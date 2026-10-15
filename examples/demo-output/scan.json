@@ -12,9 +12,9 @@
       "not_listed": 1
     },
     "by_risk": {
-      "medium": 10,
+      "medium": 8,
       "low": 1,
-      "high": 5,
+      "high": 7,
       "info": 1
     },
     "files_with_findings": 8,
@@ -41,7 +41,7 @@
       "confidence": "inferred",
       "risk": "medium",
       "notes": [
-        "Undated alias: OpenAI lists only the dated snapshots, so treating the alias as affected is inferred. Confirm with GET /v1/models (shutdown_date)."
+        "Undated alias. Live check 15 Oct 2026: it still resolves, to a dated snapshot on the 14 Jan 2027 list (gpt-4o -> gpt-4o-2024-08-06, gpt-4o-mini -> gpt-4o-mini-2024-07-18, gpt-4.1 -> gpt-4.1-2025-04-14, gpt-4.1-mini -> gpt-4.1-mini-2025-04-14). OpenAI hasn't said whether the alias is retired or re-pointed, so it's treated as affected."
       ]
     },
     {
@@ -58,7 +58,7 @@
       "confidence": "inferred",
       "risk": "medium",
       "notes": [
-        "Undated alias: OpenAI lists only the dated snapshots, so treating the alias as affected is inferred. Confirm with GET /v1/models (shutdown_date)."
+        "Undated alias. Live check 15 Oct 2026: it still resolves, to a dated snapshot on the 14 Jan 2027 list (gpt-4o -> gpt-4o-2024-08-06, gpt-4o-mini -> gpt-4o-mini-2024-07-18, gpt-4.1 -> gpt-4.1-2025-04-14, gpt-4.1-mini -> gpt-4.1-mini-2025-04-14). OpenAI hasn't said whether the alias is retired or re-pointed, so it's treated as affected."
       ]
     },
     {
@@ -75,7 +75,7 @@
       "confidence": "inferred",
       "risk": "low",
       "notes": [
-        "Undated alias: OpenAI lists only the dated snapshots, so treating the alias as affected is inferred. Confirm with GET /v1/models (shutdown_date).",
+        "Undated alias. Live check 15 Oct 2026: it still resolves, to a dated snapshot on the 14 Jan 2027 list (gpt-4o -> gpt-4o-2024-08-06, gpt-4o-mini -> gpt-4o-mini-2024-07-18, gpt-4.1 -> gpt-4.1-2025-04-14, gpt-4.1-mini -> gpt-4.1-mini-2025-04-14). OpenAI hasn't said whether the alias is retired or re-pointed, so it's treated as affected.",
         "Appears in documentation/comment only."
       ]
     },
@@ -93,8 +93,8 @@
       "confidence": "inferred",
       "risk": "high",
       "notes": [
-        "Undated alias: OpenAI lists only the dated snapshots, so treating the alias as affected is inferred. Confirm with GET /v1/models (shutdown_date).",
-        "Chat Completions + tools in this file: gpt-6-luna supports function calling on Chat Completions only with reasoning_effort set to 'none' (or move to the Responses API)."
+        "Undated alias. Live check 15 Oct 2026: it still resolves, to a dated snapshot on the 14 Jan 2027 list (gpt-4o -> gpt-4o-2024-08-06, gpt-4o-mini -> gpt-4o-mini-2024-07-18, gpt-4.1 -> gpt-4.1-2025-04-14, gpt-4.1-mini -> gpt-4.1-mini-2025-04-14). OpenAI hasn't said whether the alias is retired or re-pointed, so it's treated as affected.",
+        "Chat Completions + tools in this file: gpt-6-luna returns HTTP 400 for function tools on Chat Completions unless reasoning_effort is 'none' (docs + live-tested). Set it, or move to the Responses API."
       ]
     },
     {
@@ -127,10 +127,11 @@
       "shutdown": "2027-01-14",
       "suggested": "gpt-6-luna",
       "confidence": "confirmed",
-      "risk": "medium",
+      "risk": "high",
       "notes": [
+        "Uses `max_tokens`: gpt-6-luna rejects it with HTTP 400 (live-tested). Rename to `max_completion_tokens` (Chat Completions) or `max_output_tokens` (Responses).",
         "Structured output in this file: gpt-6-luna lists structured_outputs as supported; verify schemas with `eval`.",
-        "Sets sampling/length params (temperature, max_tokens, etc.). gpt-6-luna is a reasoning model; the kit could not confirm which of these it accepts - test with `eval`."
+        "Sets temperature/top_p/logprobs: gpt-6-luna accepts these only with reasoning_effort 'none'; at other efforts temperature must be 1 and top_p/logprobs return HTTP 400 (live-tested)."
       ]
     },
     {
@@ -147,7 +148,7 @@
       "confidence": "inferred",
       "risk": "medium",
       "notes": [
-        "Undated alias: OpenAI lists only the dated snapshots, so treating the alias as affected is inferred. Confirm with GET /v1/models (shutdown_date)."
+        "Undated alias. Live check 15 Oct 2026: it still resolves, to a dated snapshot on the 14 Jan 2027 list (gpt-4o -> gpt-4o-2024-08-06, gpt-4o-mini -> gpt-4o-mini-2024-07-18, gpt-4.1 -> gpt-4.1-2025-04-14, gpt-4.1-mini -> gpt-4.1-mini-2025-04-14). OpenAI hasn't said whether the alias is retired or re-pointed, so it's treated as affected."
       ]
     },
     {
@@ -246,8 +247,10 @@
       "shutdown": "2027-01-14",
       "suggested": "gpt-6-luna",
       "confidence": "confirmed",
-      "risk": "medium",
-      "notes": []
+      "risk": "high",
+      "notes": [
+        "Uses `max_tokens`: gpt-6-luna rejects it with HTTP 400 (live-tested). Rename to `max_completion_tokens` (Chat Completions) or `max_output_tokens` (Responses)."
+      ]
     },
     {
       "file": "config/settings.json",
@@ -280,8 +283,8 @@
       "confidence": "inferred",
       "risk": "high",
       "notes": [
-        "Undated alias: OpenAI lists only the dated snapshots, so treating the alias as affected is inferred. Confirm with GET /v1/models (shutdown_date).",
-        "Chat Completions + tools in this file: gpt-6-luna supports function calling on Chat Completions only with reasoning_effort set to 'none' (or move to the Responses API)."
+        "Undated alias. Live check 15 Oct 2026: it still resolves, to a dated snapshot on the 14 Jan 2027 list (gpt-4o -> gpt-4o-2024-08-06, gpt-4o-mini -> gpt-4o-mini-2024-07-18, gpt-4.1 -> gpt-4.1-2025-04-14, gpt-4.1-mini -> gpt-4.1-mini-2025-04-14). OpenAI hasn't said whether the alias is retired or re-pointed, so it's treated as affected.",
+        "Chat Completions + tools in this file: gpt-6-luna returns HTTP 400 for function tools on Chat Completions unless reasoning_effort is 'none' (docs + live-tested). Set it, or move to the Responses API."
       ]
     },
     {
@@ -340,7 +343,11 @@
     "app/summarise.py": [
       "chat_completions",
       "structured_output",
-      "sampling_params"
+      "sampling_params",
+      "max_tokens"
+    ],
+    "config/settings.json": [
+      "max_tokens"
     ],
     "web/src/chat.ts": [
       "chat_completions",

@@ -7,8 +7,8 @@
 
 | Risk | Count |
 |---|---|
-| high | 5 |
-| medium | 10 |
+| high | 7 |
+| medium | 8 |
 | low | 1 |
 | info | 1 |
 
@@ -23,16 +23,16 @@
 
 | File | Line | Current model | Suggested | Shutdown | Risk | Kind | Notes |
 |---|---|---|---|---|---|---|---|
-| `.env.example` | 2 | `gpt-4o-mini` | `gpt-6-luna` (inferred) | 2027-01-14 | **medium** | env | Undated alias: OpenAI lists only the dated snapshots, so treating the alias as affected is inferred. Confirm with GET /v1/models (shutdown_date). |
-| `.env.example` | 3 | `gpt-4.1-mini` | `gpt-6-luna` (inferred) | 2027-01-14 | **medium** | env | Undated alias: OpenAI lists only the dated snapshots, so treating the alias as affected is inferred. Confirm with GET /v1/models (shutdown_date). |
-| `README.md` | 4 | `gpt-4o` | `gpt-6-luna` (inferred) | 2027-01-14 | **low** | doc | Undated alias: OpenAI lists only the dated snapshots, so treating the alias as affected is inferred. Confirm with GET /v1/models (shutdown_date).<br>Appears in documentation/comment only. |
-| `app/agent.py` | 8 | `gpt-4o-mini` | `gpt-6-luna` (inferred) | 2027-01-14 | **high** | sdk_call | Undated alias: OpenAI lists only the dated snapshots, so treating the alias as affected is inferred. Confirm with GET /v1/models (shutdown_date).<br>Chat Completions + tools in this file: gpt-6-luna supports function calling on Chat Completions only with reasoning_effort set to 'none' (or move to the Responses API). |
-| `app/summarise.py` | 20 | `gpt-4o-2024-08-06` | `gpt-6-luna` | 2027-01-14 | **medium** | sdk_call | Structured output in this file: gpt-6-luna lists structured_outputs as supported; verify schemas with `eval`.<br>Sets sampling/length params (temperature, max_tokens, etc.). gpt-6-luna is a reasoning model; the kit could not confirm which of these it accepts - test with `eval`. |
-| `config/models.yaml` | 2 | `gpt-4o` | `gpt-6-luna` (inferred) | 2027-01-14 | **medium** | config | Undated alias: OpenAI lists only the dated snapshots, so treating the alias as affected is inferred. Confirm with GET /v1/models (shutdown_date). |
+| `.env.example` | 2 | `gpt-4o-mini` | `gpt-6-luna` (inferred) | 2027-01-14 | **medium** | env | Undated alias. Live check 15 Oct 2026: it still resolves, to a dated snapshot on the 14 Jan 2027 list (gpt-4o -> gpt-4o-2024-08-06, gpt-4o-mini -> gpt-4o-mini-2024-07-18, gpt-4.1 -> gpt-4.1-2025-04-14, gpt-4.1-mini -> gpt-4.1-mini-2025-04-14). OpenAI hasn't said whether the alias is retired or re-pointed, so it's treated as affected. |
+| `.env.example` | 3 | `gpt-4.1-mini` | `gpt-6-luna` (inferred) | 2027-01-14 | **medium** | env | Undated alias. Live check 15 Oct 2026: it still resolves, to a dated snapshot on the 14 Jan 2027 list (gpt-4o -> gpt-4o-2024-08-06, gpt-4o-mini -> gpt-4o-mini-2024-07-18, gpt-4.1 -> gpt-4.1-2025-04-14, gpt-4.1-mini -> gpt-4.1-mini-2025-04-14). OpenAI hasn't said whether the alias is retired or re-pointed, so it's treated as affected. |
+| `README.md` | 4 | `gpt-4o` | `gpt-6-luna` (inferred) | 2027-01-14 | **low** | doc | Undated alias. Live check 15 Oct 2026: it still resolves, to a dated snapshot on the 14 Jan 2027 list (gpt-4o -> gpt-4o-2024-08-06, gpt-4o-mini -> gpt-4o-mini-2024-07-18, gpt-4.1 -> gpt-4.1-2025-04-14, gpt-4.1-mini -> gpt-4.1-mini-2025-04-14). OpenAI hasn't said whether the alias is retired or re-pointed, so it's treated as affected.<br>Appears in documentation/comment only. |
+| `app/agent.py` | 8 | `gpt-4o-mini` | `gpt-6-luna` (inferred) | 2027-01-14 | **high** | sdk_call | Undated alias. Live check 15 Oct 2026: it still resolves, to a dated snapshot on the 14 Jan 2027 list (gpt-4o -> gpt-4o-2024-08-06, gpt-4o-mini -> gpt-4o-mini-2024-07-18, gpt-4.1 -> gpt-4.1-2025-04-14, gpt-4.1-mini -> gpt-4.1-mini-2025-04-14). OpenAI hasn't said whether the alias is retired or re-pointed, so it's treated as affected.<br>Chat Completions + tools in this file: gpt-6-luna returns HTTP 400 for function tools on Chat Completions unless reasoning_effort is 'none' (docs + live-tested). Set it, or move to the Responses API. |
+| `app/summarise.py` | 20 | `gpt-4o-2024-08-06` | `gpt-6-luna` | 2027-01-14 | **high** | sdk_call | Uses `max_tokens`: gpt-6-luna rejects it with HTTP 400 (live-tested). Rename to `max_completion_tokens` (Chat Completions) or `max_output_tokens` (Responses).<br>Structured output in this file: gpt-6-luna lists structured_outputs as supported; verify schemas with `eval`.<br>Sets temperature/top_p/logprobs: gpt-6-luna accepts these only with reasoning_effort 'none'; at other efforts temperature must be 1 and top_p/logprobs return HTTP 400 (live-tested). |
+| `config/models.yaml` | 2 | `gpt-4o` | `gpt-6-luna` (inferred) | 2027-01-14 | **medium** | config | Undated alias. Live check 15 Oct 2026: it still resolves, to a dated snapshot on the 14 Jan 2027 list (gpt-4o -> gpt-4o-2024-08-06, gpt-4o-mini -> gpt-4o-mini-2024-07-18, gpt-4.1 -> gpt-4.1-2025-04-14, gpt-4.1-mini -> gpt-4.1-mini-2025-04-14). OpenAI hasn't said whether the alias is retired or re-pointed, so it's treated as affected. |
 | `config/models.yaml` | 3 | `gpt-4o-mini-2024-07-18` | `gpt-6-luna` | 2027-01-14 | **medium** | config |  |
 | `config/models.yaml` | 4 | `gpt-4.1-2025-04-14` | `gpt-6-luna` | 2027-01-14 | **medium** | config |  |
-| `config/settings.json` | 2 | `gpt-4o-2024-11-20` | `gpt-6-luna` | 2027-01-14 | **medium** | config |  |
-| `web/src/chat.ts` | 7 | `gpt-4.1` | `gpt-6-luna` (inferred) | 2027-01-14 | **high** | sdk_call | Undated alias: OpenAI lists only the dated snapshots, so treating the alias as affected is inferred. Confirm with GET /v1/models (shutdown_date).<br>Chat Completions + tools in this file: gpt-6-luna supports function calling on Chat Completions only with reasoning_effort set to 'none' (or move to the Responses API). |
+| `config/settings.json` | 2 | `gpt-4o-2024-11-20` | `gpt-6-luna` | 2027-01-14 | **high** | config | Uses `max_tokens`: gpt-6-luna rejects it with HTTP 400 (live-tested). Rename to `max_completion_tokens` (Chat Completions) or `max_output_tokens` (Responses). |
+| `web/src/chat.ts` | 7 | `gpt-4.1` | `gpt-6-luna` (inferred) | 2027-01-14 | **high** | sdk_call | Undated alias. Live check 15 Oct 2026: it still resolves, to a dated snapshot on the 14 Jan 2027 list (gpt-4o -> gpt-4o-2024-08-06, gpt-4o-mini -> gpt-4o-mini-2024-07-18, gpt-4.1 -> gpt-4.1-2025-04-14, gpt-4.1-mini -> gpt-4.1-mini-2025-04-14). OpenAI hasn't said whether the alias is retired or re-pointed, so it's treated as affected.<br>Chat Completions + tools in this file: gpt-6-luna returns HTTP 400 for function tools on Chat Completions unless reasoning_effort is 'none' (docs + live-tested). Set it, or move to the Responses API. |
 | `web/src/classify.js` | 4 | `gpt-4.1-mini-2025-04-14` | `gpt-6-luna` | 2027-01-14 | **medium** | sdk_call |  |
 
 ## Other deprecated model

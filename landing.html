@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GPT-4o and GPT-4.1 migration, with a regression report | Burnt &amp; Toast</title>
+<meta name="description" content="OpenAI is retiring GPT-4o and GPT-4.1 in the API. Start with a free scan: we find the retiring model IDs, confirm which date applies, and only then talk about a fixed-price migration with a regression report.">
+<style>
+:root{
+  --crust:#3b2314; --toast:#8a4b22; --golden:#d99a4e; --butter:#f6e3b4; --crumb:#fbf5ea; --ink:#2a1d14; --soft:#6d5a4b; --line:#e7d7bd; --burnt:#5a2e14; --ok:#3f6b3a; --warn:#a2461f;
+  --r:14px; --max:1080px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--crumb);color:var(--ink);font:17px/1.6 Georgia,"Iowan Old Style","Palatino Linotype",serif;-webkit-font-smoothing:antialiased}
+.sans,h1,h2,h3,nav,.btn,.tag,.kicker,table,.price,.step-n,.deadline{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+a{color:var(--toast)}
+.wrap{max-width:var(--max);margin:0 auto;padding:0 22px}
+header.top{border-bottom:1px solid var(--line);background:var(--crumb);position:sticky;top:0;z-index:5}
+header.top .wrap{display:flex;align-items:center;justify-content:space-between;height:62px}
+.logo{font-weight:700;color:var(--crust);text-decoration:none;font-size:18px;letter-spacing:.2px}
+.logo span{color:var(--golden)}
+nav a{color:var(--soft);text-decoration:none;margin-left:20px;font-size:15px}
+nav a:hover{color:var(--toast)}
+@media (max-width:720px){nav a:not(.btn){display:none}}
+.btn{display:inline-block;background:var(--crust);color:#fff;text-decoration:none;padding:12px 20px;border-radius:999px;font-weight:600;font-size:15px;border:2px solid var(--crust)}
+.btn:hover{background:var(--burnt)}
+.btn.ghost{background:transparent;color:var(--crust)}
+nav .btn{padding:8px 16px;margin-left:20px;color:#fff}
+.hero{padding:72px 0 56px;background:radial-gradient(1200px 400px at 85% -10%,#f3d79c55,transparent),var(--crumb)}
+.kicker{display:inline-block;font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--toast);background:var(--butter);padding:5px 12px;border-radius:999px}
+h1{font-size:clamp(34px,5.4vw,58px);line-height:1.08;margin:18px 0 18px;color:var(--crust);letter-spacing:-.02em;max-width:17ch}
+.lede{font-size:clamp(18px,2.2vw,21px);color:var(--soft);max-width:60ch;margin:0 0 28px}
+.cta-row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.deadlines{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin-top:44px}
+.deadline{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:18px 20px}
+.deadline b{display:block;font-size:26px;color:var(--crust);letter-spacing:-.01em}
+.deadline .what{font-size:14px;color:var(--soft);margin-top:4px}
+.deadline code{font-size:12.5px}
+.deadline.soon{border-color:var(--warn);box-shadow:0 0 0 3px #a2461f14}
+.deadline.soon b{color:var(--warn)}
+.src{font-size:13px;color:var(--soft);margin-top:14px}
+section{padding:68px 0;border-top:1px solid var(--line)}
+section.alt{background:#fff}
+h2{font-size:clamp(26px,3.4vw,36px);color:var(--crust);margin:0 0 14px;letter-spacing:-.015em;line-height:1.15}
+h3{font-size:19px;color:var(--crust);margin:0 0 6px}
+.intro{color:var(--soft);max-width:64ch;margin:0 0 30px}
+.grid{display:grid;gap:18px}
+.g3{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.g2{grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
+.card{background:var(--crumb);border:1px solid var(--line);border-radius:var(--r);padding:22px}
+section.alt .card{background:var(--crumb)}
+.card p{margin:0;color:var(--soft)}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.9em;background:var(--butter);padding:1px 6px;border-radius:5px;color:var(--burnt)}
+.trap{border-left:4px solid var(--warn);background:#fff7ef}
+.report{background:#fff;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;box-shadow:0 10px 30px -18px #3b231455}
+.report .bar{background:var(--crust);color:var(--butter);padding:10px 16px;font:600 13px/1.4 ui-monospace,Menlo,Consolas,monospace}
+.report table{width:100%;border-collapse:collapse;font-size:14px}
+.report th,.report td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+.report th{background:var(--crumb);color:var(--soft);font-weight:600;font-size:12.5px;text-transform:uppercase;letter-spacing:.05em}
+.pill{display:inline-block;font-size:12px;font-weight:700;padding:2px 9px;border-radius:999px}
+.pill.ok{background:#e3efdc;color:var(--ok)}
+.pill.chg{background:#fbe9c9;color:#8a5a12}
+.pill.fix{background:#f7ddd0;color:var(--warn)}
+.report .foot{padding:12px 16px;font-size:13px;color:var(--soft)}
+ul.ticks{list-style:none;padding:0;margin:0}
+ul.ticks li{padding-left:28px;position:relative;margin:0 0 10px}
+ul.ticks li:before{content:"";position:absolute;left:4px;top:.55em;width:11px;height:11px;border-radius:50%;background:var(--golden);box-shadow:inset 0 0 0 3px #f6e3b4}
+.steps{counter-reset:s}
+.step{display:flex;gap:18px;align-items:flex-start}
+.step-n{flex:0 0 46px;height:46px;border-radius:50%;background:var(--butter);color:var(--crust);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;border:2px solid var(--golden)}
+.step p{margin:0;color:var(--soft)}
+.price{display:flex;flex-direction:column}
+.price .tier{font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--toast)}
+.price .amt{font-size:40px;font-weight:800;color:var(--crust);margin:6px 0 2px;letter-spacing:-.02em}
+.price .per{font-size:14px;color:var(--soft);margin-bottom:16px}
+.price ul{margin-bottom:22px}
+.price .btn{margin-top:auto;align-self:flex-start}
+.price.premium{background:var(--crust);color:var(--butter);border-color:var(--crust)}
+.price.premium .tier{color:var(--golden)}
+.price.premium .amt,.price.premium h3{color:#fff}
+.price.premium .per,.price.premium li{color:#f3e4c8}
+.price.premium .btn{background:var(--golden);border-color:var(--golden);color:var(--crust)}
+.price.premium code{background:#5a3a24;color:var(--butter)}
+.note{font-size:14px;color:var(--soft);margin-top:18px}
+details{background:var(--crumb);border:1px solid var(--line);border-radius:var(--r);padding:16px 20px;margin-bottom:12px}
+details[open]{background:#fff}
+summary{cursor:pointer;font:600 17px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;color:var(--crust);list-style:none}
+summary::-webkit-details-marker{display:none}
+summary:after{content:"+";float:right;color:var(--toast);font-weight:700}
+details[open] summary:after{content:"–"}
+details p{color:var(--soft);margin:10px 0 0}
+.contact{background:var(--crust);color:var(--butter);text-align:center}
+.contact h2{color:#fff}
+.contact p{color:#f0dfc2;max-width:56ch;margin:0 auto 24px}
+.contact .btn{background:var(--golden);border-color:var(--golden);color:var(--crust);font-size:17px;padding:14px 26px}
+footer{padding:28px 0;font-size:14px;color:var(--soft);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+</style>
+</head>
+<body>
+
+<header class="top"><div class="wrap">
+  <a class="logo" href="https://burntandtoast.com">Burnt <span>&amp;</span> Toast</a>
+  <nav><a href="#problem">The problem</a><a href="#what">What we do</a><a href="#pricing">Pricing</a><a href="#faq">FAQ</a><a class="btn" href="mailto:hello@burntandtoast.com?subject=Free%20migration%20scan">Free scan</a></nav>
+</div></header>
+
+<main>
+<div class="hero"><div class="wrap">
+  <span class="kicker">OpenAI API migration</span>
+  <h1>Your code may pin a model OpenAI is retiring. Start with a free scan.</h1>
+  <p class="lede">Some GPT-4o and GPT-4.1 snapshots go on 23&nbsp;October 2026, the rest on 14&nbsp;January 2027. We scan a copy or branch of your codebase for retiring model IDs, confirm the exact date that applies, and tell you whether a one-line swap is enough. Free, no obligation. If you then want the full migration, we re-run your structured outputs and tool calls and hand back a plain regression report.</p>
+  <div class="cta-row">
+    <a class="btn" href="mailto:hello@burntandtoast.com?subject=Free%20migration%20scan">Book a free scan</a>
+    <a class="btn ghost" href="#report">See what the report looks like</a>
+  </div>
+
+  <div class="deadlines">
+    <div class="deadline soon"><b>23 Oct 2026</b><div class="what"><code>gpt-4.1-nano</code> and <code>gpt-4o-2024-05-13</code> are switched off. Replacements: <code>gpt-5.6-luna</code> / <code>gpt-5.6-sol</code>. That's next week.</div></div>
+    <div class="deadline"><b>6 Jan 2027</b><div class="what">No new fine-tuning jobs. If you have a fine-tune, decide before this.</div></div>
+    <div class="deadline"><b>14 Jan 2027</b><div class="what">The remaining GPT-4o, GPT-4o mini, GPT-4.1 and GPT-4.1 mini snapshots are removed, along with fine-tunes built on them. Replacement: <code>gpt-6-luna</code>.</div></div>
+  </div>
+  <p class="src">Dates and replacements come from OpenAI's own <a href="https://platform.openai.com/docs/deprecations">deprecations page</a>, checked 15 October 2026. Undated names like <code>gpt-4o</code> still resolve to a dated snapshot; the free scan confirms which one, and which date, applies.</p>
+</div></div>
+
+<section id="problem"><div class="wrap">
+  <h2>Why it isn't just find-and-replace</h2>
+  <p class="intro">Swapping the model name looks like a five-minute job. Usually it's mostly that, plus the bits that break quietly.</p>
+  <div class="grid g3">
+    <div class="card trap"><h3>Tool calls can stop working</h3><p>On Chat Completions, the January replacement <code>gpt-6-luna</code> only supports function calling when <code>reasoning_effort</code> is set to <code>none</code>. The default is <code>medium</code>. Change only the model string and your tool calls break. The fix is a code change, or a move to the Responses API.</p></div>
+    <div class="card trap"><h3>Fine-tunes have no direct replacement</h3><p><code>gpt-6-luna</code> can't be fine-tuned. Your fine-tuned model is switched off with its base model on 14 January, and new fine-tuning jobs stop on 6 January. You need a plan before then, not a patch afterwards.</p></div>
+    <div class="card"><h3>Outputs drift</h3><p>A new model answers slightly differently. JSON fields get renamed, a classifier sorts things into different buckets, a summary runs longer. Nothing errors, but something downstream does the wrong thing.</p></div>
+    <div class="card"><h3>Model IDs hide everywhere</h3><p>Config files, environment variables, database seeds, test fixtures, settings migrations, docs your users copy. The ones you forget about turn up on shutdown day.</p></div>
+    <div class="card"><h3>Undated aliases</h3><p><code>gpt-4o</code> or <code>gpt-4.1-mini</code> with no date still resolves to a snapshot on the list. We don't guess the date from the alias alone; the free scan confirms which snapshot you're on.</p></div>
+    <div class="card"><h3>Nobody has time this quarter</h3><p>The deadline lands in the middle of everything else, including Christmas. Fair enough. That's what we're for.</p></div>
+  </div>
+</div></section>
+
+<section id="what" class="alt"><div class="wrap">
+  <div class="grid g2" style="align-items:start">
+    <div>
+      <h2>What we do</h2>
+      <p class="intro">We work on a copy of your code, on a branch, and hand back something you can review and merge.</p>
+      <ul class="ticks">
+        <li><b>Scan</b> the whole repo for pinned and aliased model IDs: code, config, env templates, seeds, tests and docs.</li>
+        <li><b>Swap</b> them to the right replacement: <code>gpt-5.6-luna</code> / <code>gpt-5.6-sol</code> for the 23 October models, <code>gpt-6-luna</code> for the 14 January batch. Then make the code changes the new model needs, such as <code>reasoning_effort</code> for tool calls on Chat Completions, or a move to the Responses API where that's cleaner.</li>
+        <li><b>Snapshot</b> your real prompts, structured outputs and tool calls on the old model while it still runs, then run the same set on the new one.</li>
+        <li><b>Compare</b> the two side by side, field by field and call by call.</li>
+        <li><b>Report</b> what changed, what we fixed, and anything that still needs a decision from you.</li>
+      </ul>
+    </div>
+    <div id="report">
+      <div class="report">
+        <div class="bar">regression-report.md · example</div>
+        <table>
+          <tr><th>Check</th><th>Before → after</th><th>Status</th></tr>
+          <tr><td>Invoice extractor (JSON schema)</td><td>48/48 valid → 48/48 valid</td><td><span class="pill ok">Same</span></td></tr>
+          <tr><td><code>lookup_order</code> tool call</td><td>Called → not called (Chat Completions default)</td><td><span class="pill fix">Fixed</span></td></tr>
+          <tr><td>Ticket classifier</td><td>3 of 60 labels moved</td><td><span class="pill chg">Changed</span></td></tr>
+          <tr><td>Reply length</td><td>Median 112 → 131 words</td><td><span class="pill chg">Changed</span></td></tr>
+          <tr><td>Pinned model IDs</td><td>9 found in 6 files → 0</td><td><span class="pill ok">Done</span></td></tr>
+        </table>
+        <div class="foot">Every changed row links to the exact before-and-after outputs, so you can judge for yourself. Example data only.</div>
+      </div>
+    </div>
+  </div>
+</div></section>
+
+<section id="get"><div class="wrap">
+  <h2>What you get</h2>
+  <p class="intro">Every job ends with a report as well as a patch. You'll know what changed, not just that the tests passed.</p>
+  <div class="grid g3">
+    <div class="card"><h3>A branch, ready to review</h3><p>One pull request with the model swap and the code changes, each commit doing one thing.</p></div>
+    <div class="card"><h3>The regression report</h3><p>Before-and-after results for your structured outputs and tool calls. Each item is marked same, changed or fixed, with the raw outputs attached.</p></div>
+    <div class="card"><h3>The snapshot set</h3><p>The prompts and expected outputs we tested with, yours to keep and re-run the next time a model is retired.</p></div>
+    <div class="card"><h3>An inventory of model IDs</h3><p>Every place a model is named, including the ones outside the code, so nothing turns up on shutdown day.</p></div>
+    <div class="card"><h3>A short handover</h3><p>Half a page in plain English: what we did, what to watch for, and anything we'd do differently given more time.</p></div>
+    <div class="card"><h3>An honest call</h3><p>If your project doesn't need us, say a single alias and no tools, we'll tell you so and point you at the change.</p></div>
+  </div>
+</div></section>
+
+<section class="alt"><div class="wrap">
+  <h2>How it works</h2>
+  <p class="intro">Three steps. Most small projects take one or two days.</p>
+  <div class="grid g3 steps">
+    <div class="step"><div class="step-n">1</div><div><h3>A free scan</h3><p>You grant read access to a copy or a branch. We find retiring model IDs, confirm the exact date that applies, and tell you whether a one-line swap is enough. Free, no obligation. Only then do we quote a fixed price, or say you don't need us.</p></div></div>
+    <div class="step"><div class="step-n">2</div><div><h3>Snapshot, swap, compare</h3><p>We record the current behaviour while the old model still runs, make the changes, and re-run everything on the right replacement (<code>gpt-5.6-luna</code> / <code>gpt-5.6-sol</code> or <code>gpt-6-luna</code>).</p></div></div>
+    <div class="step"><div class="step-n">3</div><div><h3>Report and hand back</h3><p>You get the branch, the regression report and the snapshot set. We go through anything marked "changed" with you.</p></div></div>
+  </div>
+</div></section>
+
+<section id="pricing"><div class="wrap">
+  <h2>Pricing</h2>
+  <p class="intro">Fixed prices, agreed before we start. We aren't VAT registered, so there's no VAT to add.</p>
+  <div class="grid g2">
+    <div class="card price">
+      <span class="tier">Standard</span>
+      <h3>Migration plus regression report</h3>
+      <div class="amt">[PRICE]</div>
+      <div class="per">per small project · usually 1–2 days</div>
+      <ul class="ticks">
+        <li>Repo-wide scan and swap to the right replacement (<code>gpt-5.6-luna</code> / <code>gpt-5.6-sol</code> or <code>gpt-6-luna</code>)</li>
+        <li>Tool calling fixed for the new model (Chat Completions or Responses)</li>
+        <li>Before-and-after snapshots of structured outputs and tool calls</li>
+        <li>Regression report, snapshot set and handover note</li>
+        <li>Priority slot if you're on <code>gpt-4.1-nano</code> or <code>gpt-4o-2024-05-13</code> (23 October)</li>
+      </ul>
+      <a class="btn" href="mailto:hello@burntandtoast.com?subject=Free%20migration%20scan">Start with a free scan</a>
+    </div>
+    <div class="card price premium">
+      <span class="tier">Premium · fine-tuned models</span>
+      <h3>Fine-tune migration plan</h3>
+      <div class="amt">from [PRICE]</div>
+      <div class="per">quoted after a look · needs to start well before 6 January</div>
+      <ul class="ticks">
+        <li>Everything in Standard</li>
+        <li>A behavioural snapshot of your fine-tune while it still runs</li>
+        <li>Your options set out plainly, since <code>gpt-6-luna</code> can't be fine-tuned</li>
+        <li>The chosen route measured against your fine-tune's real outputs</li>
+        <li>A clear yes or no on whether it's good enough to ship</li>
+      </ul>
+      <a class="btn" href="mailto:hello@burntandtoast.com?subject=Free%20migration%20scan%20%28fine-tune%29">Start with a free scan</a>
+    </div>
+  </div>
+  <p class="note">Bigger codebases or several services? We'll quote them separately and plainly. No retainers, nothing to sign up to.</p>
+</div></section>
+
+<section id="faq" class="alt"><div class="wrap">
+  <h2>Questions</h2>
+  <p class="intro">If yours isn't here, email us. A person reads it.</p>
+  <details><summary>We use a fine-tuned GPT-4o or GPT-4.1 model. What happens?</summary><p>Fine-tuned models follow their base model's schedule, so they're switched off on 14 January 2027. <code>gpt-6-luna</code> can't be fine-tuned, and new fine-tuning jobs stop on 6 January 2027. That's what the premium tier is for. We snapshot what your fine-tune does now, set out your realistic options, and measure the one you pick against those snapshots. Get in touch early, because some routes need that 6 January date.</p></details>
+  <details><summary>What do you do with our code and data?</summary><p>We work on a copy of your repository or on a branch you give us. Nothing goes to production unless you merge it. We run the tests with your API key or a test key you provide, and we don't keep your code, prompts or outputs after handover. The snapshot set goes to you, not into our files. If you'd prefer we test on scrubbed or synthetic inputs, say so.</p></details>
+  <details><summary>Can't we just change the model name ourselves?</summary><p>Often you can, and if that's true for you we'll say so. The traps are tool calls on Chat Completions (which need <code>reasoning_effort</code> set to <code>none</code> on <code>gpt-6-luna</code>), fine-tunes, and quiet output drift. The report exists so you can see whether any of those apply to you.</p></details>
+  <details><summary>We're on <code>gpt-4.1-nano</code> or <code>gpt-4o-2024-05-13</code>.</summary><p>Those go on 23 October 2026, which is days away. Email us today and we'll move you up the queue. OpenAI recommends <code>gpt-5.6-luna</code> and <code>gpt-5.6-sol</code> as replacements for those two, and we'll check which suits you.</p></details>
+  <details><summary>How do we know which models we actually use?</summary><p>The scan finds what your code names. OpenAI's List models endpoint also shows a <code>shutdown_date</code> on each model, and we include both in the inventory.</p></details>
+  <details><summary>Who are you?</summary><p>Burnt &amp; Toast Studios Ltd, a small, self-funded games studio in the UK. We use AI heavily in our own work, so we've done this to our own code. Same rule as our games: kind to your time, no tricks.</p></details>
+</div></section>
+
+<section class="contact"><div class="wrap">
+  <h2>Book a free scan</h2>
+  <p>Email <a href="mailto:hello@burntandtoast.com?subject=Free%20migration%20scan" style="color:var(--golden)">hello@burntandtoast.com</a> with a couple of lines about the app, or grant read access to a copy or branch. We find the retiring model IDs, confirm the exact date that applies, and tell you whether you need us. Free, no obligation.</p>
+  <a class="btn" href="mailto:hello@burntandtoast.com?subject=Free%20migration%20scan">hello@burntandtoast.com · free scan</a>
+</div></section>
+</main>
+
+<footer><div class="wrap">
+  <span>© 2026 Burnt &amp; Toast Studios Ltd · UK · <a href="https://burntandtoast.com">burntandtoast.com</a></span>
+  <span>Model dates from <a href="https://platform.openai.com/docs/deprecations">OpenAI's deprecations page</a>. We're not affiliated with OpenAI.</span>
+</div></footer>
+</body>
+</html>

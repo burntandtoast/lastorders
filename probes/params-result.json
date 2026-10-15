@@ -1,0 +1,396 @@
+[
+ {
+  "probe": "chat baseline effort=none max_completion_tokens=16",
+  "status": 200,
+  "request_model": "gpt-6-luna",
+  "resolved_model": "gpt-6-luna",
+  "usage": {
+   "prompt_tokens": 13,
+   "completion_tokens": 4,
+   "total_tokens": 17,
+   "prompt_tokens_details": {
+    "cached_tokens": 0,
+    "cache_write_tokens": 0,
+    "audio_tokens": 0
+   },
+   "completion_tokens_details": {
+    "reasoning_tokens": 0,
+    "audio_tokens": 0,
+    "accepted_prediction_tokens": 0,
+    "rejected_prediction_tokens": 0
+   }
+  },
+  "finish_reason": "stop",
+  "content": "OK",
+  "tool_calls": [],
+  "logprobs_returned": false
+ },
+ {
+  "probe": "chat baseline default effort max_completion_tokens=64",
+  "status": 200,
+  "request_model": "gpt-6-luna",
+  "resolved_model": "gpt-6-luna",
+  "usage": {
+   "prompt_tokens": 13,
+   "completion_tokens": 15,
+   "total_tokens": 28,
+   "prompt_tokens_details": {
+    "cached_tokens": 0,
+    "cache_write_tokens": 0,
+    "audio_tokens": 0
+   },
+   "completion_tokens_details": {
+    "reasoning_tokens": 5,
+    "audio_tokens": 0,
+    "accepted_prediction_tokens": 0,
+    "rejected_prediction_tokens": 0
+   }
+  },
+  "finish_reason": "stop",
+  "content": "OK",
+  "tool_calls": [],
+  "logprobs_returned": false
+ },
+ {
+  "probe": "chat max_tokens=16 effort=none",
+  "status": 400,
+  "request_model": "gpt-6-luna",
+  "error": {
+   "message": "Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead.",
+   "type": "invalid_request_error",
+   "param": "max_tokens",
+   "code": "unsupported_parameter"
+  }
+ },
+ {
+  "probe": "chat max_tokens=64 default effort",
+  "status": 400,
+  "request_model": "gpt-6-luna",
+  "error": {
+   "message": "Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead.",
+   "type": "invalid_request_error",
+   "param": "max_tokens",
+   "code": "unsupported_parameter"
+  }
+ },
+ {
+  "probe": "chat temperature=0.2 effort=none",
+  "status": 200,
+  "request_model": "gpt-6-luna",
+  "resolved_model": "gpt-6-luna",
+  "usage": {
+   "prompt_tokens": 13,
+   "completion_tokens": 4,
+   "total_tokens": 17,
+   "prompt_tokens_details": {
+    "cached_tokens": 0,
+    "cache_write_tokens": 0,
+    "audio_tokens": 0
+   },
+   "completion_tokens_details": {
+    "reasoning_tokens": 0,
+    "audio_tokens": 0,
+    "accepted_prediction_tokens": 0,
+    "rejected_prediction_tokens": 0
+   }
+  },
+  "finish_reason": "stop",
+  "content": "OK",
+  "tool_calls": [],
+  "logprobs_returned": false
+ },
+ {
+  "probe": "chat temperature=0.2 default effort",
+  "status": 400,
+  "request_model": "gpt-6-luna",
+  "error": {
+   "message": "Unsupported value: 'temperature' does not support 0.2 with this model. Only the default (1) value is supported.",
+   "type": "invalid_request_error",
+   "param": "temperature",
+   "code": "unsupported_value"
+  }
+ },
+ {
+  "probe": "chat temperature=1 default effort",
+  "status": 200,
+  "request_model": "gpt-6-luna",
+  "resolved_model": "gpt-6-luna",
+  "usage": {
+   "prompt_tokens": 13,
+   "completion_tokens": 15,
+   "total_tokens": 28,
+   "prompt_tokens_details": {
+    "cached_tokens": 0,
+    "cache_write_tokens": 0,
+    "audio_tokens": 0
+   },
+   "completion_tokens_details": {
+    "reasoning_tokens": 5,
+    "audio_tokens": 0,
+    "accepted_prediction_tokens": 0,
+    "rejected_prediction_tokens": 0
+   }
+  },
+  "finish_reason": "stop",
+  "content": "OK",
+  "tool_calls": [],
+  "logprobs_returned": false
+ },
+ {
+  "probe": "chat top_p=0.9 effort=none",
+  "status": 200,
+  "request_model": "gpt-6-luna",
+  "resolved_model": "gpt-6-luna",
+  "usage": {
+   "prompt_tokens": 13,
+   "completion_tokens": 4,
+   "total_tokens": 17,
+   "prompt_tokens_details": {
+    "cached_tokens": 0,
+    "cache_write_tokens": 0,
+    "audio_tokens": 0
+   },
+   "completion_tokens_details": {
+    "reasoning_tokens": 0,
+    "audio_tokens": 0,
+    "accepted_prediction_tokens": 0,
+    "rejected_prediction_tokens": 0
+   }
+  },
+  "finish_reason": "stop",
+  "content": "OK",
+  "tool_calls": [],
+  "logprobs_returned": false
+ },
+ {
+  "probe": "chat top_p=0.9 default effort",
+  "status": 400,
+  "request_model": "gpt-6-luna",
+  "error": {
+   "message": "Unsupported parameter: 'top_p' is not supported with this model.",
+   "type": "invalid_request_error",
+   "param": "top_p",
+   "code": "unsupported_parameter"
+  }
+ },
+ {
+  "probe": "chat logprobs effort=none",
+  "status": 200,
+  "request_model": "gpt-6-luna",
+  "resolved_model": "gpt-6-luna",
+  "usage": {
+   "prompt_tokens": 13,
+   "completion_tokens": 4,
+   "total_tokens": 17,
+   "prompt_tokens_details": {
+    "cached_tokens": 0,
+    "cache_write_tokens": 0,
+    "audio_tokens": 0
+   },
+   "completion_tokens_details": {
+    "reasoning_tokens": 0,
+    "audio_tokens": 0,
+    "accepted_prediction_tokens": 0,
+    "rejected_prediction_tokens": 0
+   }
+  },
+  "finish_reason": "stop",
+  "content": "OK",
+  "tool_calls": [],
+  "logprobs_returned": true
+ },
+ {
+  "probe": "chat logprobs default effort",
+  "status": 400,
+  "request_model": "gpt-6-luna",
+  "error": {
+   "message": "Unsupported parameter: 'logprobs' is not supported with this model.",
+   "type": "invalid_request_error",
+   "param": "logprobs",
+   "code": "unsupported_parameter"
+  }
+ },
+ {
+  "probe": "chat tools, no reasoning_effort",
+  "status": 400,
+  "request_model": "gpt-6-luna",
+  "error": {
+   "message": "Function tools with reasoning_effort are not supported for gpt-6-luna in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.",
+   "type": "invalid_request_error",
+   "param": "reasoning_effort",
+   "code": null
+  }
+ },
+ {
+  "probe": "chat tools, reasoning_effort=low",
+  "status": 400,
+  "request_model": "gpt-6-luna",
+  "error": {
+   "message": "Function tools with reasoning_effort are not supported for gpt-6-luna in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.",
+   "type": "invalid_request_error",
+   "param": "reasoning_effort",
+   "code": null
+  }
+ },
+ {
+  "probe": "chat tools, reasoning_effort=none",
+  "status": 200,
+  "request_model": "gpt-6-luna",
+  "resolved_model": "gpt-6-luna",
+  "usage": {
+   "prompt_tokens": 152,
+   "completion_tokens": 33,
+   "total_tokens": 185,
+   "prompt_tokens_details": {
+    "cached_tokens": 0,
+    "cache_write_tokens": 0,
+    "audio_tokens": 0
+   },
+   "completion_tokens_details": {
+    "reasoning_tokens": 0,
+    "audio_tokens": 0,
+    "accepted_prediction_tokens": 0,
+    "rejected_prediction_tokens": 0
+   }
+  },
+  "finish_reason": "tool_calls",
+  "content": "",
+  "tool_calls": [
+   "book_table"
+  ],
+  "logprobs_returned": false
+ },
+ {
+  "probe": "responses temperature=0.2 default effort",
+  "status": 400,
+  "request_model": "gpt-6-luna",
+  "error": {
+   "message": "Unsupported parameter: 'temperature' is not supported with this model.",
+   "type": "invalid_request_error",
+   "param": "temperature",
+   "code": null
+  }
+ },
+ {
+  "probe": "responses tools default effort",
+  "status": 200,
+  "request_model": "gpt-6-luna",
+  "resolved_model": "gpt-6-luna",
+  "usage": {
+   "input_tokens": 70,
+   "input_tokens_details": {
+    "cache_write_tokens": 0,
+    "cached_tokens": 0
+   },
+   "output_tokens": 34,
+   "output_tokens_details": {
+    "reasoning_tokens": 0
+   },
+   "total_tokens": 104
+  },
+  "output_types": [
+   "function_call"
+  ],
+  "status_field": "completed"
+ },
+ {
+  "probe": "alias gpt-4o resolves",
+  "status": 200,
+  "request_model": "gpt-4o",
+  "resolved_model": "gpt-4o-2024-08-06",
+  "usage": {
+   "prompt_tokens": 14,
+   "completion_tokens": 1,
+   "total_tokens": 15,
+   "prompt_tokens_details": {
+    "cached_tokens": 0,
+    "audio_tokens": 0
+   },
+   "completion_tokens_details": {
+    "reasoning_tokens": 0,
+    "audio_tokens": 0,
+    "accepted_prediction_tokens": 0,
+    "rejected_prediction_tokens": 0
+   }
+  },
+  "finish_reason": "stop",
+  "content": "OK",
+  "tool_calls": [],
+  "logprobs_returned": false
+ },
+ {
+  "probe": "alias gpt-4o-mini resolves",
+  "status": 200,
+  "request_model": "gpt-4o-mini",
+  "resolved_model": "gpt-4o-mini-2024-07-18",
+  "usage": {
+   "prompt_tokens": 14,
+   "completion_tokens": 1,
+   "total_tokens": 15,
+   "prompt_tokens_details": {
+    "cached_tokens": 0,
+    "audio_tokens": 0
+   },
+   "completion_tokens_details": {
+    "reasoning_tokens": 0,
+    "audio_tokens": 0,
+    "accepted_prediction_tokens": 0,
+    "rejected_prediction_tokens": 0
+   }
+  },
+  "finish_reason": "stop",
+  "content": "OK",
+  "tool_calls": [],
+  "logprobs_returned": false
+ },
+ {
+  "probe": "alias gpt-4.1 resolves",
+  "status": 200,
+  "request_model": "gpt-4.1",
+  "resolved_model": "gpt-4.1-2025-04-14",
+  "usage": {
+   "prompt_tokens": 14,
+   "completion_tokens": 1,
+   "total_tokens": 15,
+   "prompt_tokens_details": {
+    "cached_tokens": 0,
+    "audio_tokens": 0
+   },
+   "completion_tokens_details": {
+    "reasoning_tokens": 0,
+    "audio_tokens": 0,
+    "accepted_prediction_tokens": 0,
+    "rejected_prediction_tokens": 0
+   }
+  },
+  "finish_reason": "stop",
+  "content": "OK",
+  "tool_calls": [],
+  "logprobs_returned": false
+ },
+ {
+  "probe": "alias gpt-4.1-mini resolves",
+  "status": 200,
+  "request_model": "gpt-4.1-mini",
+  "resolved_model": "gpt-4.1-mini-2025-04-14",
+  "usage": {
+   "prompt_tokens": 14,
+   "completion_tokens": 1,
+   "total_tokens": 15,
+   "prompt_tokens_details": {
+    "cached_tokens": 0,
+    "audio_tokens": 0
+   },
+   "completion_tokens_details": {
+    "reasoning_tokens": 0,
+    "audio_tokens": 0,
+    "accepted_prediction_tokens": 0,
+    "rejected_prediction_tokens": 0
+   }
+  },
+  "finish_reason": "stop",
+  "content": "OK",
+  "tool_calls": [],
+  "logprobs_returned": false
+ }
+]

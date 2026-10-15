@@ -33,6 +33,8 @@ class ModelOutput:
     latency_ms: int | None = None
     usage: dict | None = None
     simulated: bool = False
+    resolved_model: str | None = None
+    truncated: bool = False
 
 
 @dataclass
@@ -148,11 +150,21 @@ class OpenAIProvider:
         raise RuntimeError("unreachable")
 
     def build_request(self, case: dict, model: str, role: str, suite: dict) -> tuple[str, dict]:
-        params = {**(suite.get("model_params", {}).get(role) or {}), **((case.get("model_params") or {}).get(role) or {})}
+        params = {**((suite.get("model_params") or {}).get(role) or {}), **((case.get("model_params") or {}).get(role) or {})}
         system = case.get("system", suite.get("system"))
         strict = case.get("strict", True)
+        max_out = case.get("max_output_tokens", suite.get("max_output_tokens"))
         if self.api == "responses":
+            # Chat-style reasoning_effort -> Responses `reasoning.effort`
+            if "reasoning_effort" in params:
+                params = dict(params)
+                params["reasoning"] = {**params.get("reasoning", {}), "effort": params.pop("reasoning_effort")}
+            if "max_completion_tokens" in params or "max_tokens" in params:
+                params = dict(params)
+                params.setdefault("max_output_tokens", params.pop("max_completion_tokens", None) or params.pop("max_tokens"))
             body: dict = {"model": model, "input": case["prompt"]}
+            if max_out:
+                body["max_output_tokens"] = int(max_out)
             if system:
                 body["instructions"] = system
             if case["type"] == "structured":
@@ -168,6 +180,10 @@ class OpenAIProvider:
             return "/responses", body
         msgs = ([{"role": "system", "content": system}] if system else []) + [{"role": "user", "content": case["prompt"]}]
         body = {"model": model, "messages": msgs}
+        if max_out:
+            # `max_tokens` is rejected by gpt-6-luna (live-tested 2026-10-15);
+            # `max_completion_tokens` works on both the GPT-4 series and gpt-6-luna.
+            body["max_completion_tokens"] = int(max_out)
         if case["type"] == "structured":
             body["response_format"] = {"type": "json_schema", "json_schema": {
                 "name": case.get("schema_name", "output"), "schema": case["schema"], "strict": strict}}
@@ -191,8 +207,10 @@ class OpenAIProvider:
         return self.parse(data, ms)
 
     def parse(self, data: dict, ms: int | None = None) -> ModelOutput:
-        out = ModelOutput(latency_ms=ms, usage=data.get("usage"))
+        out = ModelOutput(latency_ms=ms, usage=data.get("usage"), resolved_model=data.get("model"))
         if self.api == "responses":
+            if data.get("status") == "incomplete":
+                out.truncated = True
             texts = []
             for item in data.get("output", []):
                 if item.get("type") == "message":
@@ -201,7 +219,10 @@ class OpenAIProvider:
                     out.tool_calls.append(ToolCall(item.get("name"), _maybe_json(item.get("arguments"))))
             out.text = "".join(texts) or None
             return out
-        msg = (data.get("choices") or [{}])[0].get("message", {})
+        choice = (data.get("choices") or [{}])[0]
+        if choice.get("finish_reason") == "length":
+            out.truncated = True
+        msg = choice.get("message", {})
         out.text = msg.get("content")
         for tc in msg.get("tool_calls") or []:
             fn = tc.get("function", {})
@@ -305,8 +326,15 @@ def compare(case: dict, old: ModelOutput, new: ModelOutput) -> CaseResult:
         checks["schema_valid"] = {"old": so["ok"], "new": sn["ok"]}
         checks["schema_errors"] = {"old": so["errors"], "new": sn["errors"]}
         if so["value"] is not None and sn["value"] is not None:
-            checks["field_diff"] = diff_values(so["value"], sn["value"])
-            checks["similarity"] = similarity(json.dumps(so["value"], sort_keys=True), json.dumps(sn["value"], sort_keys=True))
+            ignore = set(case.get("ignore_fields") or [])
+            all_diffs = diff_values(so["value"], sn["value"])
+            checks["field_diff"] = [d for d in all_diffs if d["path"].split("[")[0].split(".")[0] not in ignore]
+            if ignore:
+                checks["ignored_fields"] = sorted(ignore)
+            def _strip(v):
+                return {k: x for k, x in v.items() if k not in ignore} if isinstance(v, dict) else v
+            checks["similarity"] = similarity(json.dumps(_strip(so["value"]), sort_keys=True),
+                                              json.dumps(_strip(sn["value"]), sort_keys=True))
         old_ok, new_ok = so["ok"], sn["ok"]
         drift = bool(checks.get("field_diff"))
     elif t == "tool_call":
@@ -348,6 +376,9 @@ def compare(case: dict, old: ModelOutput, new: ModelOutput) -> CaseResult:
         status = "drift"
     else:
         status = "pass"
+    for side, o in (("old", old), ("new", new)):
+        if o.truncated:
+            notes.append(f"{side} model output was cut off by the output-token limit.")
     if old.simulated or new.simulated:
         notes.append("Simulated (dry-run) output - not a real model response.")
     if t != "text" and checks.get("similarity") is not None and checks["similarity"] < thr:
@@ -375,7 +406,9 @@ def run_suite(suite: dict, provider, old_model: str | None = None, new_model: st
     counts: dict[str, int] = {}
     for r in results:
         counts[r.status] = counts.get(r.status, 0) + 1
+    usage = usage_and_cost(results, suite.get("pricing") or {}, old_m, new_m)
     return {
+        "usage": usage,
         "suite": suite.get("name", "unnamed"),
         "api": suite.get("api", "chat"),
         "mode": provider.name,
@@ -384,6 +417,31 @@ def run_suite(suite: dict, provider, old_model: str | None = None, new_model: st
         "summary": counts,
         "cases": [asdict(r) for r in results],
     }
+
+
+def _tokens(u: dict | None) -> tuple[int, int]:
+    if not u:
+        return 0, 0
+    return (int(u.get("prompt_tokens", u.get("input_tokens", 0)) or 0),
+            int(u.get("completion_tokens", u.get("output_tokens", 0)) or 0))
+
+
+def usage_and_cost(results: list[CaseResult], pricing: dict, old_m: str, new_m: str) -> dict:
+    """Token totals per side and, if the suite gives prices (USD per 1M tokens), an estimated cost."""
+    out = {}
+    for side, model in (("old", old_m), ("new", new_m)):
+        tin = tout = 0
+        for r in results:
+            i, o = _tokens(getattr(r, side).get("usage"))
+            tin, tout = tin + i, tout + o
+        rec = {"model": model, "input_tokens": tin, "output_tokens": tout}
+        price = pricing.get(model)
+        if price:
+            rec["est_cost_usd"] = round(tin / 1e6 * price["input"] + tout / 1e6 * price["output"], 6)
+        out[side] = rec
+    if all("est_cost_usd" in out[s] for s in ("old", "new")):
+        out["total_est_cost_usd"] = round(out["old"]["est_cost_usd"] + out["new"]["est_cost_usd"], 6)
+    return out
 
 
 def make_provider(suite: dict, dry_run: bool):
@@ -402,6 +460,12 @@ def to_markdown(res: dict) -> str:
            f"- API: {res['api']} | Mode: **{res['mode']}** | Run: {res['run_at']}"]
     if res["mode"] == "mock":
         out.append("- **Dry run: outputs are simulated, not real model responses.**")
+    u = res.get("usage") or {}
+    if res["mode"] != "mock" and u:
+        for side in ("old", "new"):
+            r = u.get(side, {})
+            cost = f", est. ${r['est_cost_usd']:.4f}" if "est_cost_usd" in r else ""
+            out.append(f"- {side}: `{r.get('model')}` {r.get('input_tokens', 0)} in / {r.get('output_tokens', 0)} out tokens{cost}")
     out += ["", "| Status | Count |", "|---|---|"] + [f"| {k} | {v} |" for k, v in sorted(res["summary"].items())] + [""]
     out += ["| Case | Type | Status | Key checks |", "|---|---|---|---|"]
     for c in res["cases"]:

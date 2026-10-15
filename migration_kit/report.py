@@ -20,13 +20,12 @@ CONFIRMED = [
     "gpt-6-luna supports Chat Completions, Responses, Batch, structured outputs and function calling; "
     "on Chat Completions, function calling works only with reasoning_effort set to 'none'.",
     "gpt-6-luna does not support the Assistants API or legacy /v1/completions.",
-    "Shutdown dates can be checked per account via GET /v1/models (the shutdown_date field).",
+    "OpenAI documents a shutdown_date field on GET /v1/models (not yet filled in for this batch; see the live checks).",
 ]
 UNCONFIRMED = [
-    "Whether the undated aliases (gpt-4o, gpt-4o-mini, gpt-4.1, gpt-4.1-mini) stop working on 14 Jan 2027 or are "
-    "re-pointed. The page lists the families by name with dated snapshots only; we treat the aliases as affected.",
-    "Which sampling/length parameters (temperature, top_p, max_tokens, logprobs) gpt-6-luna accepts. It is a "
-    "reasoning model; we test rather than assume.",
+    "Whether the undated aliases (gpt-4o, gpt-4o-mini, gpt-4.1, gpt-4.1-mini) are retired or re-pointed on "
+    "14 Jan 2027. Today they resolve to dated snapshots that are on the shutdown list. OpenAI hasn't said what "
+    "happens to them, and GET /v1/models doesn't show a shutdown date for them yet, so we treat them as affected.",
     "Output quality, latency and cost on the client's own workload. Only the regression eval below can show that.",
 ]
 
@@ -36,11 +35,12 @@ def _days_left(today: dt.date) -> int:
 
 
 def build_markdown(client: str, scan: dict, swap: dict | None, diff: str | None, ev: dict | None,
-                   today: dt.date) -> str:
+                   today: dt.date, label: str | None = None) -> str:
     s = scan["summary"]
     findings = sorted(scan["findings"], key=lambda f: (RISK_ORDER.get(f["risk"], 9), f["file"], f["line"]))
     o = [f"# OpenAI model migration report: {client}", "",
          f"Prepared by Burnt & Toast Studios on {today:%d %B %Y}.", "",
+         *([f"> **{label}**", ""] if label else []),
          "## At a glance", "",
          f"- **Deadline:** OpenAI removes GPT-4o, GPT-4o mini, GPT-4.1 and GPT-4.1 mini from the API on "
          f"**14 January 2027** ({_days_left(today)} days from this report).",
@@ -62,6 +62,7 @@ def build_markdown(client: str, scan: dict, swap: dict | None, diff: str | None,
           f"Source: [{cat.DEPRECATIONS_URL}]({cat.DEPRECATIONS_URL}) and "
           f"[gpt-6-luna model page]({cat.LUNA_URL}), checked {cat.CHECKED_ON}.", ""]
     o += [f"- {x}" for x in CONFIRMED]
+    o += ["", f"## Confirmed by our own live API checks ({cat.LIVE_CHECKED_ON})", ""] + [f"- {x}" for x in cat.LIVE_FACTS]
     o += ["", "## What we have not been able to confirm", ""] + [f"- {x}" for x in UNCONFIRMED]
     o += ["", "## Findings", "", "| Risk | File | Line | Current model | Suggested | Category | Notes |",
           "|---|---|---|---|---|---|---|"]
@@ -87,17 +88,31 @@ def build_markdown(client: str, scan: dict, swap: dict | None, diff: str | None,
         if ev["mode"] == "mock":
             o += ["> **Demo run.** These results use simulated outputs to show the format. A real engagement runs the "
                   "same suite against both models with the client's API key.", ""]
+        else:
+            o += [f"> **Live run** against the OpenAI API ({ev['api']} endpoint), {ev['run_at']}. {_cost_line(ev)} "
+                  "DRIFT means the new model's output differs and needs a human look; it is not automatically a failure.", ""]
         o += ["| Case | Type | Status | What changed |", "|---|---|---|---|"]
         for c in ev["cases"]:
             o.append(f"| `{c['id']}` | {c['type']} | **{c['status'].upper()}** | {_explain(c)} |")
     o += ["", "## Next steps", "",
           "1. **Scan:** confirm the findings above, including environment variables set outside the repo.",
-          "2. **Swap:** review and apply the patch on a branch; add `reasoning_effort: \"none\"` (Chat Completions + "
-          "tools) or move those calls to the Responses API.",
+          "2. **Swap:** review and apply the patch on a branch. Then rename `max_tokens` to `max_completion_tokens`, add "
+          "`reasoning_effort: \"none\"` where Chat Completions uses tools or temperature/top_p (or move to the Responses API).",
           "3. **Eval:** run the regression suite against live models; fix prompts or schemas for any DRIFT or FAIL.",
-          "4. **Handoff:** merge, deploy, update environment variables, check with GET /v1/models that no model you "
-          "still call has a shutdown_date, and check your API usage for any remaining calls to retired models.", ""]
+          "4. **Handoff:** merge, deploy, update environment variables, and check your API usage for any remaining calls "
+          "to GPT-4o / 4.1 models. (GET /v1/models doesn't show the 14 Jan 2027 date yet, so don't rely on shutdown_date alone.)", ""]
     return "\n".join(o)
+
+
+def _cost_line(ev: dict) -> str:
+    u = ev.get("usage") or {}
+    parts = []
+    for side in ("old", "new"):
+        r = u.get(side)
+        if r:
+            c = f" (~${r['est_cost_usd']:.4f})" if "est_cost_usd" in r else ""
+            parts.append(f"{r['model']}: {r['input_tokens']} in / {r['output_tokens']} out tokens{c}")
+    return ("Tokens: " + "; ".join(parts) + ".") if parts else ""
 
 
 def _explain(c: dict) -> str:
@@ -135,6 +150,7 @@ th{background:#f4f1ee}code{background:#f3f3f3;padding:.05rem .3rem;border-radius
 .risk{font-weight:700;padding:.1rem .45rem;border-radius:4px;font-size:.8rem;text-transform:uppercase}
 .high{background:#fde2e1;color:#a11}.medium{background:#fff1d6;color:#8a5a00}.low{background:#e8f2ff;color:#1c4f8f}.info{background:#eee;color:#555}
 .pass{background:#e2f5e6;color:#17642a}.drift{background:#fff1d6;color:#8a5a00}.fail,.error{background:#fde2e1;color:#a11}.improved{background:#e8f2ff;color:#1c4f8f}
+.banner{background:#e8f2ff;border-left-color:#1c4f8f;font-size:1.05rem}
 .note{background:#fff8e6;border-left:4px solid #e0a800;padding:.6rem .9rem;margin:1rem 0}
 pre.diff{background:#1e1e1e;color:#ddd;padding:1rem;overflow:auto;font-size:.8rem;border-radius:6px}
 pre.diff .add{color:#7ee787}pre.diff .del{color:#ff7b72}pre.diff .hdr{color:#79c0ff}
@@ -146,13 +162,15 @@ def _e(x) -> str:
     return html.escape(str(x))
 
 
-def build_html(client: str, scan: dict, swap: dict | None, diff: str | None, ev: dict | None, today: dt.date) -> str:
+def build_html(client: str, scan: dict, swap: dict | None, diff: str | None, ev: dict | None, today: dt.date,
+               label: str | None = None) -> str:
     s = scan["summary"]
     findings = sorted(scan["findings"], key=lambda f: (RISK_ORDER.get(f["risk"], 9), f["file"], f["line"]))
     h = [f"<!doctype html><html lang='en'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>"
          f"<title>OpenAI migration report - {_e(client)}</title><style>{CSS}</style></head><body>",
          f"<header><div class='brand'>Burnt &amp; Toast Studios</div><h1>OpenAI model migration report</h1>"
          f"<div>{_e(client)} &middot; {today:%d %B %Y}</div></header>",
+         *([f"<div class='note banner'><strong>{_e(label)}</strong></div>"] if label else []),
          "<h2>At a glance</h2><div class='cards'>",
          f"<div class='card'><div class='n'>{_days_left(today)}</div><div class='l'>days until 14 Jan 2027 shutdown</div></div>",
          f"<div class='card'><div class='n'>{s['total_findings']}</div><div class='l'>model references in {s['files_with_findings']} files</div></div>",
@@ -169,6 +187,8 @@ def build_html(client: str, scan: dict, swap: dict | None, diff: str | None, ev:
     h.append(f"<h2>What OpenAI has confirmed</h2><p>Source: <a href='{cat.DEPRECATIONS_URL}'>OpenAI deprecations</a> and "
              f"<a href='{cat.LUNA_URL}'>gpt-6-luna model page</a>, checked {cat.CHECKED_ON}.</p><ul>"
              + "".join(f"<li>{_e(x)}</li>" for x in CONFIRMED) + "</ul>")
+    h.append(f"<h2>Confirmed by our own live API checks ({cat.LIVE_CHECKED_ON})</h2><ul>"
+             + "".join(f"<li>{_e(x)}</li>" for x in cat.LIVE_FACTS) + "</ul>")
     h.append("<h2>What we have not been able to confirm</h2><ul>" + "".join(f"<li>{_e(x)}</li>" for x in UNCONFIRMED) + "</ul>")
     h.append("<h2>Findings</h2><table><tr><th>Risk</th><th>File</th><th>Line</th><th>Current model</th>"
              "<th>Suggested</th><th>Category</th><th>Notes</th></tr>")
@@ -201,6 +221,10 @@ def build_html(client: str, scan: dict, swap: dict | None, diff: str | None, ev:
         if ev["mode"] == "mock":
             h.append("<div class='note'><strong>Demo run.</strong> These results use simulated outputs to show the format. "
                      "A real engagement runs the same suite against both models with the client's API key.</div>")
+        else:
+            h.append(f"<div class='note'><strong>Live run</strong> against the OpenAI API ({_e(ev['api'])} endpoint), "
+                     f"{_e(ev['run_at'])}. {_e(_cost_line(ev))} DRIFT means the new model's output differs and needs a "
+                     "human look; it is not automatically a failure.</div>")
         h.append("<table><tr><th>Case</th><th>Type</th><th>Status</th><th>What changed</th></tr>")
         for c in ev["cases"]:
             h.append(f"<tr><td><code>{_e(c['id'])}</code></td><td>{_e(c['type'])}</td>"
@@ -208,19 +232,20 @@ def build_html(client: str, scan: dict, swap: dict | None, diff: str | None, ev:
         h.append("</table>")
     h.append("<h2>Next steps</h2><ol>"
              "<li><strong>Scan:</strong> confirm the findings, including environment variables set outside the repo.</li>"
-             "<li><strong>Swap:</strong> review and apply the patch on a branch; add <code>reasoning_effort: \"none\"</code> "
-             "for Chat Completions calls that use tools, or move them to the Responses API.</li>"
+             "<li><strong>Swap:</strong> review and apply the patch on a branch. Then rename <code>max_tokens</code> to "
+             "<code>max_completion_tokens</code>, and add <code>reasoning_effort: \"none\"</code> where Chat Completions uses "
+             "tools or temperature/top_p (or move those calls to the Responses API).</li>"
              "<li><strong>Eval:</strong> run the regression suite against live models and fix any DRIFT or FAIL.</li>"
-             "<li><strong>Handoff:</strong> merge, deploy, update environment variables, check with "
-             "<code>GET /v1/models</code> that no model you still call has a <code>shutdown_date</code>, and check your "
-             "API usage for any remaining calls to retired models.</li></ol>")
+             "<li><strong>Handoff:</strong> merge, deploy, update environment variables, and check your API usage for any "
+             "remaining calls to GPT-4o / 4.1 models. <code>GET /v1/models</code> doesn't show the 14 Jan 2027 date yet, so "
+             "don't rely on <code>shutdown_date</code> alone.</li></ol>")
     h.append(f"<footer>Generated by the Burnt &amp; Toast Studios OpenAI migration kit. Deprecation data checked {cat.CHECKED_ON}; "
              "re-verify against OpenAI's documentation before acting.</footer></body></html>")
     return "\n".join(h)
 
 
 def generate(client: str, scan_path: str | Path, out_dir: str | Path, swap_path=None, diff_path=None,
-             eval_path=None, today: dt.date | None = None) -> tuple[Path, Path]:
+             eval_path=None, today: dt.date | None = None, label: str | None = None) -> tuple[Path, Path]:
     today = today or dt.date.today()
     scan = json.loads(Path(scan_path).read_text())
     swap = json.loads(Path(swap_path).read_text()) if swap_path else None
@@ -229,6 +254,6 @@ def generate(client: str, scan_path: str | Path, out_dir: str | Path, swap_path=
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
     md, ht = out / "client-report.md", out / "client-report.html"
-    md.write_text(build_markdown(client, scan, swap, diff, ev, today))
-    ht.write_text(build_html(client, scan, swap, diff, ev, today))
+    md.write_text(build_markdown(client, scan, swap, diff, ev, today, label))
+    ht.write_text(build_html(client, scan, swap, diff, ev, today, label))
     return md, ht

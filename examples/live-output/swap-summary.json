@@ -1,0 +1,78 @@
+{
+  "files_changed": 7,
+  "replacements": 10,
+  "skipped_fine_tunes": [
+    {
+      "file": "app/agent.py",
+      "line": 36,
+      "model": "ft:gpt-4o-mini-2024-07-18:acme-widgets:intent-v3:9xYzAbC1"
+    },
+    {
+      "file": "config/models.yaml",
+      "line": 6,
+      "model": "ft:gpt-4o-mini-2024-07-18:acme-widgets:intent-v3:9xYzAbC1"
+    }
+  ],
+  "changes": [
+    {
+      "file": ".env.example",
+      "line": 2,
+      "old": "gpt-4o-mini",
+      "new": "gpt-6-luna"
+    },
+    {
+      "file": ".env.example",
+      "line": 3,
+      "old": "gpt-4.1-mini",
+      "new": "gpt-6-luna"
+    },
+    {
+      "file": "app/agent.py",
+      "line": 8,
+      "old": "gpt-4o-mini",
+      "new": "gpt-6-luna"
+    },
+    {
+      "file": "app/summarise.py",
+      "line": 20,
+      "old": "gpt-4o-2024-08-06",
+      "new": "gpt-6-luna"
+    },
+    {
+      "file": "config/models.yaml",
+      "line": 2,
+      "old": "gpt-4o",
+      "new": "gpt-6-luna"
+    },
+    {
+      "file": "config/models.yaml",
+      "line": 3,
+      "old": "gpt-4o-mini-2024-07-18",
+      "new": "gpt-6-luna"
+    },
+    {
+      "file": "config/models.yaml",
+      "line": 4,
+      "old": "gpt-4.1-2025-04-14",
+      "new": "gpt-6-luna"
+    },
+    {
+      "file": "config/settings.json",
+      "line": 2,
+      "old": "gpt-4o-2024-11-20",
+      "new": "gpt-6-luna"
+    },
+    {
+      "file": "web/src/chat.ts",
+      "line": 7,
+      "old": "gpt-4.1",
+      "new": "gpt-6-luna"
+    },
+    {
+      "file": "web/src/classify.js",
+      "line": 4,
+      "old": "gpt-4.1-mini-2025-04-14",
+      "new": "gpt-6-luna"
+    }
+  ]
+}

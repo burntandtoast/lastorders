@@ -43,7 +43,9 @@ SIGNALS = {
     "tools": re.compile(r"\btools\s*[=:]|tool_choice|\bfunction_call\b|\bfunctions\s*[=:]"),
     "legacy_functions": re.compile(r"\bfunctions\s*[=:]|\bfunction_call\s*[=:]"),
     "structured_output": re.compile(r"json_schema|response_format|text_format|zodResponseFormat|\.parse\("),
-    "sampling_params": re.compile(r"\btemperature\b|\btop_p\b|\bmax_tokens\b|\blogprobs\b|\bpresence_penalty\b|\bfrequency_penalty\b"),
+    "sampling_params": re.compile(r"\btemperature\b|\btop_p\b|\blogprobs\b|\btop_logprobs\b|\bpresence_penalty\b|\bfrequency_penalty\b"),
+    "max_tokens": re.compile(r"\bmax_tokens\b|\bmaxTokens\b"),
+    "reasoning_effort_none": re.compile(r"""reasoning_effort["']?\s*[:=]\s*["']none["']|effort["']?\s*[:=]\s*["']none["']"""),
     "assistants_api": re.compile(r"beta\.assistants|/v1/assistants|beta\.threads"),
     "legacy_completions": re.compile(r"\bcompletions\.create\b(?<!chat\.completions\.create)|/v1/completions\b"),
     "fine_tuning_jobs": re.compile(r"fine_tuning\.jobs|fineTuning\.jobs|/v1/fine_tuning"),
@@ -192,17 +194,23 @@ def _assess(f: Finding, entry: cat.Entry | None, base: str | None, signals: list
         notes.append(entry.note)
     if f.category == "in_scope":
         f.risk = "medium"
-        if "tools" in signals and "chat_completions" in signals:
+        if "tools" in signals and "chat_completions" in signals and "reasoning_effort_none" not in signals:
             f.risk = "high"
-            notes.append("Chat Completions + tools in this file: gpt-6-luna supports function calling on "
-                         "Chat Completions only with reasoning_effort set to 'none' (or move to the Responses API).")
+            notes.append("Chat Completions + tools in this file: gpt-6-luna returns HTTP 400 for function tools on "
+                         "Chat Completions unless reasoning_effort is 'none' (docs + live-tested). Set it, or move to the Responses API.")
+        if "max_tokens" in signals:
+            f.risk = "high"
+            notes.append("Uses `max_tokens`: gpt-6-luna rejects it with HTTP 400 (live-tested). Rename to "
+                         "`max_completion_tokens` (Chat Completions) or `max_output_tokens` (Responses).")
         if "legacy_functions" in signals:
             notes.append("Uses legacy `functions`/`function_call` parameters - check support and prefer `tools`.")
         if "structured_output" in signals:
             notes.append("Structured output in this file: gpt-6-luna lists structured_outputs as supported; verify schemas with `eval`.")
         if "sampling_params" in signals:
-            notes.append("Sets sampling/length params (temperature, max_tokens, etc.). gpt-6-luna is a reasoning "
-                         "model; the kit could not confirm which of these it accepts - test with `eval`.")
+            if "reasoning_effort_none" not in signals:
+                f.risk = "high"
+            notes.append("Sets temperature/top_p/logprobs: gpt-6-luna accepts these only with reasoning_effort 'none'; "
+                         "at other efforts temperature must be 1 and top_p/logprobs return HTTP 400 (live-tested).")
         if "assistants_api" in signals:
             f.risk = "high"
             notes.append("Assistants API detected: gpt-6-luna does not support it (and the Assistants API shut down 26 Aug 2026).")
@@ -230,7 +238,10 @@ def scan(root: str | Path, include_docs: bool = True) -> ScanResult:
             continue
         n += 1
         rel = path.relative_to(root).as_posix()
-        sig = [k for k, rx in SIGNALS.items() if lang in ("python", "javascript", "typescript") and rx.search(text)]
+        code_or_cfg = lang in ("python", "javascript", "typescript") or lang in CONFIG_EXT.values()
+        sig = [k for k, rx in SIGNALS.items()
+               if (lang in ("python", "javascript", "typescript") or (k == "max_tokens" and code_or_cfg))
+               and rx.search(text)]
         lines = text.splitlines()
         file_hits = []
         for i, line in enumerate(lines, 1):

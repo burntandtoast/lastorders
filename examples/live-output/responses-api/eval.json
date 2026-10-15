@@ -1,0 +1,469 @@
+{
+  "usage": {
+    "old": {
+      "model": "gpt-4o-2024-08-06",
+      "input_tokens": 501,
+      "output_tokens": 187,
+      "est_cost_usd": 0.003123
+    },
+    "new": {
+      "model": "gpt-6-luna",
+      "input_tokens": 511,
+      "output_tokens": 232,
+      "est_cost_usd": 0.000167
+    },
+    "total_est_cost_usd": 0.00329
+  },
+  "suite": "acme-widgets-support-bot",
+  "api": "responses",
+  "mode": "openai",
+  "old_model": "gpt-4o-2024-08-06",
+  "new_model": "gpt-6-luna",
+  "run_at": "2026-10-15T09:51:05+0100",
+  "summary": {
+    "drift": 4,
+    "pass": 2
+  },
+  "cases": [
+    {
+      "id": "ticket-summary-refund",
+      "type": "structured",
+      "status": "drift",
+      "old": {
+        "text": "{\"summary\":\"Customer reports receiving a broken order #4411 and requests an immediate refund. This is the second occurrence.\",\"priority\":\"high\",\"tags\":[\"order_issue\",\"refund_request\",\"repeat_issue\",\"customer_service\"]}",
+        "latency_ms": 1533,
+        "usage": {
+          "input_tokens": 80,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 44,
+          "output_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "total_tokens": 124
+        },
+        "simulated": false,
+        "resolved_model": "gpt-4o-2024-08-06"
+      },
+      "new": {
+        "text": "{\"summary\":\"Customer reports order #4411 arrived broken again (second occurrence) and requests a refund today. Review the order and arrange a refund promptly.\",\"priority\":\"high\",\"tags\":[\"damaged-order\",\"refund-request\",\"repeat-issue\"]}",
+        "latency_ms": 2063,
+        "usage": {
+          "input_tokens": 78,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 56,
+          "output_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "total_tokens": 134
+        },
+        "simulated": false,
+        "resolved_model": "gpt-6-luna"
+      },
+      "checks": {
+        "schema_valid": {
+          "old": true,
+          "new": true
+        },
+        "schema_errors": {
+          "old": [],
+          "new": []
+        },
+        "field_diff": [
+          {
+            "path": "tags",
+            "change": "changed",
+            "old": [
+              "order_issue",
+              "refund_request",
+              "repeat_issue",
+              "customer_service"
+            ],
+            "new": [
+              "damaged-order",
+              "refund-request",
+              "repeat-issue"
+            ]
+          }
+        ],
+        "ignored_fields": [
+          "summary"
+        ],
+        "similarity": 0.789,
+        "similarity_threshold": 0.85
+      },
+      "notes": [
+        "Output similarity 0.789 below 0.85."
+      ]
+    },
+    {
+      "id": "ticket-summary-question",
+      "type": "structured",
+      "status": "drift",
+      "old": {
+        "text": "{\"summary\":\"Check if shipping to Ireland is available and confirm estimated delivery time.\",\"priority\":\"medium\",\"tags\":[\"shipping\",\"Ireland\",\"delivery time\"]}",
+        "latency_ms": 2636,
+        "usage": {
+          "input_tokens": 71,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 31,
+          "output_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "total_tokens": 102
+        },
+        "simulated": false,
+        "resolved_model": "gpt-4o-2024-08-06"
+      },
+      "new": {
+        "text": "{\"summary\":\"I don\u2019t have access to this store\u2019s shipping information, so I can\u2019t confirm whether it ships to Ireland or the delivery time. Please check the store\u2019s shipping policy or contact its support team.\",\"priority\":\"low\",\"tags\":[\"shipping\",\"Ireland\"]}",
+        "latency_ms": 1704,
+        "usage": {
+          "input_tokens": 69,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 61,
+          "output_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "total_tokens": 130
+        },
+        "simulated": false,
+        "resolved_model": "gpt-6-luna"
+      },
+      "checks": {
+        "schema_valid": {
+          "old": true,
+          "new": true
+        },
+        "schema_errors": {
+          "old": [],
+          "new": []
+        },
+        "field_diff": [
+          {
+            "path": "priority",
+            "change": "changed",
+            "old": "medium",
+            "new": "low"
+          },
+          {
+            "path": "tags",
+            "change": "changed",
+            "old": [
+              "shipping",
+              "Ireland",
+              "delivery time"
+            ],
+            "new": [
+              "shipping",
+              "Ireland"
+            ]
+          }
+        ],
+        "ignored_fields": [
+          "summary"
+        ],
+        "similarity": 0.79,
+        "similarity_threshold": 0.85
+      },
+      "notes": [
+        "Output similarity 0.79 below 0.85."
+      ]
+    },
+    {
+      "id": "book-table-simple",
+      "type": "tool_call",
+      "status": "pass",
+      "old": {
+        "tool_calls": [
+          {
+            "name": "book_table",
+            "arguments": {
+              "date": "2026-11-02",
+              "time": "19:30",
+              "party_size": 4
+            }
+          }
+        ],
+        "latency_ms": 1520,
+        "usage": {
+          "input_tokens": 110,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 31,
+          "output_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "total_tokens": 141
+        },
+        "simulated": false,
+        "resolved_model": "gpt-4o-2024-08-06"
+      },
+      "new": {
+        "tool_calls": [
+          {
+            "name": "book_table",
+            "arguments": {
+              "date": "2026-11-02",
+              "time": "19:30",
+              "party_size": 4
+            }
+          }
+        ],
+        "latency_ms": 1538,
+        "usage": {
+          "input_tokens": 115,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 34,
+          "output_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "total_tokens": 149
+        },
+        "simulated": false,
+        "resolved_model": "gpt-6-luna"
+      },
+      "checks": {
+        "tool_names": {
+          "old": [
+            "book_table"
+          ],
+          "new": [
+            "book_table"
+          ],
+          "match": true
+        },
+        "errors": {
+          "old": [],
+          "new": []
+        },
+        "argument_diff": []
+      },
+      "notes": []
+    },
+    {
+      "id": "book-table-relative-date",
+      "type": "tool_call",
+      "status": "drift",
+      "old": {
+        "tool_calls": [
+          {
+            "name": "book_table",
+            "arguments": {
+              "date": "2023-10-20",
+              "time": "19:30",
+              "party_size": 2
+            }
+          }
+        ],
+        "latency_ms": 1455,
+        "usage": {
+          "input_tokens": 104,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 31,
+          "output_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "total_tokens": 135
+        },
+        "simulated": false,
+        "resolved_model": "gpt-4o-2024-08-06"
+      },
+      "new": {
+        "tool_calls": [
+          {
+            "name": "book_table",
+            "arguments": {
+              "date": "2025-05-30",
+              "time": "19:30",
+              "party_size": 2
+            }
+          }
+        ],
+        "latency_ms": 1681,
+        "usage": {
+          "input_tokens": 109,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 34,
+          "output_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "total_tokens": 143
+        },
+        "simulated": false,
+        "resolved_model": "gpt-6-luna"
+      },
+      "checks": {
+        "tool_names": {
+          "old": [
+            "book_table"
+          ],
+          "new": [
+            "book_table"
+          ],
+          "match": true
+        },
+        "errors": {
+          "old": [],
+          "new": []
+        },
+        "argument_diff": [
+          {
+            "call": 0,
+            "tool": "book_table",
+            "diff": [
+              {
+                "path": "date",
+                "change": "changed",
+                "old": "2023-10-20",
+                "new": "2025-05-30"
+              }
+            ]
+          }
+        ]
+      },
+      "notes": []
+    },
+    {
+      "id": "order-lookup",
+      "type": "tool_call",
+      "status": "pass",
+      "old": {
+        "tool_calls": [
+          {
+            "name": "lookup_order",
+            "arguments": {
+              "order_id": "A-77812"
+            }
+          }
+        ],
+        "latency_ms": 1130,
+        "usage": {
+          "input_tokens": 100,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 19,
+          "output_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "total_tokens": 119
+        },
+        "simulated": false,
+        "resolved_model": "gpt-4o-2024-08-06"
+      },
+      "new": {
+        "tool_calls": [
+          {
+            "name": "lookup_order",
+            "arguments": {
+              "order_id": "A-77812"
+            }
+          }
+        ],
+        "latency_ms": 1766,
+        "usage": {
+          "input_tokens": 105,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 22,
+          "output_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "total_tokens": 127
+        },
+        "simulated": false,
+        "resolved_model": "gpt-6-luna"
+      },
+      "checks": {
+        "tool_names": {
+          "old": [
+            "lookup_order"
+          ],
+          "new": [
+            "lookup_order"
+          ],
+          "match": true
+        },
+        "errors": {
+          "old": [],
+          "new": []
+        },
+        "argument_diff": []
+      },
+      "notes": []
+    },
+    {
+      "id": "apology-tone",
+      "type": "text",
+      "status": "drift",
+      "old": {
+        "text": "We apologize for the delay in your delivery. We're committed to getting your order to you as soon as possible. Thank you for your patience and understanding.",
+        "latency_ms": 1268,
+        "usage": {
+          "input_tokens": 36,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 31,
+          "output_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "total_tokens": 67
+        },
+        "simulated": false,
+        "resolved_model": "gpt-4o-2024-08-06"
+      },
+      "new": {
+        "text": "We\u2019re sorry your delivery arrived late. We understand how frustrating that is, and we appreciate your patience.",
+        "latency_ms": 3296,
+        "usage": {
+          "input_tokens": 35,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 25,
+          "output_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "total_tokens": 60
+        },
+        "simulated": false,
+        "resolved_model": "gpt-6-luna"
+      },
+      "checks": {
+        "similarity": 0.425,
+        "missing_phrases": [],
+        "similarity_threshold": 0.5
+      },
+      "notes": []
+    }
+  ]
+}

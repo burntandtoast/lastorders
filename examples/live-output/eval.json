@@ -1,0 +1,518 @@
+{
+  "usage": {
+    "old": {
+      "model": "gpt-4o-2024-08-06",
+      "input_tokens": 531,
+      "output_tokens": 293,
+      "est_cost_usd": 0.004258
+    },
+    "new": {
+      "model": "gpt-6-luna",
+      "input_tokens": 765,
+      "output_tokens": 205,
+      "est_cost_usd": 0.000179
+    },
+    "total_est_cost_usd": 0.004437
+  },
+  "suite": "acme-widgets-support-bot",
+  "api": "chat",
+  "mode": "openai",
+  "old_model": "gpt-4o-2024-08-06",
+  "new_model": "gpt-6-luna",
+  "run_at": "2026-10-15T09:50:43+0100",
+  "summary": {
+    "drift": 4,
+    "pass": 2
+  },
+  "cases": [
+    {
+      "id": "ticket-summary-refund",
+      "type": "structured",
+      "status": "drift",
+      "old": {
+        "text": "{\"summary\":\"Customer's order #4411 arrived broken and requires an immediate refund.\",\"priority\":\"high\",\"tags\":[\"refund_issue\",\"repeat_issue\",\"express_delivery\",\"customer_dissatisfaction\"]}",
+        "latency_ms": 975,
+        "usage": {
+          "prompt_tokens": 86,
+          "completion_tokens": 38,
+          "total_tokens": 124,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "audio_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "audio_tokens": 0,
+            "accepted_prediction_tokens": 0,
+            "rejected_prediction_tokens": 0
+          }
+        },
+        "simulated": false,
+        "resolved_model": "gpt-4o-2024-08-06"
+      },
+      "new": {
+        "text": "{\"summary\":\"Customer reports order #4411 arrived broken, requests a refund today, and says this has happened before.\",\"priority\":\"high\",\"tags\":[\"damaged-order\",\"refund-request\",\"repeat-issue\",\"order-4411\"]}",
+        "latency_ms": 1759,
+        "usage": {
+          "prompt_tokens": 82,
+          "completion_tokens": 53,
+          "total_tokens": 135,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "audio_tokens": 0,
+            "accepted_prediction_tokens": 0,
+            "rejected_prediction_tokens": 0
+          }
+        },
+        "simulated": false,
+        "resolved_model": "gpt-6-luna"
+      },
+      "checks": {
+        "schema_valid": {
+          "old": true,
+          "new": true
+        },
+        "schema_errors": {
+          "old": [],
+          "new": []
+        },
+        "field_diff": [
+          {
+            "path": "tags[0]",
+            "change": "changed",
+            "old": "refund_issue",
+            "new": "damaged-order"
+          },
+          {
+            "path": "tags[1]",
+            "change": "changed",
+            "old": "repeat_issue",
+            "new": "refund-request"
+          },
+          {
+            "path": "tags[2]",
+            "change": "changed",
+            "old": "express_delivery",
+            "new": "repeat-issue"
+          },
+          {
+            "path": "tags[3]",
+            "change": "changed",
+            "old": "customer_dissatisfaction",
+            "new": "order-4411"
+          }
+        ],
+        "ignored_fields": [
+          "summary"
+        ],
+        "similarity": 0.634,
+        "similarity_threshold": 0.85
+      },
+      "notes": [
+        "Output similarity 0.634 below 0.85."
+      ]
+    },
+    {
+      "id": "ticket-summary-question",
+      "type": "structured",
+      "status": "drift",
+      "old": {
+        "text": "{\"summary\":\"Yes, we do ship to Ireland! Depending on the shipping method you choose, delivery times can vary:\\n\\n1. **Standard Shipping**: \\n   - Typically takes 7-10 business days after the order has been processed and dispatched.\\n\\n2. **Express Shipping**: \\n   - Usually arrives within 3-5 business days, giving you a faster option if you need your items quickly.\\n\\nPlease note that these times are estimates and can be affected by local holidays or customs delays.\",\"priority\":\"low\",\"tags\":[\"Shipping\",\"Ireland\",\"Delivery Time\"]}",
+        "latency_ms": 3310,
+        "usage": {
+          "prompt_tokens": 77,
+          "completion_tokens": 123,
+          "total_tokens": 200,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "audio_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "audio_tokens": 0,
+            "accepted_prediction_tokens": 0,
+            "rejected_prediction_tokens": 0
+          }
+        },
+        "simulated": false,
+        "resolved_model": "gpt-4o-2024-08-06"
+      },
+      "new": {
+        "text": "{\"summary\":\"Shipping availability and delivery time to Ireland are unknown; check the seller\u2019s shipping policy or contact customer support.\",\"priority\":\"low\",\"tags\":[\"shipping\",\"Ireland\"]}",
+        "latency_ms": 1442,
+        "usage": {
+          "prompt_tokens": 73,
+          "completion_tokens": 41,
+          "total_tokens": 114,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "audio_tokens": 0,
+            "accepted_prediction_tokens": 0,
+            "rejected_prediction_tokens": 0
+          }
+        },
+        "simulated": false,
+        "resolved_model": "gpt-6-luna"
+      },
+      "checks": {
+        "schema_valid": {
+          "old": true,
+          "new": true
+        },
+        "schema_errors": {
+          "old": [],
+          "new": []
+        },
+        "field_diff": [
+          {
+            "path": "tags",
+            "change": "changed",
+            "old": [
+              "Shipping",
+              "Ireland",
+              "Delivery Time"
+            ],
+            "new": [
+              "shipping",
+              "Ireland"
+            ]
+          }
+        ],
+        "ignored_fields": [
+          "summary"
+        ],
+        "similarity": 0.86,
+        "similarity_threshold": 0.85
+      },
+      "notes": []
+    },
+    {
+      "id": "book-table-simple",
+      "type": "tool_call",
+      "status": "pass",
+      "old": {
+        "tool_calls": [
+          {
+            "name": "book_table",
+            "arguments": {
+              "date": "2026-11-02",
+              "time": "19:30",
+              "party_size": 4
+            }
+          }
+        ],
+        "latency_ms": 670,
+        "usage": {
+          "prompt_tokens": 116,
+          "completion_tokens": 30,
+          "total_tokens": 146,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "audio_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "audio_tokens": 0,
+            "accepted_prediction_tokens": 0,
+            "rejected_prediction_tokens": 0
+          }
+        },
+        "simulated": false,
+        "resolved_model": "gpt-4o-2024-08-06"
+      },
+      "new": {
+        "tool_calls": [
+          {
+            "name": "book_table",
+            "arguments": {
+              "date": "2026-11-02",
+              "time": "19:30",
+              "party_size": 4
+            }
+          }
+        ],
+        "latency_ms": 1348,
+        "usage": {
+          "prompt_tokens": 197,
+          "completion_tokens": 33,
+          "total_tokens": 230,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "audio_tokens": 0,
+            "accepted_prediction_tokens": 0,
+            "rejected_prediction_tokens": 0
+          }
+        },
+        "simulated": false,
+        "resolved_model": "gpt-6-luna"
+      },
+      "checks": {
+        "tool_names": {
+          "old": [
+            "book_table"
+          ],
+          "new": [
+            "book_table"
+          ],
+          "match": true
+        },
+        "errors": {
+          "old": [],
+          "new": []
+        },
+        "argument_diff": []
+      },
+      "notes": []
+    },
+    {
+      "id": "book-table-relative-date",
+      "type": "tool_call",
+      "status": "drift",
+      "old": {
+        "tool_calls": [
+          {
+            "name": "book_table",
+            "arguments": {
+              "date": "2023-11-03",
+              "time": "19:30",
+              "party_size": 2
+            }
+          }
+        ],
+        "latency_ms": 810,
+        "usage": {
+          "prompt_tokens": 110,
+          "completion_tokens": 30,
+          "total_tokens": 140,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "audio_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "audio_tokens": 0,
+            "accepted_prediction_tokens": 0,
+            "rejected_prediction_tokens": 0
+          }
+        },
+        "simulated": false,
+        "resolved_model": "gpt-4o-2024-08-06"
+      },
+      "new": {
+        "tool_calls": [
+          {
+            "name": "book_table",
+            "arguments": {
+              "date": "2026-10-23",
+              "time": "7:30 PM",
+              "party_size": 2
+            }
+          }
+        ],
+        "latency_ms": 1003,
+        "usage": {
+          "prompt_tokens": 191,
+          "completion_tokens": 34,
+          "total_tokens": 225,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "audio_tokens": 0,
+            "accepted_prediction_tokens": 0,
+            "rejected_prediction_tokens": 0
+          }
+        },
+        "simulated": false,
+        "resolved_model": "gpt-6-luna"
+      },
+      "checks": {
+        "tool_names": {
+          "old": [
+            "book_table"
+          ],
+          "new": [
+            "book_table"
+          ],
+          "match": true
+        },
+        "errors": {
+          "old": [],
+          "new": []
+        },
+        "argument_diff": [
+          {
+            "call": 0,
+            "tool": "book_table",
+            "diff": [
+              {
+                "path": "date",
+                "change": "changed",
+                "old": "2023-11-03",
+                "new": "2026-10-23"
+              },
+              {
+                "path": "time",
+                "change": "changed",
+                "old": "19:30",
+                "new": "7:30 PM"
+              }
+            ]
+          }
+        ]
+      },
+      "notes": []
+    },
+    {
+      "id": "order-lookup",
+      "type": "tool_call",
+      "status": "pass",
+      "old": {
+        "tool_calls": [
+          {
+            "name": "lookup_order",
+            "arguments": {
+              "order_id": "A-77812"
+            }
+          }
+        ],
+        "latency_ms": 773,
+        "usage": {
+          "prompt_tokens": 106,
+          "completion_tokens": 18,
+          "total_tokens": 124,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "audio_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "audio_tokens": 0,
+            "accepted_prediction_tokens": 0,
+            "rejected_prediction_tokens": 0
+          }
+        },
+        "simulated": false,
+        "resolved_model": "gpt-4o-2024-08-06"
+      },
+      "new": {
+        "tool_calls": [
+          {
+            "name": "lookup_order",
+            "arguments": {
+              "order_id": "A-77812"
+            }
+          }
+        ],
+        "latency_ms": 1286,
+        "usage": {
+          "prompt_tokens": 187,
+          "completion_tokens": 21,
+          "total_tokens": 208,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "audio_tokens": 0,
+            "accepted_prediction_tokens": 0,
+            "rejected_prediction_tokens": 0
+          }
+        },
+        "simulated": false,
+        "resolved_model": "gpt-6-luna"
+      },
+      "checks": {
+        "tool_names": {
+          "old": [
+            "lookup_order"
+          ],
+          "new": [
+            "lookup_order"
+          ],
+          "match": true
+        },
+        "errors": {
+          "old": [],
+          "new": []
+        },
+        "argument_diff": []
+      },
+      "notes": []
+    },
+    {
+      "id": "apology-tone",
+      "type": "text",
+      "status": "drift",
+      "old": {
+        "text": "We're sorry for the delay in delivering your order. We know how important it is for you to receive items on time. Rest assured, we're working diligently to get it resolved. Thank you for your patience and understanding. Please let us know if you need any further assistance.",
+        "latency_ms": 1010,
+        "usage": {
+          "prompt_tokens": 36,
+          "completion_tokens": 54,
+          "total_tokens": 90,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "audio_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "audio_tokens": 0,
+            "accepted_prediction_tokens": 0,
+            "rejected_prediction_tokens": 0
+          }
+        },
+        "simulated": false,
+        "resolved_model": "gpt-4o-2024-08-06"
+      },
+      "new": {
+        "text": "We\u2019re sorry your delivery arrived late. We understand how frustrating that can be and appreciate your patience.",
+        "latency_ms": 1224,
+        "usage": {
+          "prompt_tokens": 35,
+          "completion_tokens": 23,
+          "total_tokens": 58,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "audio_tokens": 0,
+            "accepted_prediction_tokens": 0,
+            "rejected_prediction_tokens": 0
+          }
+        },
+        "simulated": false,
+        "resolved_model": "gpt-6-luna"
+      },
+      "checks": {
+        "similarity": 0.343,
+        "missing_phrases": [],
+        "similarity_threshold": 0.5
+      },
+      "notes": []
+    }
+  ]
+}

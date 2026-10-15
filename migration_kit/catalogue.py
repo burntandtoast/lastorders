@@ -33,8 +33,10 @@ _GPT4_SECTION = "2026-10-14: GPT-4 series model deprecations"
 _LEGACY_OCT = "2026-04-22: Legacy GPT model snapshots (shutdown 23 Oct 2026)"
 
 _ALIAS_NOTE = (
-    "Undated alias: OpenAI lists only the dated snapshots, so treating the alias as "
-    "affected is inferred. Confirm with GET /v1/models (shutdown_date)."
+    "Undated alias. Live check 15 Oct 2026: it still resolves, to a dated snapshot on the "
+    "14 Jan 2027 list (gpt-4o -> gpt-4o-2024-08-06, gpt-4o-mini -> gpt-4o-mini-2024-07-18, "
+    "gpt-4.1 -> gpt-4.1-2025-04-14, gpt-4.1-mini -> gpt-4.1-mini-2025-04-14). OpenAI hasn't "
+    "said whether the alias is retired or re-pointed, so it's treated as affected."
 )
 
 ENTRIES: list[Entry] = [
@@ -70,7 +72,9 @@ ENTRIES: list[Entry] = [
     Entry("gpt-4o-transcribe-diarize", "2027-02-26", "gpt-live-transcribe or gpt-transcribe",
           "2026-08-26: Transcription models", note="Not a chat model. Do not map to gpt-6-luna."),
     Entry("gpt-4o-mini-tts-2025-03-20", "2027-01-06", "gpt-realtime-2.1-mini",
-          "2026-10-01: Text-to-speech models", note="Speech model. Do not map to gpt-6-luna."),
+          "2026-10-01: Text-to-speech models",
+          note="Speech model. Do not map to gpt-6-luna. Note: GET /v1/models returned shutdown_date "
+               "2026-07-23 for this id on 15 Oct 2026, which conflicts with the docs page (6 Jan 2027)."),
     Entry("gpt-4o-mini-tts-2025-12-15", "2027-01-06", "gpt-realtime-2.1-mini",
           "2026-10-01: Text-to-speech models", note="Speech model. Do not map to gpt-6-luna."),
     Entry("gpt-4o-audio", "2027-01-20", "gpt-audio-1.5", "2026-07-20: Legacy audio, realtime, and transcription models",
@@ -98,6 +102,24 @@ FAMILY_PREFIXES = sorted(
 )
 
 # Facts about the replacement model taken from its model page.
+# Live API checks run on 15 Oct 2026 (probes/ in this repo). Chat Completions unless stated.
+LIVE_CHECKED_ON = "2026-10-15"
+LIVE_FACTS = [
+    "gpt-6-luna rejects `max_tokens` (400 unsupported_parameter, at every reasoning effort). "
+    "Use `max_completion_tokens` (Chat Completions) or `max_output_tokens` (Responses). "
+    "`max_completion_tokens` also works on gpt-4o-2024-08-06.",
+    "gpt-6-luna accepts temperature, top_p and logprobs only with reasoning_effort 'none'. At the "
+    "default and 'low' effort, temperature is accepted only at 1, and top_p and logprobs are rejected. "
+    "On the Responses API, temperature and top_p work with reasoning.effort 'none' and are rejected at the default effort.",
+    "Chat Completions + function tools on gpt-6-luna returns 400 unless reasoning_effort is 'none' "
+    "('low' and the default both fail). Function tools on the Responses API work at the default effort.",
+    "Undated aliases still resolve: gpt-4o -> gpt-4o-2024-08-06, gpt-4o-mini -> gpt-4o-mini-2024-07-18, "
+    "gpt-4.1 -> gpt-4.1-2025-04-14, gpt-4.1-mini -> gpt-4.1-mini-2025-04-14.",
+    "GET /v1/models shows shutdown_date null for all nine GPT-4o / 4.1 ids (aliases and dated snapshots) "
+    "and for gpt-6-luna. The 14 Jan 2027 date isn't in the API yet, so for this batch it's not a reliable check. "
+    "Earlier batches are populated (e.g. gpt-4.1-nano and gpt-4o-2024-05-13 show 2026-10-23).",
+]
+
 LUNA_FACTS = {
     "fine_tuning": False,           # Fine-tuning endpoint: Not supported
     "structured_outputs": True,

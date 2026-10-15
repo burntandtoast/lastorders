@@ -9,6 +9,16 @@ api: chat            # chat (Chat Completions) or responses
 models:
   old: gpt-4o-2024-08-06
   new: gpt-6-luna
+# Cap output per request (sent as max_completion_tokens on Chat Completions,
+# max_output_tokens on Responses). gpt-6-luna rejects the old `max_tokens`.
+max_output_tokens: 300
+
+# USD per 1M tokens, used only to estimate eval cost. From the OpenAI model
+# pages for gpt-4o and gpt-6-luna, read 2026-10-15 (standard tier, uncached).
+pricing:
+  gpt-4o-2024-08-06: {input: 2.5, output: 10}
+  gpt-6-luna: {input: 0.1, output: 0.5}
+
 model_params:
   old: {}
   new:
@@ -20,6 +30,7 @@ cases:
   - id: ticket-summary-refund
     type: structured
     schema_name: ticket
+    ignore_fields: [summary]   # free text; judge priority and tags
     prompt: "Customer says: my order #4411 arrived broken and I want a refund today, this is the second time."
     schema: &ticket
       type: object
@@ -36,6 +47,7 @@ cases:
   - id: ticket-summary-question
     type: structured
     schema_name: ticket
+    ignore_fields: [summary]
     prompt: "Hi, do you ship to Ireland and how long does it take?"
     schema: *ticket
     mock:

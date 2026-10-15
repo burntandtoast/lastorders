@@ -1,7 +1,7 @@
 # Regression eval: acme-widgets-support-bot
 
 - Old model: `gpt-4o-2024-08-06`  ->  New model: `gpt-6-luna`
-- API: chat | Mode: **mock** | Run: 2026-10-15T08:59:54+0100
+- API: chat | Mode: **mock** | Run: 2026-10-15T09:51:49+0100
 - **Dry run: outputs are simulated, not real model responses.**
 
 | Status | Count |
@@ -13,7 +13,7 @@
 | Case | Type | Status | Key checks |
 |---|---|---|---|
 | `ticket-summary-refund` | structured | **PASS** | schema valid old=True new=True; similarity 1.0 |
-| `ticket-summary-question` | structured | **DRIFT** | schema valid old=True new=True; 3 field difference(s); similarity 0.762 |
+| `ticket-summary-question` | structured | **DRIFT** | schema valid old=True new=True; 2 field difference(s); similarity 0.745 |
 | `book-table-simple` | tool_call | **PASS** | tools ['book_table'] -> ['book_table'] |
 | `book-table-relative-date` | tool_call | **FAIL** | tools ['book_table'] -> ['book_table']; 2 argument difference(s) |
 | `order-lookup` | tool_call | **PASS** | tools ['lookup_order'] -> ['lookup_order'] |
@@ -39,12 +39,6 @@
       "new": "medium"
     },
     {
-      "path": "summary",
-      "change": "changed",
-      "old": "Asks about shipping to Ireland and delivery time.",
-      "new": "Shipping question: Ireland availability and delivery time."
-    },
-    {
       "path": "tags",
       "change": "changed",
       "old": [
@@ -56,7 +50,10 @@
       ]
     }
   ],
-  "similarity": 0.762,
+  "ignored_fields": [
+    "summary"
+  ],
+  "similarity": 0.745,
   "similarity_threshold": 0.85
 }
 ```

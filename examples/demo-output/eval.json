@@ -1,10 +1,25 @@
 {
+  "usage": {
+    "old": {
+      "model": "gpt-4o-2024-08-06",
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "est_cost_usd": 0.0
+    },
+    "new": {
+      "model": "gpt-6-luna",
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "est_cost_usd": 0.0
+    },
+    "total_est_cost_usd": 0.0
+  },
   "suite": "acme-widgets-support-bot",
   "api": "chat",
   "mode": "mock",
   "old_model": "gpt-4o-2024-08-06",
   "new_model": "gpt-6-luna",
-  "run_at": "2026-10-15T08:59:54+0100",
+  "run_at": "2026-10-15T09:51:49+0100",
   "summary": {
     "pass": 4,
     "drift": 1,
@@ -33,6 +48,9 @@
           "new": []
         },
         "field_diff": [],
+        "ignored_fields": [
+          "summary"
+        ],
         "similarity": 1.0,
         "similarity_threshold": 0.85
       },
@@ -69,12 +87,6 @@
             "new": "medium"
           },
           {
-            "path": "summary",
-            "change": "changed",
-            "old": "Asks about shipping to Ireland and delivery time.",
-            "new": "Shipping question: Ireland availability and delivery time."
-          },
-          {
             "path": "tags",
             "change": "changed",
             "old": [
@@ -86,12 +98,15 @@
             ]
           }
         ],
-        "similarity": 0.762,
+        "ignored_fields": [
+          "summary"
+        ],
+        "similarity": 0.745,
         "similarity_threshold": 0.85
       },
       "notes": [
         "Simulated (dry-run) output - not a real model response.",
-        "Output similarity 0.762 below 0.85."
+        "Output similarity 0.745 below 0.85."
       ]
     },
     {

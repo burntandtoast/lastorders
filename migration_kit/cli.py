@@ -54,7 +54,7 @@ def cmd_eval(a) -> int:
 
 
 def cmd_report(a) -> int:
-    md, ht = report.generate(a.client, a.scan, a.out, a.swap_summary, a.diff, a.eval)
+    md, ht = report.generate(a.client, a.scan, a.out, a.swap_summary, a.diff, a.eval, label=a.label)
     print(f"  {ht}\n  {md}")
     return 0
 
@@ -69,7 +69,8 @@ def cmd_demo(a) -> int:
                  ["eval", str(ex / "evals" / "sample-suite.yaml"), "--dry-run", "--out", str(out)],
                  ["report", "--client", "Acme Widgets Ltd (sample)", "--scan", str(out / "scan.json"),
                   "--swap-summary", str(out / "swap-summary.json"), "--diff", str(out / "model-swap.diff"),
-                  "--eval", str(out / "eval.json"), "--out", str(out)]):
+                  "--eval", str(out / "eval.json"), "--out", str(out),
+                  "--label", "Demo: simulated eval outputs on a fictional sample repo"]):
         print(f"$ bt-migrate {' '.join(args)}")
         rc = main(args)
         if rc not in (0,):
@@ -113,6 +114,7 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--swap-summary")
     r.add_argument("--diff")
     r.add_argument("--eval")
+    r.add_argument("--label", help="banner shown at the top of the report, e.g. 'Live run on our sample repo'")
     r.add_argument("--out", default="migration-out")
     r.set_defaults(fn=cmd_report)
 
