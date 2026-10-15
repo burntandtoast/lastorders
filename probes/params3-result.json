@@ -1,0 +1,46 @@
+[
+ {
+  "probe": "chat gpt-4o-2024-08-06 reasoning_effort=none",
+  "status": 400,
+  "error": "Unrecognized request argument supplied: reasoning_effort",
+  "param": null
+ },
+ {
+  "probe": "chat gpt-4o-mini-2024-07-18 reasoning_effort=none + tools",
+  "status": 400,
+  "error": "Unrecognized request argument supplied: reasoning_effort",
+  "param": null
+ },
+ {
+  "probe": "chat gpt-4.1-2025-04-14 reasoning_effort=none",
+  "status": 400,
+  "error": "Unrecognized request argument supplied: reasoning_effort",
+  "param": null
+ },
+ {
+  "probe": "responses gpt-4.1-mini-2025-04-14 reasoning.effort=none",
+  "status": 400,
+  "error": "Unsupported parameter: 'reasoning.effort' is not supported with this model.",
+  "param": "reasoning.effort"
+ },
+ {
+  "probe": "chat luna effort=none + tools + max_completion_tokens",
+  "status": 200,
+  "usage": {
+   "prompt_tokens": 117,
+   "completion_tokens": 4,
+   "total_tokens": 121,
+   "prompt_tokens_details": {
+    "cached_tokens": 0,
+    "cache_write_tokens": 0,
+    "audio_tokens": 0
+   },
+   "completion_tokens_details": {
+    "reasoning_tokens": 0,
+    "audio_tokens": 0,
+    "accepted_prediction_tokens": 0,
+    "rejected_prediction_tokens": 0
+   }
+  }
+ }
+]

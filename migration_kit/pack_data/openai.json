@@ -3,7 +3,7 @@
   "pack_format": 1,
   "provider": "openai",
   "name": "OpenAI API",
-  "version": "2026.10.15.2",
+  "version": "2026.10.15.3",
   "updated": "2026-10-15",
   "status": "stable",
   "notes": [
@@ -556,7 +556,13 @@
         "typescript"
       ],
       "pattern": "\\bChatOpenAI\\(|langchain_openai|@langchain/openai",
-      "description": "LangChain OpenAI chat model"
+      "description": "LangChain OpenAI chat model",
+      "call": {
+        "callees": [
+          "ChatOpenAI",
+          "AzureChatOpenAI"
+        ]
+      }
     },
     {
       "id": "http_openai",
@@ -580,7 +586,15 @@
         "typescript"
       ],
       "pattern": "chat\\.completions\\.(?:create|parse|stream)|/v1/chat/completions|ChatCompletion\\.create|\\bChatOpenAI\\(",
-      "description": "Chat Completions call site"
+      "description": "Chat Completions call site",
+      "call": {
+        "callees": [
+          "chat.completions.create",
+          "chat.completions.parse",
+          "chat.completions.stream",
+          "ChatCompletion.create"
+        ]
+      }
     },
     {
       "id": "responses_api",
@@ -590,7 +604,14 @@
         "typescript"
       ],
       "pattern": "responses\\.(?:create|parse|stream)|/v1/responses|use_responses_api\\s*=\\s*True",
-      "description": "Responses API call site"
+      "description": "Responses API call site",
+      "call": {
+        "callees": [
+          "responses.create",
+          "responses.parse",
+          "responses.stream"
+        ]
+      }
     },
     {
       "id": "tools",
@@ -600,7 +621,15 @@
         "typescript"
       ],
       "pattern": "\\btools\\s*[=:]|tool_choice|\\bfunction_call\\b|\\bfunctions\\s*[=:]|bind_tools\\(",
-      "description": "Tool / function calling"
+      "description": "Tool / function calling",
+      "call": {
+        "params": [
+          "tools",
+          "tool_choice",
+          "functions",
+          "function_call"
+        ]
+      }
     },
     {
       "id": "legacy_functions",
@@ -610,7 +639,13 @@
         "typescript"
       ],
       "pattern": "\\bfunctions\\s*[=:]|\\bfunction_call\\s*[=:]",
-      "description": "Legacy functions / function_call parameters"
+      "description": "Legacy functions / function_call parameters",
+      "call": {
+        "params": [
+          "functions",
+          "function_call"
+        ]
+      }
     },
     {
       "id": "structured_output",
@@ -620,7 +655,14 @@
         "typescript"
       ],
       "pattern": "json_schema|response_format|text_format|zodResponseFormat|with_structured_output\\(|\\.parse\\(",
-      "description": "Structured output"
+      "description": "Structured output",
+      "call": {
+        "params": [
+          "response_format",
+          "text_format",
+          "text.format"
+        ]
+      }
     },
     {
       "id": "sampling_params",
@@ -630,7 +672,23 @@
         "typescript"
       ],
       "pattern": "\\btemperature\\b|\\btop_p\\b|\\blogprobs\\b|\\btop_logprobs\\b",
-      "description": "temperature / top_p / logprobs"
+      "description": "temperature / top_p / logprobs",
+      "call": {
+        "params": [
+          "temperature",
+          "top_p",
+          "logprobs",
+          "top_logprobs"
+        ],
+        "ignore_values": {
+          "temperature": [
+            1
+          ],
+          "logprobs": [
+            false
+          ]
+        }
+      }
     },
     {
       "id": "max_tokens",
@@ -645,7 +703,12 @@
         "env"
       ],
       "pattern": "\\bmax_tokens\\b|\\bmaxTokens\\b",
-      "description": "max_tokens parameter"
+      "description": "max_tokens parameter",
+      "call": {
+        "params": [
+          "max_tokens"
+        ]
+      }
     },
     {
       "id": "reasoning_effort_none",
@@ -660,7 +723,17 @@
         "env"
       ],
       "pattern": "reasoning_effort[\"']?\\s*[:=]\\s*[\"']none[\"']|effort[\"']?\\s*[:=]\\s*[\"']none[\"']",
-      "description": "reasoning effort set to none"
+      "description": "reasoning effort set to none",
+      "call": {
+        "param_values": {
+          "reasoning_effort": [
+            "none"
+          ],
+          "reasoning.effort": [
+            "none"
+          ]
+        }
+      }
     },
     {
       "id": "assistants_api",
@@ -670,7 +743,18 @@
         "typescript"
       ],
       "pattern": "beta\\.assistants|/v1/assistants|beta\\.threads",
-      "description": "Assistants API"
+      "description": "Assistants API",
+      "call": {
+        "callees": [
+          "beta.assistants.create",
+          "beta.assistants.update",
+          "beta.threads.create",
+          "beta.threads.runs.create",
+          "beta.threads.create_and_run",
+          "beta.threads.runs.create_and_poll",
+          "beta.threads.runs.stream"
+        ]
+      }
     },
     {
       "id": "legacy_completions",
@@ -680,7 +764,13 @@
         "typescript"
       ],
       "pattern": "(?<!chat\\.)\\bcompletions\\.create\\b|/v1/completions\\b",
-      "description": "Legacy Completions API"
+      "description": "Legacy Completions API",
+      "call": {
+        "callees": [
+          "Completion.create",
+          "completions.create"
+        ]
+      }
     },
     {
       "id": "fine_tuning_jobs",
@@ -690,7 +780,13 @@
         "typescript"
       ],
       "pattern": "fine_tuning\\.jobs|fineTuning\\.jobs|/v1/fine_tuning",
-      "description": "Fine-tuning jobs API"
+      "description": "Fine-tuning jobs API",
+      "call": {
+        "callees": [
+          "fine_tuning.jobs.create",
+          "fineTuning.jobs.create"
+        ]
+      }
     }
   ],
   "rules": [
@@ -717,7 +813,10 @@
         "to": {
           "chat_completions": "max_completion_tokens",
           "responses_api": "max_output_tokens"
-        }
+        },
+        "requires_new_model": false,
+        "requires_new_model_evidence": "max_completion_tokens is accepted by gpt-4o-2024-08-06 too (live-tested 15 Oct 2026), so this rename is safe before the swap.",
+        "note": "LangChain and other wrappers are not renamed automatically: check how your wrapper version maps max_tokens."
       }
     },
     {
@@ -741,10 +840,16 @@
       "message": "Chat Completions + tools: gpt-6-luna returns HTTP 400 for function tools on Chat Completions unless reasoning_effort is 'none'. Set it, or move to the Responses API.",
       "fix": {
         "action": "set_param",
-        "param": "reasoning_effort",
-        "value": "none",
-        "scope": "chat_completions_calls_with_tools",
-        "alternative": "move_endpoint:responses"
+        "per_endpoint": {
+          "chat_completions": {
+            "param": "reasoning_effort",
+            "value": "none"
+          }
+        },
+        "scope": "Chat Completions calls that pass tools",
+        "alternative": "move the call to the Responses API (tools work there at the default effort)",
+        "requires_new_model": true,
+        "requires_new_model_evidence": "Live-tested 15 Oct 2026: gpt-4o-2024-08-06, gpt-4o-mini-2024-07-18 and gpt-4.1-2025-04-14 return HTTP 400 'Unrecognized request argument supplied: reasoning_effort' on Chat Completions; gpt-4.1-mini-2025-04-14 returns 400 for reasoning.effort on Responses (probes/params3-result.json)."
       }
     },
     {
@@ -763,14 +868,24 @@
       ],
       "risk": "high",
       "confidence": "live-tested",
-      "evidence": "temperature!=1, top_p, logprobs \u2192 400 unless effort none (15 Oct 2026)",
+      "evidence": "temperature!=1, top_p, logprobs → 400 unless effort none (15 Oct 2026)",
       "message": "Sets temperature/top_p/logprobs: gpt-6-luna accepts these only with reasoning_effort 'none'; at other efforts temperature must be 1 and top_p/logprobs return HTTP 400.",
       "fix": {
         "action": "set_param",
-        "param": "reasoning_effort",
-        "value": "none",
-        "scope": "calls_with_sampling_params",
-        "alternative": "remove_param:temperature,top_p,logprobs,top_logprobs"
+        "per_endpoint": {
+          "chat_completions": {
+            "param": "reasoning_effort",
+            "value": "none"
+          },
+          "responses_api": {
+            "param": "reasoning.effort",
+            "value": "none"
+          }
+        },
+        "scope": "calls that set temperature (other than 1), top_p or logprobs",
+        "alternative": "remove temperature/top_p/logprobs/top_logprobs and keep the default reasoning effort",
+        "requires_new_model": true,
+        "requires_new_model_evidence": "Live-tested 15 Oct 2026: gpt-4o-2024-08-06, gpt-4o-mini-2024-07-18 and gpt-4.1-2025-04-14 return HTTP 400 'Unrecognized request argument supplied: reasoning_effort' on Chat Completions; gpt-4.1-mini-2025-04-14 returns 400 for reasoning.effort on Responses (probes/params3-result.json)."
       }
     },
     {
@@ -788,7 +903,8 @@
       "confidence": "inferred",
       "message": "Uses legacy `functions`/`function_call` parameters. Not tested on gpt-6-luna; migrate to `tools`.",
       "fix": {
-        "action": "manual"
+        "action": "manual",
+        "note": "Rewrite `functions`/`function_call` as `tools`/`tool_choice` and update the response handling (message.tool_calls)."
       }
     },
     {
@@ -822,7 +938,8 @@
       "message": "Assistants API: gpt-6-luna does not support it (and the Assistants API shut down 26 Aug 2026).",
       "fix": {
         "action": "move_endpoint",
-        "to": "responses"
+        "to": "responses_api",
+        "note": "The Assistants API has shut down; port threads/runs to the Responses API (conversation state, tools, file search)."
       }
     },
     {
@@ -841,7 +958,8 @@
       "message": "Legacy /v1/completions: gpt-6-luna does not support it.",
       "fix": {
         "action": "move_endpoint",
-        "to": "responses"
+        "to": "responses_api",
+        "note": "Move prompt-completion calls to the Responses API (input=...)."
       }
     },
     {
@@ -859,7 +977,8 @@
       "confidence": "confirmed",
       "message": "Creates fine-tuning jobs: gpt-6-luna can't be fine-tuned, and new fine-tuning jobs stop on 6 Jan 2027.",
       "fix": {
-        "action": "manual"
+        "action": "manual",
+        "note": "gpt-6-luna can't be fine-tuned; decide whether to keep a fine-tunable model or replace the fine-tune with prompting validated by eval."
       }
     },
     {
@@ -922,7 +1041,8 @@
       "gpt-6-luna accepts temperature, top_p and logprobs only with reasoning_effort 'none'. At the default and 'low' effort, temperature is accepted only at 1, and top_p and logprobs are rejected. On the Responses API, temperature and top_p work with reasoning.effort 'none' and are rejected at the default effort.",
       "Chat Completions + function tools on gpt-6-luna returns 400 unless reasoning_effort is 'none' ('low' and the default both fail). Function tools on the Responses API work at the default effort.",
       "Undated aliases still resolve: gpt-4o -> gpt-4o-2024-08-06, gpt-4o-mini -> gpt-4o-mini-2024-07-18, gpt-4.1 -> gpt-4.1-2025-04-14, gpt-4.1-mini -> gpt-4.1-mini-2025-04-14.",
-      "GET /v1/models shows shutdown_date null for all nine GPT-4o / 4.1 ids and for gpt-6-luna; the 14 Jan 2027 date isn't in the API yet. Earlier batches are populated (e.g. gpt-4.1-nano and gpt-4o-2024-05-13 show 2026-10-23)."
+      "GET /v1/models shows shutdown_date null for all nine GPT-4o / 4.1 ids and for gpt-6-luna; the 14 Jan 2027 date isn't in the API yet. Earlier batches are populated (e.g. gpt-4.1-nano and gpt-4o-2024-05-13 show 2026-10-23).",
+      "GPT-4o / GPT-4.1 models reject reasoning_effort (Chat: 'Unrecognized request argument', Responses: reasoning.effort unsupported), so adding reasoning_effort must ship in the same deploy as the model swap (live-tested 15 Oct 2026)."
     ],
     "unconfirmed": [
       "Whether the undated aliases (gpt-4o, gpt-4o-mini, gpt-4.1, gpt-4.1-mini) are retired or re-pointed on 14 Jan 2027. Today they resolve to dated snapshots that are on the shutdown list, so we treat them as affected.",

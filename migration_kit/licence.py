@@ -29,7 +29,9 @@ KEY_RE = re.compile(r"^BTM-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$")
 # .diff from `swap` as well (phase-1 brief gates only `swap --apply`).
 GATE_SWAP_PATCH = False
 
-PAID_FEATURES = {"swap-apply": "applying the patch in place", "init-evals": "generating a starter eval suite",
+GATE_FIX_PATCH = GATE_SWAP_PATCH   # same policy for the fixer's patch: previewing it is free
+
+PAID_FEATURES = {"swap-apply": "applying the patch in place", "fix-apply": "applying the automatic fixes in place", "init-evals": "generating a starter eval suite",
                  "eval": "the regression eval", "report": "the client report"}
 
 

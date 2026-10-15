@@ -18,9 +18,11 @@ def test_bundled_packs_valid_and_listed():
 
 
 def test_engine_code_has_no_provider_specific_strings():
-    for mod in ["scanner.py", "swapper.py", "report.py", "packs.py"]:
+    for mod in ["scanner.py", "swapper.py", "report.py", "packs.py", "fixer/engine.py", "fixer/pyfix.py",
+                "fixer/jsfix.py", "fixer/callsite.py"]:
         src = (ROOT / "migration_kit" / mod).read_text()
-        for word in ["gpt-6-luna", "gpt-4o", "claude-", "max_completion_tokens", "reasoning_effort"]:
+        for word in ["gpt-6-luna", "gpt-4o", "claude-", "max_completion_tokens", "reasoning_effort", "max_tokens",
+                     "temperature", "openai", "anthropic", "chat_completions", "responses_api"]:
             assert word not in src, f"{word} hard-coded in {mod}"
 
 

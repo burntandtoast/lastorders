@@ -449,6 +449,16 @@ def usage_and_cost(results: list[CaseResult], pricing: dict, old_m: str, new_m: 
 
 # Provider adapters the eval can call (provider-specific by design; the scanner/report are not).
 ADAPTERS = {"openai"}
+# Pack endpoint signal ids -> the request shape each adapter speaks.
+ENDPOINT_API = {"openai": {"chat_completions": "chat", "responses_api": "responses"}}
+# Arguments the adapter builds itself from the case (prompt, schema, tools); everything else a
+# fixed call passes (token limits, sampling, reasoning) is replayed verbatim by `fix --verify`.
+REQUEST_CONTENT_PARAMS = {"messages", "input", "instructions", "tools", "tool_choice", "functions", "function_call",
+                          "response_format", "text", "text_format", "stream", "stream_options", "metadata", "store",
+                          "user", "previous_response_id", "conversation", "prompt", "background", "include",
+                          "extra_headers", "extra_body", "timeout", "parallel_tool_calls"}
+TOKEN_LIMIT_PARAMS = {"max_tokens", "max_completion_tokens", "max_output_tokens"}
+TOKEN_CAP_PARAM = {"chat": "max_completion_tokens", "responses": "max_output_tokens"}
 
 
 def make_provider(suite: dict, dry_run: bool):

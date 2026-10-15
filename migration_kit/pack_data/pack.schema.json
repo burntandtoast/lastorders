@@ -4,104 +4,564 @@
   "title": "Model migration pack",
   "description": "Provider-neutral data that drives the scanner, fixer and report. One pack per provider. Packs contain data only; detection patterns are Python-compatible regular expressions with a length cap.",
   "type": "object",
-  "required": ["pack_format", "provider", "name", "version", "updated", "status", "sources", "id_patterns", "models"],
+  "required": [
+    "pack_format",
+    "provider",
+    "name",
+    "version",
+    "updated",
+    "status",
+    "sources",
+    "id_patterns",
+    "models"
+  ],
   "additionalProperties": false,
   "$defs": {
-    "date": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$"},
-    "regex": {"type": "string", "minLength": 1, "maxLength": 300},
-    "risk": {"enum": ["high", "medium", "low", "info"]},
-    "confidence": {"enum": ["confirmed", "live-tested", "inferred", "example"]},
-    "lang": {"enum": ["python", "javascript", "typescript", "yaml", "json", "toml", "ini", "env", "markdown", "text"]},
+    "date": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    },
+    "regex": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 300
+    },
+    "risk": {
+      "enum": [
+        "high",
+        "medium",
+        "low",
+        "info"
+      ]
+    },
+    "confidence": {
+      "enum": [
+        "confirmed",
+        "live-tested",
+        "inferred",
+        "example"
+      ]
+    },
+    "lang": {
+      "enum": [
+        "python",
+        "javascript",
+        "typescript",
+        "yaml",
+        "json",
+        "toml",
+        "ini",
+        "env",
+        "markdown",
+        "text"
+      ]
+    },
     "source": {
-      "type": "object", "required": ["url", "checked"], "additionalProperties": false,
-      "properties": {"id": {"type": "string"}, "title": {"type": "string"}, "url": {"type": "string"}, "checked": {"$ref": "#/$defs/date"}}
+      "type": "object",
+      "required": [
+        "url",
+        "checked"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        },
+        "checked": {
+          "$ref": "#/$defs/date"
+        }
+      }
     }
   },
   "properties": {
-    "$schema": {"type": "string"},
-    "pack_format": {"const": 1},
-    "provider": {"type": "string", "pattern": "^[a-z0-9-]+$"},
-    "name": {"type": "string"},
-    "version": {"type": "string", "pattern": "^\\d{4}\\.\\d{2}\\.\\d{2}(\\.\\d+)?$", "description": "Calendar version YYYY.MM.DD[.N]; higher wins."},
-    "updated": {"$ref": "#/$defs/date"},
-    "status": {"enum": ["stable", "stub", "example"]},
-    "notes": {"type": "array", "items": {"type": "string"}},
-    "sources": {"type": "array", "items": {"$ref": "#/$defs/source"}},
+    "$schema": {
+      "type": "string"
+    },
+    "pack_format": {
+      "const": 1
+    },
+    "provider": {
+      "type": "string",
+      "pattern": "^[a-z0-9-]+$"
+    },
+    "name": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d{4}\\.\\d{2}\\.\\d{2}(\\.\\d+)?$",
+      "description": "Calendar version YYYY.MM.DD[.N]; higher wins."
+    },
+    "updated": {
+      "$ref": "#/$defs/date"
+    },
+    "status": {
+      "enum": [
+        "stable",
+        "stub",
+        "example"
+      ]
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/source"
+      }
+    },
     "id_patterns": {
       "description": "Regexes for model-id tokens. The engine adds token boundaries.",
-      "type": "array", "minItems": 1,
-      "items": {"type": "object", "required": ["pattern"], "additionalProperties": false,
-                "properties": {"pattern": {"$ref": "#/$defs/regex"},
-                               "quoted_only": {"type": "boolean", "description": "Only match inside quotes or after = / : (for ambiguous ids)."}}}
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "pattern"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "pattern": {
+            "$ref": "#/$defs/regex"
+          },
+          "quoted_only": {
+            "type": "boolean",
+            "description": "Only match inside quotes or after = / : (for ambiguous ids)."
+          }
+        }
+      }
     },
     "fine_tune": {
-      "type": "object", "required": ["pattern", "base_group"], "additionalProperties": false,
-      "properties": {"pattern": {"$ref": "#/$defs/regex"}, "base_group": {"type": "integer", "minimum": 1},
-                     "risk": {"$ref": "#/$defs/risk"}, "notes": {"type": "array", "items": {"type": "string"}}}
+      "type": "object",
+      "required": [
+        "pattern",
+        "base_group"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "pattern": {
+          "$ref": "#/$defs/regex"
+        },
+        "base_group": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "risk": {
+          "$ref": "#/$defs/risk"
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
     },
     "migrations": {
       "type": "array",
-      "items": {"type": "object", "required": ["id", "title", "shutdown"], "additionalProperties": false,
-                "properties": {"id": {"type": "string"}, "title": {"type": "string"}, "announced": {"$ref": "#/$defs/date"},
-                               "shutdown": {"$ref": "#/$defs/date"}, "replacement": {"type": "string"},
-                               "headline": {"type": "boolean"}, "source": {"type": "string"}}}
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "shutdown"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "announced": {
+            "$ref": "#/$defs/date"
+          },
+          "shutdown": {
+            "$ref": "#/$defs/date"
+          },
+          "replacement": {
+            "type": "string"
+          },
+          "headline": {
+            "type": "boolean"
+          },
+          "source": {
+            "type": "string"
+          }
+        }
+      }
     },
     "models": {
       "type": "array",
-      "items": {"type": "object", "required": ["id"], "additionalProperties": false,
-                "properties": {"id": {"type": "string"}, "kind": {"enum": ["snapshot", "alias", "family"]},
-                               "alias_of": {"type": "string"}, "match": {"enum": ["exact", "prefix"]},
-                               "shutdown": {"anyOf": [{"$ref": "#/$defs/date"}, {"type": "null"}]},
-                               "replacement": {"type": "string"}, "migration": {"type": "string"},
-                               "section": {"type": "string"}, "confidence": {"$ref": "#/$defs/confidence"},
-                               "note": {"type": "string"}, "map_automatically": {"type": "boolean"},
-                               "source": {"type": "string"}}}
+      "items": {
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "snapshot",
+              "alias",
+              "family"
+            ]
+          },
+          "alias_of": {
+            "type": "string"
+          },
+          "match": {
+            "enum": [
+              "exact",
+              "prefix"
+            ]
+          },
+          "shutdown": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/date"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "replacement": {
+            "type": "string"
+          },
+          "migration": {
+            "type": "string"
+          },
+          "section": {
+            "type": "string"
+          },
+          "confidence": {
+            "$ref": "#/$defs/confidence"
+          },
+          "note": {
+            "type": "string"
+          },
+          "map_automatically": {
+            "type": "boolean"
+          },
+          "source": {
+            "type": "string"
+          }
+        }
+      }
     },
     "signals": {
       "description": "Call-site / usage detectors. A signal fires for a file when its pattern matches anywhere in it.",
       "type": "array",
-      "items": {"type": "object", "required": ["id", "pattern"], "additionalProperties": false,
-                "properties": {"id": {"type": "string"}, "pattern": {"$ref": "#/$defs/regex"},
-                               "languages": {"type": "array", "items": {"$ref": "#/$defs/lang"}},
-                               "sdk": {"type": "string"}, "description": {"type": "string"}}}
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "pattern"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "pattern": {
+            "$ref": "#/$defs/regex"
+          },
+          "languages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/lang"
+            }
+          },
+          "sdk": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "call": {
+            "description": "Call-level detection used by the fixer. `callees` marks a call as this endpoint/SDK call (dotted-name suffix match, e.g. 'chat.completions.create'). `params` fires when the call passes any of these arguments (dotted paths for nested object keys, e.g. 'reasoning.effort'). `param_values` fires when an argument has one of the listed literal values. `ignore_values` lists literal values that do NOT count for `params`.",
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "callees": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 120
+                }
+              },
+              "params": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 80
+                }
+              },
+              "param_values": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "array"
+                }
+              },
+              "ignore_values": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "array"
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "rules": {
       "description": "Parameter, endpoint and tool-calling rules applied to findings.",
       "type": "array",
-      "items": {"type": "object", "required": ["id", "type", "risk", "message"], "additionalProperties": false,
-                "properties": {
-                  "id": {"type": "string"},
-                  "type": {"enum": ["param_renamed", "param_removed", "param_conditional", "endpoint", "tool_calling", "info"]},
-                  "applies_to": {"type": "object", "additionalProperties": false,
-                                 "properties": {"replacements": {"type": "array", "items": {"type": "string"}},
-                                                "migrations": {"type": "array", "items": {"type": "string"}}}},
-                  "when_all": {"type": "array", "items": {"type": "string"}},
-                  "when_any": {"type": "array", "items": {"type": "string"}},
-                  "unless_any": {"type": "array", "items": {"type": "string"}},
-                  "param": {"type": "string"}, "new_param": {"type": "string"},
-                  "risk": {"$ref": "#/$defs/risk"}, "message": {"type": "string"},
-                  "confidence": {"$ref": "#/$defs/confidence"}, "evidence": {"type": "string"},
-                  "fix": {"type": "object", "description": "Machine-readable hint for the auto-fixer (phase 2).",
-                          "properties": {"action": {"enum": ["rename_param", "remove_param", "set_param", "move_endpoint", "manual"]}},
-                          "additionalProperties": true}
-                }}
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "type",
+          "risk",
+          "message"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "param_renamed",
+              "param_removed",
+              "param_conditional",
+              "endpoint",
+              "tool_calling",
+              "info"
+            ]
+          },
+          "applies_to": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "replacements": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "migrations": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "when_all": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "when_any": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "unless_any": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "param": {
+            "type": "string"
+          },
+          "new_param": {
+            "type": "string"
+          },
+          "risk": {
+            "$ref": "#/$defs/risk"
+          },
+          "message": {
+            "type": "string"
+          },
+          "confidence": {
+            "$ref": "#/$defs/confidence"
+          },
+          "evidence": {
+            "type": "string"
+          },
+          "fix": {
+            "type": "object",
+            "description": "Machine-readable instruction for the auto-fixer. Endpoint keys refer to signal ids that carry `call.callees`.",
+            "required": [
+              "action"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "action": {
+                "enum": [
+                  "rename_param",
+                  "remove_param",
+                  "set_param",
+                  "move_endpoint",
+                  "manual"
+                ]
+              },
+              "from": {
+                "type": "string",
+                "description": "rename_param: argument to rename"
+              },
+              "to": {
+                "description": "rename_param: {endpoint: new name} (or one name for all endpoints); move_endpoint: target endpoint",
+                "oneOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "string"
+                    }
+                  }
+                ]
+              },
+              "params": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "remove_param: arguments to remove"
+              },
+              "param": {
+                "type": "string",
+                "description": "set_param: argument to add (dotted path = nested object key)"
+              },
+              "value": {
+                "description": "set_param: literal value"
+              },
+              "per_endpoint": {
+                "type": "object",
+                "description": "set_param: {endpoint: {param, value}} overrides; endpoints not listed fall back to param/value if given, else become manual",
+                "additionalProperties": {
+                  "type": "object",
+                  "required": [
+                    "param",
+                    "value"
+                  ],
+                  "properties": {
+                    "param": {
+                      "type": "string"
+                    },
+                    "value": {}
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "scope": {
+                "type": "string",
+                "description": "human-readable description of where the fix applies"
+              },
+              "alternative": {
+                "type": "string",
+                "description": "other acceptable fix, shown to the user"
+              },
+              "requires_new_model": {
+                "type": "boolean",
+                "description": "true when the OLD models reject the fixed call: the fix is only safe in the same deploy as the model swap"
+              },
+              "requires_new_model_evidence": {
+                "type": "string"
+              },
+              "note": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
     },
     "risk_policy": {
-      "type": "object", "additionalProperties": false,
-      "properties": {"urgent_days": {"type": "integer", "minimum": 0}, "default_risk": {"$ref": "#/$defs/risk"}}
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "urgent_days": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "default_risk": {
+          "$ref": "#/$defs/risk"
+        }
+      }
     },
-    "replacement_facts": {"type": "object", "additionalProperties": {"type": "object"}},
+    "replacement_facts": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object"
+      }
+    },
     "facts": {
-      "type": "object", "additionalProperties": false,
-      "properties": {"confirmed": {"type": "array", "items": {"type": "string"}},
-                     "live_checked_on": {"$ref": "#/$defs/date"},
-                     "live": {"type": "array", "items": {"type": "string"}},
-                     "unconfirmed": {"type": "array", "items": {"type": "string"}}}
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "confirmed": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "live_checked_on": {
+          "$ref": "#/$defs/date"
+        },
+        "live": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "unconfirmed": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
     },
     "report": {
-      "type": "object", "additionalProperties": false,
-      "properties": {"next_steps": {"type": "array", "items": {"type": "string"}},
-                     "fine_tune_advice": {"type": "array", "items": {"type": "string"}}}
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "next_steps": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "fine_tune_advice": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
     }
   }
 }

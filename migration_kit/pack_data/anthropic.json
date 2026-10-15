@@ -3,7 +3,7 @@
   "pack_format": 1,
   "provider": "anthropic",
   "name": "Anthropic Claude API (stub)",
-  "version": "2026.10.15.1",
+  "version": "2026.10.15.2",
   "updated": "2026-10-15",
   "status": "stub",
   "notes": [
@@ -187,7 +187,14 @@
         "javascript",
         "typescript"
       ],
-      "pattern": "messages\\.(?:create|stream)|/v1/messages"
+      "pattern": "messages\\.(?:create|stream)|/v1/messages",
+      "call": {
+        "callees": [
+          "messages.create",
+          "messages.stream",
+          "messages.parse"
+        ]
+      }
     },
     {
       "id": "claude_sampling",
@@ -196,7 +203,14 @@
         "javascript",
         "typescript"
       ],
-      "pattern": "\\btemperature\\b|\\btop_p\\b|\\btop_k\\b"
+      "pattern": "\\btemperature\\b|\\btop_p\\b|\\btop_k\\b",
+      "call": {
+        "params": [
+          "temperature",
+          "top_p",
+          "top_k"
+        ]
+      }
     }
   ],
   "rules": [
@@ -228,7 +242,9 @@
           "temperature",
           "top_p",
           "top_k"
-        ]
+        ],
+        "requires_new_model": false,
+        "note": "Inferred rule: shown for manual review unless you pass --include-inferred."
       }
     }
   ],

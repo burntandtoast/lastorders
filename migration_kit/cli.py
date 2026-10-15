@@ -60,6 +60,55 @@ def cmd_swap(a) -> int:
     return 0
 
 
+def _dirty(repo: str, files: list[str]) -> list[str]:
+    """Touched files with uncommitted changes (only when the repo is a git checkout)."""
+    import shutil
+    import subprocess
+    git = shutil.which("git")
+    if not git or not files:
+        return []
+    r = subprocess.run([git, "-C", repo, "status", "--porcelain", "--", *files], capture_output=True, text=True)
+    return [ln[3:] for ln in r.stdout.splitlines()] if r.returncode == 0 else []
+
+
+def cmd_fix(a) -> int:
+    from . import fixer, swapper
+    from .fixer import verify as fverify
+    if a.apply or licence.GATE_FIX_PATCH:
+        print(licence.describe(licence.require("fix-apply", a.licence, a.repo)), file=sys.stderr)
+    if a.verify and a.live and not a._demo:
+        print(licence.describe(licence.require("eval", a.licence, a.repo)), file=sys.stderr)
+    packs = _packs(a)
+    mapping = swapper.load_mapping(a.mapping) if a.mapping else None
+    res = fixer.plan_fixes(a.repo, packs, mapping=mapping, model_swap=not a.no_model_swap,
+                           assume_model=a.assume_model, include_inferred=a.include_inferred)
+    paths = fixer.write(res, a.out)
+    c = res.counts()
+    print(f"{len(res.new_contents)} files changed ({res.swap_changes} model ID replacements). "
+          + ", ".join(f"{k}: {v}" for k, v in sorted(c.items())))
+    print(f"  patch: {paths['diff']}\n  plan:  {paths['md']}")
+    ok = True
+    if a.verify:
+        rep = fverify.verify(a.repo, res, packs, Path(a.out) / "verify", live=a.live, suite_path=a.evals,
+                             assume_model=a.assume_model, include_inferred=a.include_inferred)
+        ok = rep["ok"]
+        print(f"  verify: {'PASS' if ok else 'FAIL'} ({'live' if a.live else 'mock'} eval) -> {Path(a.out) / 'verify' / 'verify.md'}")
+    if a.apply:
+        if not ok:
+            print("Not applied: verification failed (see verify.md).", file=sys.stderr)
+            return 6
+        dirty = _dirty(a.repo, sorted(res.new_contents))
+        if dirty and not a.force:
+            print("Not applied: these files have uncommitted changes (commit or stash them, or pass --force): "
+                  + ", ".join(dirty), file=sys.stderr)
+            return 7
+        n = fixer.engine.apply_in_place(a.repo, res)
+        print(f"Applied in place to {n} files (--apply).")
+    else:
+        print(f"Nothing changed on disk. Review, then: git -C {a.repo} apply {Path(paths['diff']).resolve()}")
+    return 0 if ok else 6
+
+
 def cmd_init_evals(a) -> int:
     from . import initevals
     if not a._demo:
@@ -150,6 +199,7 @@ def cmd_demo(a) -> int:
     repo = ex / "sample-app"
     steps = [["scan", str(repo), "--out", str(out), "--offline"],
              ["swap", str(repo), "--mapping", str(HERE / "mappings" / "gpt4-series-to-gpt-6-luna.yaml"), "--out", str(out), "--offline"],
+             ["fix", str(repo), "--out", str(out), "--verify", "--offline"],
              ["eval", str(ex / "evals" / "sample-suite.yaml"), "--dry-run", "--out", str(out)],
              ["report", "--client", "Acme Widgets Ltd (sample)", "--scan", str(out / "scan.json"),
               "--swap-summary", str(out / "swap-summary.json"), "--diff", str(out / "model-swap.diff"),
@@ -201,6 +251,24 @@ def build_parser() -> argparse.ArgumentParser:
     _lic_opt(w)
     _pack_opts(w)
     w.set_defaults(fn=cmd_swap)
+
+    fx = sub.add_parser("fix", help="automatic fixes from the pack rules, as a reviewable patch (--apply needs a licence)")
+    fx.add_argument("repo", nargs="?", default=".")
+    fx.add_argument("--out", default=f"{brand.CLI_NAME}-out")
+    fx.add_argument("--mapping", help="mapping YAML for the model swap (default: generated from the packs)")
+    fx.add_argument("--no-model-swap", action="store_true",
+                    help="only fix arguments; fixes that need the new model are then listed, not applied")
+    fx.add_argument("--assume-model", help="model to assume for calls whose model isn't visible in the code")
+    fx.add_argument("--include-inferred", action="store_true", help="also apply rules marked 'inferred' in the pack")
+    fx.add_argument("--verify", action="store_true",
+                    help="apply to a scratch copy, check syntax + idempotence, and replay each fixed call old vs new")
+    fx.add_argument("--live", action="store_true", help="with --verify: real API calls with YOUR key [licence]")
+    fx.add_argument("--evals", help="with --verify: also run your eval suite, with the fixed arguments on matching cases")
+    fx.add_argument("--apply", action="store_true", help="ALSO edit files in place [licence]")
+    fx.add_argument("--force", action="store_true", help="with --apply: allow files with uncommitted changes")
+    _lic_opt(fx)
+    _pack_opts(fx)
+    fx.set_defaults(fn=cmd_fix)
 
     ie = sub.add_parser("init-evals", help="[licence] generate a starter eval suite from the scan's call sites")
     ie.add_argument("repo", nargs="?", default=".")
