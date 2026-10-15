@@ -1,13 +1,16 @@
-"""`scan`: find model IDs in a repository and assess them."""
+"""`scan`: generic engine. Finds model IDs in a repository and assesses them using
+migration packs (see packs.py). No provider-specific logic lives here."""
 from __future__ import annotations
 
+import datetime as dt
 import json
 import os
 import re
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
-from . import catalogue as cat
+from . import brand
+from .packs import Pack, PackSet, load_packs
 
 SKIP_DIRS = {".git", "node_modules", ".venv", "venv", "env", "__pycache__", "dist", "build",
              ".next", ".nuxt", ".cache", "coverage", ".tox", ".mypy_cache", ".pytest_cache",
@@ -17,39 +20,15 @@ CODE_EXT = {".py": "python", ".js": "javascript", ".mjs": "javascript", ".cjs": 
 CONFIG_EXT = {".yaml": "yaml", ".yml": "yaml", ".json": "json", ".toml": "toml", ".ini": "ini",
               ".cfg": "ini", ".conf": "ini"}
 DOC_EXT = {".md": "markdown", ".txt": "text", ".rst": "text"}
+CODE_LANGS = set(CODE_EXT.values())
+CONFIG_LANGS = set(CONFIG_EXT.values()) | {"env"}
+DOC_LANGS = {"markdown", "text"}
 MAX_BYTES = 2_000_000
-
-# A model-id token: ft:..., gpt-*, chatgpt-*, or an o-series id.
-_B = r"(?<![A-Za-z0-9._:/-])"
-_E = r"(?![A-Za-z0-9._:-])"
-MODEL_RE = re.compile(
-    _B + r"(ft:[A-Za-z0-9._-]+(?::[A-Za-z0-9._-]*)*"
-    r"|gpt-[0-9][A-Za-z0-9._-]*[A-Za-z0-9]"
-    r"|gpt-[0-9]"
-    r"|chatgpt-[A-Za-z0-9._-]*[A-Za-z0-9]"
-    r"|o[1-9](?:-(?:mini|pro|preview|deep-research)(?:-[0-9]{4}-[0-9]{2}-[0-9]{2})?|-[0-9]{4}-[0-9]{2}-[0-9]{2})?)" + _E
-)
-# o-series ids are only trusted inside quotes or after '=' (too ambiguous in prose)
-O_SERIES_RE = re.compile(r"^o[1-9]")
+RISK_RANK = {"info": 0, "low": 1, "medium": 2, "high": 3}
 
 MODEL_KEY_RE = re.compile(r"""(?:\bmodel(?:_name|_id|Name|Id)?\b|\bdeployment\b|\bengine\b)\s*["']?\s*[:=]""", re.I)
 ENV_REF_RE = re.compile(
     r"""(?:os\.environ\.get|os\.getenv|os\.environ\[|process\.env\.|process\.env\[|import\.meta\.env\.)\(?\s*["']?([A-Z][A-Z0-9_]*MODEL[A-Z0-9_]*)""")
-
-# Simple per-file signals of API usage patterns that change risk.
-SIGNALS = {
-    "chat_completions": re.compile(r"chat\.completions\.create|/v1/chat/completions|ChatCompletion\.create"),
-    "responses_api": re.compile(r"responses\.create|/v1/responses"),
-    "tools": re.compile(r"\btools\s*[=:]|tool_choice|\bfunction_call\b|\bfunctions\s*[=:]"),
-    "legacy_functions": re.compile(r"\bfunctions\s*[=:]|\bfunction_call\s*[=:]"),
-    "structured_output": re.compile(r"json_schema|response_format|text_format|zodResponseFormat|\.parse\("),
-    "sampling_params": re.compile(r"\btemperature\b|\btop_p\b|\blogprobs\b|\btop_logprobs\b|\bpresence_penalty\b|\bfrequency_penalty\b"),
-    "max_tokens": re.compile(r"\bmax_tokens\b|\bmaxTokens\b"),
-    "reasoning_effort_none": re.compile(r"""reasoning_effort["']?\s*[:=]\s*["']none["']|effort["']?\s*[:=]\s*["']none["']"""),
-    "assistants_api": re.compile(r"beta\.assistants|/v1/assistants|beta\.threads"),
-    "legacy_completions": re.compile(r"\bcompletions\.create\b(?<!chat\.completions\.create)|/v1/completions\b"),
-    "fine_tuning_jobs": re.compile(r"fine_tuning\.jobs|fineTuning\.jobs|/v1/fine_tuning"),
-}
 
 
 @dataclass
@@ -58,6 +37,7 @@ class Finding:
     line: int
     column: int
     model: str
+    provider: str
     kind: str            # sdk_call | env | config | string_literal | doc | comment
     language: str
     snippet: str
@@ -66,6 +46,8 @@ class Finding:
     suggested: str | None
     confidence: str
     risk: str            # high | medium | low | info
+    migration: str | None = None
+    rules: list[str] = field(default_factory=list)
     notes: list[str] = field(default_factory=list)
 
 
@@ -84,19 +66,19 @@ class ScanResult:
     findings: list[Finding]
     env_refs: list[EnvRef]
     file_signals: dict[str, list[str]]
-    checked_on: str = cat.CHECKED_ON
-    source: str = cat.DEPRECATIONS_URL
+    file_sdks: dict[str, list[str]]
+    packs: list[dict]
+    scanned_on: str
 
     def to_dict(self) -> dict:
-        d = {
-            "root": self.root, "files_scanned": self.files_scanned,
-            "checked_on": self.checked_on, "source": self.source,
+        return {
+            "tool": brand.CLI_NAME, "root": self.root, "files_scanned": self.files_scanned,
+            "scanned_on": self.scanned_on, "packs": self.packs,
             "summary": summarise(self),
             "findings": [asdict(f) for f in self.findings],
             "env_refs": [asdict(e) for e in self.env_refs],
-            "file_signals": self.file_signals,
+            "file_signals": self.file_signals, "file_sdks": self.file_sdks,
         }
-        return d
 
 
 def _language(path: Path) -> str | None:
@@ -113,9 +95,7 @@ def iter_files(root: Path, include_docs: bool = True):
         for fn in sorted(filenames):
             p = Path(dirpath) / fn
             lang = _language(p)
-            if lang is None:
-                continue
-            if not include_docs and lang in ("markdown", "text"):
+            if lang is None or (not include_docs and lang in DOC_LANGS):
                 continue
             try:
                 if p.stat().st_size > MAX_BYTES:
@@ -127,109 +107,141 @@ def iter_files(root: Path, include_docs: bool = True):
 
 def _is_comment(line: str, lang: str) -> bool:
     s = line.strip()
-    if lang == "python" or lang in ("yaml", "toml", "ini", "env"):
+    if lang in ("python", "yaml", "toml", "ini", "env"):
         return s.startswith("#")
     if lang in ("javascript", "typescript"):
-        return s.startswith("//") or s.startswith("/*") or s.startswith("*")
+        return s.startswith(("//", "/*", "*"))
     return False
 
 
 def _kind(line: str, lang: str, prev: str) -> str:
-    if lang in ("markdown", "text"):
+    if lang in DOC_LANGS:
         return "doc"
     if _is_comment(line, lang):
         return "comment"
     if lang == "env":
         return "env"
-    if lang in CONFIG_EXT.values():
+    if lang in CONFIG_LANGS:
         return "config"
     if MODEL_KEY_RE.search(line) or MODEL_KEY_RE.search(prev):
         return "sdk_call"
     return "string_literal"
 
 
-def _quoted_or_assigned(line: str, start: int, end: int) -> bool:
+def quoted_or_assigned(line: str, start: int, end: int) -> bool:
     before = line[:start].rstrip()
-    after = line[end:end + 1]
-    return (before[-1:] in "\"'`=:" and True) or after in ("\"", "'", "`")
+    return before[-1:] in ("\"", "'", "`", "=", ":") or line[end:end + 1] in ("\"", "'", "`")
 
 
-def classify(model: str) -> tuple[str, cat.Entry | None, str | None]:
-    """Return (category, entry, base_model_for_fine_tune)."""
-    base = cat.base_of_fine_tune(model)
+def iter_model_tokens(line: str, packs: PackSet):
+    """Yield (start, end, token, pack) for every model-id token on a line, longest match first per span."""
+    seen: list[tuple[int, int]] = []
+    hits = []
+    for pack in packs:
+        for rx, quoted_only in pack.id_res:
+            for m in rx.finditer(line):
+                if quoted_only and not quoted_or_assigned(line, m.start(1), m.end(1)):
+                    continue
+                hits.append((m.start(1), m.end(1), m.group(1), pack))
+    for s, e, tok, pack in sorted(hits, key=lambda h: (h[0], -(h[1] - h[0]))):
+        if any(s < pe and e > ps for ps, pe in seen):
+            continue
+        seen.append((s, e))
+        yield s, e, tok, pack
+
+
+def file_signals(text: str, lang: str, packs: PackSet) -> tuple[list[str], list[str]]:
+    sig, sdks = set(), set()
+    if lang in DOC_LANGS:
+        return [], []
+    for pack in packs:
+        for sid, rx, langs, sdk in pack.signals:
+            if (not langs or lang in langs) and rx.search(text):
+                sig.add(sid)
+                if sdk:
+                    sdks.add(f"{pack.provider}:{sdk}")
+    return sorted(sig), sorted(sdks)
+
+
+def _rule_applies(rule: dict, model_repl: str | None, migration: str | None, sig: set[str]) -> bool:
+    at = rule.get("applies_to") or {}
+    if at:
+        ok = (model_repl in (at.get("replacements") or [])) or (migration and migration in (at.get("migrations") or []))
+        if not ok:
+            return False
+    if rule.get("when_all") and not set(rule["when_all"]) <= sig:
+        return False
+    if rule.get("when_any") and not (set(rule["when_any"]) & sig):
+        return False
+    if rule.get("unless_any") and (set(rule["unless_any"]) & sig):
+        return False
+    return bool(rule.get("when_all") or rule.get("when_any"))
+
+
+def _bump(risk: str, to: str) -> str:
+    return to if RISK_RANK[to] > RISK_RANK[risk] else risk
+
+
+def assess(f: Finding, pack: Pack, sig: list[str], today: dt.date) -> None:
+    sigset = set(sig)
+    base = pack.fine_tune_base(f.model)
     if base is not None:
-        return "fine_tune", cat.lookup(base), base
-    e = cat.lookup(model)
-    if e is None:
-        return "not_listed", None, None
-    return ("in_scope" if e.in_scope else "other_deprecated"), e, None
-
-
-def _assess(f: Finding, entry: cat.Entry | None, base: str | None, signals: list[str]) -> None:
-    notes = f.notes
-    if f.category == "fine_tune":
-        f.risk = "high"
-        if entry and entry.in_scope:
-            f.shutdown = entry.shutdown
-            notes.append(f"Fine-tune of {base}; per OpenAI it shuts down with its base model on {entry.shutdown}.")
-        elif entry:
-            f.shutdown = entry.shutdown
-            notes.append(f"Fine-tune of {base} (base shutdown {entry.shutdown}).")
+        f.category = "fine_tune"
+        ft = pack.data.get("fine_tune") or {}
+        f.risk = ft.get("risk", "high")
+        bm = pack.lookup(base)
+        if bm:
+            f.shutdown, f.migration = bm.shutdown, bm.migration
+            f.notes.append(f"Fine-tune of {base}; it shuts down with its base model on {bm.shutdown}.")
+            f.confidence = "confirmed" if bm.confidence in ("confirmed", "live-tested") else bm.confidence
         else:
-            notes.append(f"Fine-tune of {base}; base model not in the kit's catalogue - check manually.")
-        f.suggested = None
-        notes.append("No automatic replacement: gpt-6-luna does not support fine-tuning. Options are "
-                     "prompting/few-shot on gpt-6-luna validated with `eval`, or re-training on a "
-                     "fine-tunable model (none confirmed by the kit). New fine-tuning jobs stop on 6 Jan 2027.")
-        f.confidence = "confirmed" if entry and entry.confidence == "confirmed" else "inferred"
+            f.notes.append(f"Fine-tune of {base}; base model not in the {pack.provider} pack - check manually.")
+            f.confidence = "n/a"
+        f.notes += ft.get("notes", [])
         return
-    if entry is None:
-        f.risk = "info"
-        f.suggested = None
-        f.confidence = "n/a"
-        notes.append("Not in the kit's deprecation catalogue. Leave as-is unless the client wants to consolidate.")
+    m = pack.lookup(f.model)
+    if m is None:
+        f.category, f.risk, f.confidence = "not_listed", "info", "n/a"
+        f.notes.append(f"Not listed as retiring in the {pack.provider} pack (v{pack.version}).")
         return
-    f.shutdown, f.suggested, f.confidence = entry.shutdown, entry.replacement, entry.confidence
-    if entry.note:
-        notes.append(entry.note)
-    if f.category == "in_scope":
-        f.risk = "medium"
-        if "tools" in signals and "chat_completions" in signals and "reasoning_effort_none" not in signals:
+    headline = {x["id"] for x in pack.headline_migrations}
+    f.category = "in_scope" if m.migration in headline else "other_deprecated"
+    f.shutdown, f.suggested, f.confidence, f.migration = m.shutdown, m.replacement, m.confidence, m.migration
+    f.risk = (pack.data.get("risk_policy") or {}).get("default_risk", "medium")
+    if m.note:
+        f.notes.append(m.note)
+    if m.shutdown:
+        days = (dt.date.fromisoformat(m.shutdown) - today).days
+        if days < 0:
             f.risk = "high"
-            notes.append("Chat Completions + tools in this file: gpt-6-luna returns HTTP 400 for function tools on "
-                         "Chat Completions unless reasoning_effort is 'none' (docs + live-tested). Set it, or move to the Responses API.")
-        if "max_tokens" in signals:
+            f.notes.append(f"Shutdown date {m.shutdown} has passed; calls are likely failing now.")
+        elif days <= pack.urgent_days:
             f.risk = "high"
-            notes.append("Uses `max_tokens`: gpt-6-luna rejects it with HTTP 400 (live-tested). Rename to "
-                         "`max_completion_tokens` (Chat Completions) or `max_output_tokens` (Responses).")
-        if "legacy_functions" in signals:
-            notes.append("Uses legacy `functions`/`function_call` parameters - check support and prefer `tools`.")
-        if "structured_output" in signals:
-            notes.append("Structured output in this file: gpt-6-luna lists structured_outputs as supported; verify schemas with `eval`.")
-        if "sampling_params" in signals:
-            if "reasoning_effort_none" not in signals:
-                f.risk = "high"
-            notes.append("Sets temperature/top_p/logprobs: gpt-6-luna accepts these only with reasoning_effort 'none'; "
-                         "at other efforts temperature must be 1 and top_p/logprobs return HTTP 400 (live-tested).")
-        if "assistants_api" in signals:
-            f.risk = "high"
-            notes.append("Assistants API detected: gpt-6-luna does not support it (and the Assistants API shut down 26 Aug 2026).")
-        if "legacy_completions" in signals:
-            f.risk = "high"
-            notes.append("Legacy /v1/completions detected: gpt-6-luna does not support it.")
-    else:
-        f.risk = "high" if (entry.shutdown or "9") < cat.PRIMARY_SHUTDOWN else "medium"
-        notes.append(f"Outside the GPT-4o/4.1 migration; OpenAI's listed replacement is {entry.replacement}.")
+            f.notes.append(f"Shuts down in {days} days.")
+    if f.category == "other_deprecated":
+        f.notes.append(f"Outside the headline migration; the listed replacement is {m.replacement}.")
+    for rule in pack.data.get("rules", []):
+        if _rule_applies(rule, m.replacement, m.migration, sigset):
+            f.rules.append(rule["id"])
+            tag = " [live-tested]" if rule.get("confidence") == "live-tested" else (
+                " [inferred]" if rule.get("confidence") == "inferred" else "")
+            f.notes.append(rule["message"] + tag)
+            if rule["risk"] != "info":
+                f.risk = _bump(f.risk, rule["risk"])
     if f.kind in ("doc", "comment"):
         f.risk = "low"
-        notes.append("Appears in documentation/comment only.")
+        f.notes.append("Appears in documentation/comment only.")
 
 
-def scan(root: str | Path, include_docs: bool = True) -> ScanResult:
+def scan(root: str | Path, include_docs: bool = True, packs: PackSet | None = None,
+         today: dt.date | None = None) -> ScanResult:
     root = Path(root).resolve()
+    packs = packs or load_packs()
+    today = today or dt.date.today()
     findings: list[Finding] = []
     env_refs: list[EnvRef] = []
-    file_signals: dict[str, list[str]] = {}
+    fsig: dict[str, list[str]] = {}
+    fsdk: dict[str, list[str]] = {}
     n = 0
     for path, lang in iter_files(root, include_docs):
         try:
@@ -238,88 +250,119 @@ def scan(root: str | Path, include_docs: bool = True) -> ScanResult:
             continue
         n += 1
         rel = path.relative_to(root).as_posix()
-        code_or_cfg = lang in ("python", "javascript", "typescript") or lang in CONFIG_EXT.values()
-        sig = [k for k, rx in SIGNALS.items()
-               if (lang in ("python", "javascript", "typescript") or (k == "max_tokens" and code_or_cfg))
-               and rx.search(text)]
+        sig, sdks = file_signals(text, lang, packs)
+        if sig:
+            fsig[rel] = sig
+        if sdks:
+            fsdk[rel] = sdks
         lines = text.splitlines()
-        file_hits = []
         for i, line in enumerate(lines, 1):
             prev = lines[i - 2] if i > 1 else ""
-            for m in MODEL_RE.finditer(line):
-                model = m.group(1)
-                if O_SERIES_RE.match(model) and not _quoted_or_assigned(line, m.start(1), m.end(1)):
-                    continue
-                category, entry, base = classify(model)
-                f = Finding(rel, i, m.start(1) + 1, model, _kind(line, lang, prev), lang,
-                            line.strip()[:200], category, None, None, "n/a", "info")
-                _assess(f, entry, base, sig)
-                file_hits.append(f)
+            for s, _e, tok, pack in iter_model_tokens(line, packs):
+                f = Finding(rel, i, s + 1, tok, pack.provider, _kind(line, lang, prev), lang,
+                            line.strip()[:200], "not_listed", None, None, "n/a", "info")
+                assess(f, pack, sig, today)
+                findings.append(f)
             for m in ENV_REF_RE.finditer(line):
                 env_refs.append(EnvRef(rel, i, m.group(1), line.strip()[:200]))
-        if file_hits or sig:
-            if sig:
-                file_signals[rel] = sig
-        findings.extend(file_hits)
-    return ScanResult(str(root), n, findings, env_refs, file_signals)
+    return ScanResult(str(root), n, findings, env_refs, fsig, fsdk, packs.info(), today.isoformat())
 
 
 def summarise(res: ScanResult) -> dict:
     by_cat: dict[str, int] = {}
     by_risk: dict[str, int] = {}
+    by_provider: dict[str, int] = {}
     for f in res.findings:
         by_cat[f.category] = by_cat.get(f.category, 0) + 1
         by_risk[f.risk] = by_risk.get(f.risk, 0) + 1
+        by_provider[f.provider] = by_provider.get(f.provider, 0) + 1
     return {
         "total_findings": len(res.findings),
-        "by_category": by_cat,
-        "by_risk": by_risk,
+        "by_category": by_cat, "by_risk": by_risk, "by_provider": by_provider,
         "files_with_findings": len({f.file for f in res.findings}),
         "fine_tuned_models": sorted({f.model for f in res.findings if f.category == "fine_tune"}),
         "env_var_model_refs": sorted({e.variable for e in res.env_refs}),
+        "sdks": sorted({s for v in res.file_sdks.values() for s in v}),
     }
 
 
-CAT_LABEL = {"in_scope": "GPT-4o / 4.1 (shutdown 14 Jan 2027)", "fine_tune": "Fine-tuned model",
-             "other_deprecated": "Other deprecated model", "not_listed": "Not in catalogue"}
+CAT_LABEL = {"in_scope": "Headline migration", "fine_tune": "Fine-tuned model",
+             "other_deprecated": "Other retiring model", "not_listed": "Not listed as retiring"}
+
+
+def _esc(s: str) -> str:
+    return s.replace("|", "\\|")
 
 
 def to_markdown(res: ScanResult) -> str:
     s = summarise(res)
-    out = [f"# Model scan report", "",
+    packs = ", ".join(f"{p['provider']} v{p['version']} ({p['source']})" for p in res.packs)
+    out = ["# Model scan report", "",
            f"- Repository: `{res.root}`",
            f"- Files scanned: {res.files_scanned}",
            f"- Findings: {s['total_findings']} in {s['files_with_findings']} files",
-           f"- Deprecation data: {res.source} (checked {res.checked_on})", ""]
-    out.append("| Risk | Count |\n|---|---|")
-    for r in ("high", "medium", "low", "info"):
-        if s["by_risk"].get(r):
-            out.append(f"| {r} | {s['by_risk'][r]} |")
+           f"- Migration packs: {packs}",
+           f"- SDKs detected: {', '.join(s['sdks']) or 'none'}", "",
+           "| Risk | Count |", "|---|---|"]
+    out += [f"| {r} | {s['by_risk'][r]} |" for r in ("high", "medium", "low", "info") if s["by_risk"].get(r)]
     out.append("")
-    order = ["fine_tune", "in_scope", "other_deprecated", "not_listed"]
-    for c in order:
+    for c in ["fine_tune", "in_scope", "other_deprecated", "not_listed"]:
         items = [f for f in res.findings if f.category == c]
         if not items:
             continue
         out += [f"## {CAT_LABEL[c]}", "",
-                "| File | Line | Current model | Suggested | Shutdown | Risk | Kind | Notes |",
-                "|---|---|---|---|---|---|---|---|"]
+                "| File | Line | Provider | Current model | Suggested | Shutdown | Risk | Kind | Notes |",
+                "|---|---|---|---|---|---|---|---|---|"]
         for f in items:
-            notes = "<br>".join(n.replace("|", "\\|") for n in f.notes)
             sug = f"`{f.suggested}`" if f.suggested else "manual decision"
-            conf = " (inferred)" if f.confidence == "inferred" else ""
-            out.append(f"| `{f.file}` | {f.line} | `{f.model}` | {sug}{conf} | {f.shutdown or '-'} | "
-                       f"**{f.risk}** | {f.kind} | {notes} |")
+            conf = " (inferred)" if f.confidence == "inferred" and f.suggested else ""
+            out.append(f"| `{f.file}` | {f.line} | {f.provider} | `{f.model}` | {sug}{conf} | {f.shutdown or '-'} | "
+                       f"**{f.risk}** | {f.kind} | {'<br>'.join(_esc(n) for n in f.notes)} |")
         out.append("")
     if res.env_refs:
         out += ["## Models read from environment variables", "",
-                "These are set outside the repo (hosting dashboard, CI secrets, .env on servers). "
-                "Check their deployed values too.", "",
+                "These are set outside the repo (hosting dashboard, CI secrets, .env on servers). Check their deployed values too.", "",
                 "| File | Line | Variable |", "|---|---|---|"]
-        for e in res.env_refs:
-            out.append(f"| `{e.file}` | {e.line} | `{e.variable}` |")
+        out += [f"| `{e.file}` | {e.line} | `{e.variable}` |" for e in res.env_refs]
         out.append("")
     return "\n".join(out)
+
+
+def to_summary_markdown(res: ScanResult, max_rows: int = 25) -> str:
+    """Compact markdown for CI job summaries (GitHub caps step summaries at 1 MiB)."""
+    s = summarise(res)
+    hi = s["by_risk"].get("high", 0)
+    head = "### :red_circle:" if hi else ("### :large_orange_diamond:" if s["total_findings"] else "### :white_check_mark:")
+    out = [f"{head} Model retirement scan: {s['total_findings']} reference(s), {hi} high risk", "",
+           "| Risk | Count |", "|---|---|"]
+    out += [f"| {r} | {s['by_risk'].get(r, 0)} |" for r in ("high", "medium", "low", "info")]
+    out += ["", "| Risk | File:line | Model | Suggested | Shutdown |", "|---|---|---|---|---|"]
+    rows = sorted(res.findings, key=lambda f: (-RISK_RANK[f.risk], f.file, f.line))
+    for f in rows[:max_rows]:
+        out.append(f"| {f.risk} | `{f.file}:{f.line}` | `{f.model}` | {('`'+f.suggested+'`') if f.suggested else '-'} | {f.shutdown or '-'} |")
+    if len(rows) > max_rows:
+        out.append(f"\n_{len(rows) - max_rows} more in the `scan.json` artifact._")
+    packs = ", ".join(f"{p['provider']} v{p['version']}" for p in res.packs)
+    out += ["", f"<sub>{brand.PRODUCT_NAME} free scan · packs: {packs} · scanned {res.scanned_on}</sub>"]
+    return "\n".join(out)
+
+
+def github_annotations(res: ScanResult, base: str | Path | None = None) -> list[str]:
+    """GitHub workflow commands so findings show inline on PRs. Paths are made relative to
+    `base` (the workspace / current directory), which is what GitHub expects."""
+    base = Path(base or Path.cwd()).resolve()
+    out = []
+    for f in res.findings:
+        try:
+            path = (Path(res.root) / f.file).resolve().relative_to(base).as_posix()
+        except ValueError:
+            path = f.file
+        if f.risk in ("high", "medium"):
+            level = "error" if f.risk == "high" else "warning"
+            msg = f"{f.model} -> {f.suggested or 'manual decision'} (shutdown {f.shutdown or '?'}). " + " ".join(f.notes[:2])
+            msg = msg.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+            out.append(f"::{level} file={path},line={f.line},title=Retiring model {f.model}::{msg[:900]}")
+    return out
 
 
 def write_reports(res: ScanResult, out_dir: str | Path) -> tuple[Path, Path]:

@@ -1,2 +1,2 @@
-"""Burnt & Toast Studios - OpenAI API migration kit."""
-__version__ = "0.1.0"
+"""Find and fix retiring AI model IDs (Burnt & Toast Studios). Product name: see brand.py."""
+__version__ = "0.2.0"

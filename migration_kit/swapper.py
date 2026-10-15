@@ -8,7 +8,8 @@ from pathlib import Path
 
 import yaml
 
-from .scanner import MODEL_RE, O_SERIES_RE, _quoted_or_assigned, iter_files
+from .packs import PackSet, load_packs
+from .scanner import iter_files, iter_model_tokens
 
 
 @dataclass
@@ -19,11 +20,20 @@ class Mapping:
     source: str = ""
 
 
+def mapping_from_packs(packs: PackSet, migrations: list[str] | None = None) -> Mapping:
+    """Default mapping: every auto-mappable model in each pack's headline migration(s)."""
+    reps: dict[str, str] = {}
+    for p in packs:
+        reps.update(p.default_mapping(migrations))
+    srcs = ", ".join(f"{p.provider} pack v{p.version}" for p in packs)
+    return Mapping(reps, {}, False, f"generated from {srcs}")
+
+
 def load_mapping(path: str | Path) -> Mapping:
     data = yaml.safe_load(Path(path).read_text()) or {}
     reps = {str(k): str(v) for k, v in (data.get("mappings") or {}).items()}
     for k in reps:
-        if k.startswith("ft:"):
+        if k.startswith("ft:"):  # OpenAI-style fine-tune ids; other providers' fine-tunes are caught in plan()
             raise ValueError(f"Fine-tuned id {k!r} belongs under 'fine_tuned:', not 'mappings:'")
     ft = {str(k): str(v) for k, v in (data.get("fine_tuned") or {}).items()}
     return Mapping(reps, ft, bool(data.get("include_docs", False)), str(data.get("source", "")))
@@ -53,8 +63,9 @@ class SwapResult:
         }
 
 
-def plan(root: str | Path, mapping: Mapping) -> SwapResult:
+def plan(root: str | Path, mapping: Mapping, packs: PackSet | None = None) -> SwapResult:
     root = Path(root).resolve()
+    packs = packs or load_packs()
     changes: list[Change] = []
     skipped: list[tuple[str, int, str]] = []
     diffs: list[str] = []
@@ -70,23 +81,19 @@ def plan(root: str | Path, mapping: Mapping) -> SwapResult:
         new_lines = []
         for i, line in enumerate(old_lines, 1):
             pieces, last = [], 0
-            for m in MODEL_RE.finditer(line):
-                model = m.group(1)
-                if O_SERIES_RE.match(model) and not _quoted_or_assigned(line, m.start(1), m.end(1)):
-                    continue
-                if model.startswith("ft:") and model not in mapping.fine_tuned:
+            for s, e, model, pack in iter_model_tokens(line, packs):
+                if pack.fine_tune_base(model) is not None and model not in mapping.fine_tuned:
                     skipped.append((rel, i, model))
                     continue
                 if model in table:
-                    pieces.append(line[last:m.start(1)])
+                    pieces.append(line[last:s])
                     pieces.append(table[model])
-                    last = m.end(1)
+                    last = e
                     changes.append(Change(rel, i, model, table[model]))
             pieces.append(line[last:])
             new_lines.append("".join(pieces))
         if new_lines != old_lines:
-            new_text = "".join(new_lines)
-            new_contents[rel] = new_text
+            new_contents[rel] = "".join(new_lines)
             diffs.append(_unified(old_lines, new_lines, rel))
     return SwapResult(changes, skipped, "".join(diffs), new_contents)
 

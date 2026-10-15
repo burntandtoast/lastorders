@@ -1,4 +1,4 @@
-# OpenAI model migration report: Acme Widgets Ltd (sample)
+# Model migration report: Acme Widgets Ltd (sample)
 
 Prepared by Burnt & Toast Studios on 15 October 2026.
 
@@ -6,68 +6,83 @@ Prepared by Burnt & Toast Studios on 15 October 2026.
 
 ## At a glance
 
-- **Deadline:** OpenAI removes GPT-4o, GPT-4o mini, GPT-4.1 and GPT-4.1 mini from the API on **14 January 2027** (91 days from this report).
-- **Model references found:** 17 across 8 files (8 files scanned).
-- **High risk:** 7 | **Medium:** 8 | **Low:** 1 | **Info:** 1
+- **Deadline:** Anthropic retires Claude Sonnet 4.5 on the Claude API: **30 November 2026** (46 days from this report).
+- **Deadline:** OpenAI removes GPT-4o, GPT-4o mini, GPT-4.1 and GPT-4.1 mini from the API: **14 January 2027** (91 days from this report).
+- **Model references found:** 18 across 9 files (9 files scanned).
+- **High risk:** 8 | **Medium:** 8 | **Low:** 1 | **Info:** 1
+- **Providers:** anthropic (1), openai (17)
 - **Fine-tuned models:** 1 (need a separate decision)
 - **Models set by environment variable:** `CLASSIFIER_MODEL`, `OPENAI_MODEL` (check the live values on your servers)
 - **Proposed patch:** 10 replacements in 7 files, 2 fine-tuned references left untouched
 - **Regression eval (mock):** 1 drift, 1 fail, 4 pass
 
-## What OpenAI has confirmed
+## Anthropic Claude API (stub): what's confirmed
 
-Source: [https://developers.openai.com/api/docs/deprecations](https://developers.openai.com/api/docs/deprecations) and [gpt-6-luna model page](https://developers.openai.com/api/docs/models/gpt-6-luna), checked 2026-10-15.
+Migration pack `anthropic` v2026.10.15.1 (stub). Sources: [Anthropic model deprecations](https://docs.anthropic.com/en/docs/about-claude/model-deprecations).
 
-- OpenAI announced on 14 Oct 2026 that these GPT-4 series snapshots will be removed from the API on 14 Jan 2027: gpt-4o-2024-08-06, gpt-4o-2024-11-20, gpt-4o-mini-2024-07-18, gpt-4.1-2025-04-14, gpt-4.1-mini-2025-04-14.
+- claude-sonnet-4-5-20250929 is deprecated and retires on the Claude API on 30 Nov 2026; recommended replacement claude-sonnet-5-5.
+- Anthropic gives at least 60 days' notice before retiring publicly released models.
+- Amazon Bedrock and Google Cloud set their own retirement schedules; these dates apply to Anthropic-operated platforms only.
+- temperature, top_p and top_k are deprecated on Claude 4.7 and later models (400 at non-default values).
+
+**Not confirmed:**
+
+- This is a stub pack: no live checks, no alias data, and replacements' parameter behaviour beyond the docs is untested.
+
+## OpenAI API: what's confirmed
+
+Migration pack `openai` v2026.10.15.2 (stable). Sources: [OpenAI deprecations](https://developers.openai.com/api/docs/deprecations), [GPT-6 Luna model page](https://developers.openai.com/api/docs/models/gpt-6-luna), [GPT-4o model page](https://developers.openai.com/api/docs/models/gpt-4o).
+
+- OpenAI announced on 14 Oct 2026 that gpt-4o-2024-08-06, gpt-4o-2024-11-20, gpt-4o-mini-2024-07-18, gpt-4.1-2025-04-14 and gpt-4.1-mini-2025-04-14 will be removed from the API on 14 Jan 2027.
 - OpenAI's recommended replacement for all five is gpt-6-luna.
-- Fine-tuned versions of the GPT-4 series models follow the same shutdown schedule as their base models (shutdown 14 Jan 2027).
-- gpt-6-luna does not support fine-tuning (model page: Fine-tuning - Not supported).
-- From 6 Jan 2027, active existing customers can no longer create new fine-tuning jobs.
+- Fine-tuned versions of these models follow the same shutdown schedule as their base models.
+- gpt-6-luna does not support fine-tuning. From 6 Jan 2027, active existing customers can no longer create new fine-tuning jobs.
 - gpt-6-luna supports Chat Completions, Responses, Batch, structured outputs and function calling; on Chat Completions, function calling works only with reasoning_effort set to 'none'.
 - gpt-6-luna does not support the Assistants API or legacy /v1/completions.
 - OpenAI documents a shutdown_date field on GET /v1/models (not yet filled in for this batch; see the live checks).
 
-## Confirmed by our own live API checks (2026-10-15)
+**Confirmed by our own live API checks (2026-10-15):**
 
 - gpt-6-luna rejects `max_tokens` (400 unsupported_parameter, at every reasoning effort). Use `max_completion_tokens` (Chat Completions) or `max_output_tokens` (Responses). `max_completion_tokens` also works on gpt-4o-2024-08-06.
 - gpt-6-luna accepts temperature, top_p and logprobs only with reasoning_effort 'none'. At the default and 'low' effort, temperature is accepted only at 1, and top_p and logprobs are rejected. On the Responses API, temperature and top_p work with reasoning.effort 'none' and are rejected at the default effort.
 - Chat Completions + function tools on gpt-6-luna returns 400 unless reasoning_effort is 'none' ('low' and the default both fail). Function tools on the Responses API work at the default effort.
 - Undated aliases still resolve: gpt-4o -> gpt-4o-2024-08-06, gpt-4o-mini -> gpt-4o-mini-2024-07-18, gpt-4.1 -> gpt-4.1-2025-04-14, gpt-4.1-mini -> gpt-4.1-mini-2025-04-14.
-- GET /v1/models shows shutdown_date null for all nine GPT-4o / 4.1 ids (aliases and dated snapshots) and for gpt-6-luna. The 14 Jan 2027 date isn't in the API yet, so for this batch it's not a reliable check. Earlier batches are populated (e.g. gpt-4.1-nano and gpt-4o-2024-05-13 show 2026-10-23).
+- GET /v1/models shows shutdown_date null for all nine GPT-4o / 4.1 ids and for gpt-6-luna; the 14 Jan 2027 date isn't in the API yet. Earlier batches are populated (e.g. gpt-4.1-nano and gpt-4o-2024-05-13 show 2026-10-23).
 
-## What we have not been able to confirm
+**Not confirmed:**
 
-- Whether the undated aliases (gpt-4o, gpt-4o-mini, gpt-4.1, gpt-4.1-mini) are retired or re-pointed on 14 Jan 2027. Today they resolve to dated snapshots that are on the shutdown list. OpenAI hasn't said what happens to them, and GET /v1/models doesn't show a shutdown date for them yet, so we treat them as affected.
-- Output quality, latency and cost on the client's own workload. Only the regression eval below can show that.
+- Whether the undated aliases (gpt-4o, gpt-4o-mini, gpt-4.1, gpt-4.1-mini) are retired or re-pointed on 14 Jan 2027. Today they resolve to dated snapshots that are on the shutdown list, so we treat them as affected.
+- Output quality, latency and cost on your own workload. Only a regression eval can show that.
 
 ## Findings
 
 | Risk | File | Line | Current model | Suggested | Category | Notes |
 |---|---|---|---|---|---|---|
-| **high** | `app/agent.py` | 8 | `gpt-4o-mini` | `gpt-6-luna` (inferred) | GPT-4o / 4.1 (shutdown 14 Jan 2027) | Undated alias. Live check 15 Oct 2026: it still resolves, to a dated snapshot on the 14 Jan 2027 list (gpt-4o -> gpt-4o-2024-08-06, gpt-4o-mini -> gpt-4o-mini-2024-07-18, gpt-4.1 -> gpt-4.1-2025-04-14, gpt-4.1-mini -> gpt-4.1-mini-2025-04-14). OpenAI hasn't said whether the alias is retired or re-pointed, so it's treated as affected.<br>Chat Completions + tools in this file: gpt-6-luna returns HTTP 400 for function tools on Chat Completions unless reasoning_effort is 'none' (docs + live-tested). Set it, or move to the Responses API. |
-| **high** | `app/agent.py` | 36 | `ft:gpt-4o-mini-2024-07-18:acme-widgets:intent-v3:9xYzAbC1` | decision needed | Fine-tuned model | Fine-tune of gpt-4o-mini-2024-07-18; per OpenAI it shuts down with its base model on 2027-01-14.<br>No automatic replacement: gpt-6-luna does not support fine-tuning. Options are prompting/few-shot on gpt-6-luna validated with `eval`, or re-training on a fine-tunable model (none confirmed by the kit). New fine-tuning jobs stop on 6 Jan 2027. |
-| **high** | `app/summarise.py` | 20 | `gpt-4o-2024-08-06` | `gpt-6-luna` | GPT-4o / 4.1 (shutdown 14 Jan 2027) | Uses `max_tokens`: gpt-6-luna rejects it with HTTP 400 (live-tested). Rename to `max_completion_tokens` (Chat Completions) or `max_output_tokens` (Responses).<br>Structured output in this file: gpt-6-luna lists structured_outputs as supported; verify schemas with `eval`.<br>Sets temperature/top_p/logprobs: gpt-6-luna accepts these only with reasoning_effort 'none'; at other efforts temperature must be 1 and top_p/logprobs return HTTP 400 (live-tested). |
-| **high** | `config/models.yaml` | 5 | `gpt-4.1-nano` | `gpt-5.6-luna` | Other deprecated model | Shuts down 23 Oct 2026, before the main deadline.<br>Outside the GPT-4o/4.1 migration; OpenAI's listed replacement is gpt-5.6-luna. |
-| **high** | `config/models.yaml` | 6 | `ft:gpt-4o-mini-2024-07-18:acme-widgets:intent-v3:9xYzAbC1` | decision needed | Fine-tuned model | Fine-tune of gpt-4o-mini-2024-07-18; per OpenAI it shuts down with its base model on 2027-01-14.<br>No automatic replacement: gpt-6-luna does not support fine-tuning. Options are prompting/few-shot on gpt-6-luna validated with `eval`, or re-training on a fine-tunable model (none confirmed by the kit). New fine-tuning jobs stop on 6 Jan 2027. |
-| **high** | `config/settings.json` | 2 | `gpt-4o-2024-11-20` | `gpt-6-luna` | GPT-4o / 4.1 (shutdown 14 Jan 2027) | Uses `max_tokens`: gpt-6-luna rejects it with HTTP 400 (live-tested). Rename to `max_completion_tokens` (Chat Completions) or `max_output_tokens` (Responses). |
-| **high** | `web/src/chat.ts` | 7 | `gpt-4.1` | `gpt-6-luna` (inferred) | GPT-4o / 4.1 (shutdown 14 Jan 2027) | Undated alias. Live check 15 Oct 2026: it still resolves, to a dated snapshot on the 14 Jan 2027 list (gpt-4o -> gpt-4o-2024-08-06, gpt-4o-mini -> gpt-4o-mini-2024-07-18, gpt-4.1 -> gpt-4.1-2025-04-14, gpt-4.1-mini -> gpt-4.1-mini-2025-04-14). OpenAI hasn't said whether the alias is retired or re-pointed, so it's treated as affected.<br>Chat Completions + tools in this file: gpt-6-luna returns HTTP 400 for function tools on Chat Completions unless reasoning_effort is 'none' (docs + live-tested). Set it, or move to the Responses API. |
-| **medium** | `.env.example` | 2 | `gpt-4o-mini` | `gpt-6-luna` (inferred) | GPT-4o / 4.1 (shutdown 14 Jan 2027) | Undated alias. Live check 15 Oct 2026: it still resolves, to a dated snapshot on the 14 Jan 2027 list (gpt-4o -> gpt-4o-2024-08-06, gpt-4o-mini -> gpt-4o-mini-2024-07-18, gpt-4.1 -> gpt-4.1-2025-04-14, gpt-4.1-mini -> gpt-4.1-mini-2025-04-14). OpenAI hasn't said whether the alias is retired or re-pointed, so it's treated as affected. |
-| **medium** | `.env.example` | 3 | `gpt-4.1-mini` | `gpt-6-luna` (inferred) | GPT-4o / 4.1 (shutdown 14 Jan 2027) | Undated alias. Live check 15 Oct 2026: it still resolves, to a dated snapshot on the 14 Jan 2027 list (gpt-4o -> gpt-4o-2024-08-06, gpt-4o-mini -> gpt-4o-mini-2024-07-18, gpt-4.1 -> gpt-4.1-2025-04-14, gpt-4.1-mini -> gpt-4.1-mini-2025-04-14). OpenAI hasn't said whether the alias is retired or re-pointed, so it's treated as affected. |
-| **medium** | `config/models.yaml` | 2 | `gpt-4o` | `gpt-6-luna` (inferred) | GPT-4o / 4.1 (shutdown 14 Jan 2027) | Undated alias. Live check 15 Oct 2026: it still resolves, to a dated snapshot on the 14 Jan 2027 list (gpt-4o -> gpt-4o-2024-08-06, gpt-4o-mini -> gpt-4o-mini-2024-07-18, gpt-4.1 -> gpt-4.1-2025-04-14, gpt-4.1-mini -> gpt-4.1-mini-2025-04-14). OpenAI hasn't said whether the alias is retired or re-pointed, so it's treated as affected. |
-| **medium** | `config/models.yaml` | 3 | `gpt-4o-mini-2024-07-18` | `gpt-6-luna` | GPT-4o / 4.1 (shutdown 14 Jan 2027) |  |
-| **medium** | `config/models.yaml` | 4 | `gpt-4.1-2025-04-14` | `gpt-6-luna` | GPT-4o / 4.1 (shutdown 14 Jan 2027) |  |
-| **medium** | `config/models.yaml` | 8 | `gpt-4o-transcribe` | `gpt-live-transcribe or gpt-transcribe` | Other deprecated model | Not a chat model. Do not map to gpt-6-luna (Luna does not support transcription).<br>Outside the GPT-4o/4.1 migration; OpenAI's listed replacement is gpt-live-transcribe or gpt-transcribe. |
-| **medium** | `web/src/chat.ts` | 24 | `gpt-4o-transcribe` | `gpt-live-transcribe or gpt-transcribe` | Other deprecated model | Not a chat model. Do not map to gpt-6-luna (Luna does not support transcription).<br>Outside the GPT-4o/4.1 migration; OpenAI's listed replacement is gpt-live-transcribe or gpt-transcribe. |
-| **medium** | `web/src/classify.js` | 4 | `gpt-4.1-mini-2025-04-14` | `gpt-6-luna` | GPT-4o / 4.1 (shutdown 14 Jan 2027) |  |
-| **low** | `README.md` | 4 | `gpt-4o` | `gpt-6-luna` (inferred) | GPT-4o / 4.1 (shutdown 14 Jan 2027) | Undated alias. Live check 15 Oct 2026: it still resolves, to a dated snapshot on the 14 Jan 2027 list (gpt-4o -> gpt-4o-2024-08-06, gpt-4o-mini -> gpt-4o-mini-2024-07-18, gpt-4.1 -> gpt-4.1-2025-04-14, gpt-4.1-mini -> gpt-4.1-mini-2025-04-14). OpenAI hasn't said whether the alias is retired or re-pointed, so it's treated as affected.<br>Appears in documentation/comment only. |
-| **info** | `config/settings.json` | 3 | `gpt-5.6-sol` | decision needed | Not in catalogue | Not in the kit's deprecation catalogue. Leave as-is unless the client wants to consolidate. |
+| **high** | `app/agent.py` | 8 | `gpt-4o-mini` | `gpt-6-luna` (inferred) | Headline migration | Undated alias. Live check 15 Oct 2026: it still resolves, to a dated snapshot on the 14 Jan 2027 list. OpenAI hasn't said whether the alias is retired or re-pointed, so it's treated as affected.<br>Chat Completions + tools: gpt-6-luna returns HTTP 400 for function tools on Chat Completions unless reasoning_effort is 'none'. Set it, or move to the Responses API. [live-tested] |
+| **high** | `app/agent.py` | 36 | `ft:gpt-4o-mini-2024-07-18:acme-widgets:intent-v3:9xYzAbC1` | decision needed | Fine-tuned model | Fine-tune of gpt-4o-mini-2024-07-18; it shuts down with its base model on 2027-01-14.<br>No automatic replacement: gpt-6-luna does not support fine-tuning. Options are prompting/few-shot on gpt-6-luna validated with `eval`, or re-training on a fine-tunable model. New fine-tuning jobs stop on 6 Jan 2027. |
+| **high** | `app/claude_fallback.py` | 9 | `claude-sonnet-4-5-20250929` | `claude-sonnet-5-5` | Headline migration | Deprecated 30 Sep 2026; retires 30 Nov 2026 on the Claude API.<br>Sets temperature/top_p/top_k: on Claude 4.7 and later models these return HTTP 400 at non-default values, and the anthropic Python SDK v1.0+ raises TypeError. Remove them and guide behaviour with prompting. [inferred] |
+| **high** | `app/summarise.py` | 20 | `gpt-4o-2024-08-06` | `gpt-6-luna` | Headline migration | Uses `max_tokens`: gpt-6-luna rejects it with HTTP 400. Rename to `max_completion_tokens` (Chat Completions) or `max_output_tokens` (Responses). [live-tested]<br>Sets temperature/top_p/logprobs: gpt-6-luna accepts these only with reasoning_effort 'none'; at other efforts temperature must be 1 and top_p/logprobs return HTTP 400. [live-tested]<br>Structured output: gpt-6-luna lists structured_outputs as supported (and it worked in our live eval); verify schemas with `eval`. |
+| **high** | `config/models.yaml` | 5 | `gpt-4.1-nano` | `gpt-5.6-luna` | Other retiring model | Shuts down 23 Oct 2026, before the main deadline.<br>Shuts down in 8 days.<br>Outside the headline migration; the listed replacement is gpt-5.6-luna. |
+| **high** | `config/models.yaml` | 6 | `ft:gpt-4o-mini-2024-07-18:acme-widgets:intent-v3:9xYzAbC1` | decision needed | Fine-tuned model | Fine-tune of gpt-4o-mini-2024-07-18; it shuts down with its base model on 2027-01-14.<br>No automatic replacement: gpt-6-luna does not support fine-tuning. Options are prompting/few-shot on gpt-6-luna validated with `eval`, or re-training on a fine-tunable model. New fine-tuning jobs stop on 6 Jan 2027. |
+| **high** | `config/settings.json` | 2 | `gpt-4o-2024-11-20` | `gpt-6-luna` | Headline migration | Uses `max_tokens`: gpt-6-luna rejects it with HTTP 400. Rename to `max_completion_tokens` (Chat Completions) or `max_output_tokens` (Responses). [live-tested] |
+| **high** | `web/src/chat.ts` | 7 | `gpt-4.1` | `gpt-6-luna` (inferred) | Headline migration | Undated alias. Live check 15 Oct 2026: it still resolves, to a dated snapshot on the 14 Jan 2027 list. OpenAI hasn't said whether the alias is retired or re-pointed, so it's treated as affected.<br>Chat Completions + tools: gpt-6-luna returns HTTP 400 for function tools on Chat Completions unless reasoning_effort is 'none'. Set it, or move to the Responses API. [live-tested] |
+| **medium** | `.env.example` | 2 | `gpt-4o-mini` | `gpt-6-luna` (inferred) | Headline migration | Undated alias. Live check 15 Oct 2026: it still resolves, to a dated snapshot on the 14 Jan 2027 list. OpenAI hasn't said whether the alias is retired or re-pointed, so it's treated as affected. |
+| **medium** | `.env.example` | 3 | `gpt-4.1-mini` | `gpt-6-luna` (inferred) | Headline migration | Undated alias. Live check 15 Oct 2026: it still resolves, to a dated snapshot on the 14 Jan 2027 list. OpenAI hasn't said whether the alias is retired or re-pointed, so it's treated as affected. |
+| **medium** | `config/models.yaml` | 2 | `gpt-4o` | `gpt-6-luna` (inferred) | Headline migration | Undated alias. Live check 15 Oct 2026: it still resolves, to a dated snapshot on the 14 Jan 2027 list. OpenAI hasn't said whether the alias is retired or re-pointed, so it's treated as affected. |
+| **medium** | `config/models.yaml` | 3 | `gpt-4o-mini-2024-07-18` | `gpt-6-luna` | Headline migration |  |
+| **medium** | `config/models.yaml` | 4 | `gpt-4.1-2025-04-14` | `gpt-6-luna` | Headline migration |  |
+| **medium** | `config/models.yaml` | 8 | `gpt-4o-transcribe` | `gpt-live-transcribe or gpt-transcribe` | Other retiring model | Not a chat model. Do not map to gpt-6-luna. (Transcription model.)<br>Outside the headline migration; the listed replacement is gpt-live-transcribe or gpt-transcribe. |
+| **medium** | `web/src/chat.ts` | 24 | `gpt-4o-transcribe` | `gpt-live-transcribe or gpt-transcribe` | Other retiring model | Not a chat model. Do not map to gpt-6-luna. (Transcription model.)<br>Outside the headline migration; the listed replacement is gpt-live-transcribe or gpt-transcribe. |
+| **medium** | `web/src/classify.js` | 4 | `gpt-4.1-mini-2025-04-14` | `gpt-6-luna` | Headline migration |  |
+| **low** | `README.md` | 4 | `gpt-4o` | `gpt-6-luna` (inferred) | Headline migration | Undated alias. Live check 15 Oct 2026: it still resolves, to a dated snapshot on the 14 Jan 2027 list. OpenAI hasn't said whether the alias is retired or re-pointed, so it's treated as affected.<br>Appears in documentation/comment only. |
+| **info** | `config/settings.json` | 3 | `gpt-5.6-sol` | decision needed | Not listed as retiring | Not listed as retiring in the openai pack (v2026.10.15.2). |
 
 ## Fine-tuned models
 
-These can't be swapped automatically. gpt-6-luna can't be fine-tuned, so for each one you choose to:
+These can't be swapped automatically. For each one, choose to:
 
-1. replace it with gpt-6-luna plus a stronger prompt and examples, proven with the regression eval, or
-2. re-train on another fine-tunable model, before new fine-tuning jobs close on 6 January 2027.
+1. Replace it with gpt-6-luna plus a stronger prompt and examples, proven with the regression eval, or
+2. re-train on another fine-tunable model before new fine-tuning jobs close on 6 January 2027.
 
 - `ft:gpt-4o-mini-2024-07-18:acme-widgets:intent-v3:9xYzAbC1` in `app/agent.py` line 36
 - `ft:gpt-4o-mini-2024-07-18:acme-widgets:intent-v3:9xYzAbC1` in `config/models.yaml` line 6
@@ -167,7 +182,10 @@ Nothing has been changed in your repository. This is the patch for review:
 
 ## Next steps
 
-1. **Scan:** confirm the findings above, including environment variables set outside the repo.
-2. **Swap:** review and apply the patch on a branch. Then rename `max_tokens` to `max_completion_tokens`, add `reasoning_effort: "none"` where Chat Completions uses tools or temperature/top_p (or move to the Responses API).
-3. **Eval:** run the regression suite against live models; fix prompts or schemas for any DRIFT or FAIL.
-4. **Handoff:** merge, deploy, update environment variables, and check your API usage for any remaining calls to GPT-4o / 4.1 models. (GET /v1/models doesn't show the 14 Jan 2027 date yet, so don't rely on shutdown_date alone.)
+1. Swap retired Claude model ids for the recommended replacements, remove temperature/top_p/top_k where targeting Claude 4.7+, and run a regression eval.
+2. Scan: confirm the findings, including environment variables set outside the repo.
+3. Swap: review and apply the patch on a branch. Then rename `max_tokens` to `max_completion_tokens`, and add `reasoning_effort: "none"` where Chat Completions uses tools or temperature/top_p (or move those calls to the Responses API).
+4. Eval: run the regression suite against live models and fix any DRIFT or FAIL.
+5. Handoff: merge, deploy, update environment variables, and check your API usage for any remaining calls to GPT-4o / 4.1 models. GET /v1/models doesn't show the 14 Jan 2027 date yet, so don't rely on shutdown_date alone.
+
+_Migration packs: anthropic v2026.10.15.1, openai v2026.10.15.2._

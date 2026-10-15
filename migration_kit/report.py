@@ -1,4 +1,5 @@
-"""Client-facing report (Markdown + self-contained HTML)."""
+"""Client-facing report (Markdown + self-contained HTML). Generic: all provider facts,
+deadlines and advice come from the migration packs."""
 from __future__ import annotations
 
 import datetime as dt
@@ -6,102 +7,11 @@ import html
 import json
 from pathlib import Path
 
-from . import catalogue as cat
+from . import brand
+from .packs import PackSet, load_packs
 from .scanner import CAT_LABEL
 
 RISK_ORDER = {"high": 0, "medium": 1, "low": 2, "info": 3}
-
-CONFIRMED = [
-    f"OpenAI announced on 14 Oct 2026 that these GPT-4 series snapshots will be removed from the API on "
-    f"14 Jan 2027: gpt-4o-2024-08-06, gpt-4o-2024-11-20, gpt-4o-mini-2024-07-18, gpt-4.1-2025-04-14, "
-    f"gpt-4.1-mini-2025-04-14.",
-    "OpenAI's recommended replacement for all five is gpt-6-luna.",
-    *cat.FINE_TUNE_FACTS,
-    "gpt-6-luna supports Chat Completions, Responses, Batch, structured outputs and function calling; "
-    "on Chat Completions, function calling works only with reasoning_effort set to 'none'.",
-    "gpt-6-luna does not support the Assistants API or legacy /v1/completions.",
-    "OpenAI documents a shutdown_date field on GET /v1/models (not yet filled in for this batch; see the live checks).",
-]
-UNCONFIRMED = [
-    "Whether the undated aliases (gpt-4o, gpt-4o-mini, gpt-4.1, gpt-4.1-mini) are retired or re-pointed on "
-    "14 Jan 2027. Today they resolve to dated snapshots that are on the shutdown list. OpenAI hasn't said what "
-    "happens to them, and GET /v1/models doesn't show a shutdown date for them yet, so we treat them as affected.",
-    "Output quality, latency and cost on the client's own workload. Only the regression eval below can show that.",
-]
-
-
-def _days_left(today: dt.date) -> int:
-    return (dt.date.fromisoformat(cat.PRIMARY_SHUTDOWN) - today).days
-
-
-def build_markdown(client: str, scan: dict, swap: dict | None, diff: str | None, ev: dict | None,
-                   today: dt.date, label: str | None = None) -> str:
-    s = scan["summary"]
-    findings = sorted(scan["findings"], key=lambda f: (RISK_ORDER.get(f["risk"], 9), f["file"], f["line"]))
-    o = [f"# OpenAI model migration report: {client}", "",
-         f"Prepared by Burnt & Toast Studios on {today:%d %B %Y}.", "",
-         *([f"> **{label}**", ""] if label else []),
-         "## At a glance", "",
-         f"- **Deadline:** OpenAI removes GPT-4o, GPT-4o mini, GPT-4.1 and GPT-4.1 mini from the API on "
-         f"**14 January 2027** ({_days_left(today)} days from this report).",
-         f"- **Model references found:** {s['total_findings']} across {s['files_with_findings']} files "
-         f"({scan['files_scanned']} files scanned).",
-         f"- **High risk:** {s['by_risk'].get('high', 0)} | **Medium:** {s['by_risk'].get('medium', 0)} | "
-         f"**Low:** {s['by_risk'].get('low', 0)} | **Info:** {s['by_risk'].get('info', 0)}",
-         f"- **Fine-tuned models:** {len(s['fine_tuned_models'])} (need a separate decision)"]
-    if s["env_var_model_refs"]:
-        o.append(f"- **Models set by environment variable:** {', '.join('`'+v+'`' for v in s['env_var_model_refs'])} "
-                 "(check the live values on your servers)")
-    if swap:
-        o.append(f"- **Proposed patch:** {swap['replacements']} replacements in {swap['files_changed']} files, "
-                 f"{len(swap['skipped_fine_tunes'])} fine-tuned references left untouched")
-    if ev:
-        summ = ", ".join(f"{v} {k}" for k, v in sorted(ev["summary"].items()))
-        o.append(f"- **Regression eval ({ev['mode']}):** {summ}")
-    o += ["", "## What OpenAI has confirmed", "",
-          f"Source: [{cat.DEPRECATIONS_URL}]({cat.DEPRECATIONS_URL}) and "
-          f"[gpt-6-luna model page]({cat.LUNA_URL}), checked {cat.CHECKED_ON}.", ""]
-    o += [f"- {x}" for x in CONFIRMED]
-    o += ["", f"## Confirmed by our own live API checks ({cat.LIVE_CHECKED_ON})", ""] + [f"- {x}" for x in cat.LIVE_FACTS]
-    o += ["", "## What we have not been able to confirm", ""] + [f"- {x}" for x in UNCONFIRMED]
-    o += ["", "## Findings", "", "| Risk | File | Line | Current model | Suggested | Category | Notes |",
-          "|---|---|---|---|---|---|---|"]
-    for f in findings:
-        sug = f"`{f['suggested']}`" if f["suggested"] else "decision needed"
-        if f["confidence"] == "inferred" and f["suggested"]:
-            sug += " (inferred)"
-        notes = "<br>".join(n.replace("|", "\\|") for n in f["notes"])
-        o.append(f"| **{f['risk']}** | `{f['file']}` | {f['line']} | `{f['model']}` | {sug} | "
-                 f"{CAT_LABEL[f['category']]} | {notes} |")
-    ft = [f for f in findings if f["category"] == "fine_tune"]
-    if ft:
-        o += ["", "## Fine-tuned models", "",
-              "These can't be swapped automatically. gpt-6-luna can't be fine-tuned, so for each one you choose to:", "",
-              "1. replace it with gpt-6-luna plus a stronger prompt and examples, proven with the regression eval, or",
-              "2. re-train on another fine-tunable model, before new fine-tuning jobs close on 6 January 2027.", ""]
-        o += [f"- `{f['model']}` in `{f['file']}` line {f['line']}" for f in ft]
-    if diff is not None:
-        o += ["", "## Proposed code change", "",
-              "Nothing has been changed in your repository. This is the patch for review:", "", "```diff", diff.strip(), "```"]
-    if ev:
-        o += ["", f"## Regression eval: `{ev['old_model']}` vs `{ev['new_model']}`", ""]
-        if ev["mode"] == "mock":
-            o += ["> **Demo run.** These results use simulated outputs to show the format. A real engagement runs the "
-                  "same suite against both models with the client's API key.", ""]
-        else:
-            o += [f"> **Live run** against the OpenAI API ({ev['api']} endpoint), {ev['run_at']}. {_cost_line(ev)} "
-                  "DRIFT means the new model's output differs and needs a human look; it is not automatically a failure.", ""]
-        o += ["| Case | Type | Status | What changed |", "|---|---|---|---|"]
-        for c in ev["cases"]:
-            o.append(f"| `{c['id']}` | {c['type']} | **{c['status'].upper()}** | {_explain(c)} |")
-    o += ["", "## Next steps", "",
-          "1. **Scan:** confirm the findings above, including environment variables set outside the repo.",
-          "2. **Swap:** review and apply the patch on a branch. Then rename `max_tokens` to `max_completion_tokens`, add "
-          "`reasoning_effort: \"none\"` where Chat Completions uses tools or temperature/top_p (or move to the Responses API).",
-          "3. **Eval:** run the regression suite against live models; fix prompts or schemas for any DRIFT or FAIL.",
-          "4. **Handoff:** merge, deploy, update environment variables, and check your API usage for any remaining calls "
-          "to GPT-4o / 4.1 models. (GET /v1/models doesn't show the 14 Jan 2027 date yet, so don't rely on shutdown_date alone.)", ""]
-    return "\n".join(o)
 
 
 def _cost_line(ev: dict) -> str:
@@ -136,7 +46,114 @@ def _explain(c: dict) -> str:
     return ("; ".join(parts) or "no material difference").replace("|", "/")
 
 
-# ------------------------------------------------------------------ HTML
+
+class Ctx:
+    """Everything the templates need, derived from the scan + packs."""
+
+    def __init__(self, client, scan, swap, diff, ev, today, label, packs: PackSet):
+        self.client, self.scan, self.swap, self.diff, self.ev, self.today, self.label = client, scan, swap, diff, ev, today, label
+        self.s = scan["summary"]
+        self.findings = sorted(scan["findings"], key=lambda f: (RISK_ORDER.get(f["risk"], 9), f["file"], f["line"]))
+        used = {f["provider"] for f in scan["findings"]}
+        self.packs = [p for p in packs if p.provider in used] or list(packs)
+        heads = []
+        for p in self.packs:
+            if any(f["provider"] == p.provider and f["category"] in ("in_scope", "fine_tune") for f in scan["findings"]):
+                hit = {f.get("migration") for f in scan["findings"] if f["provider"] == p.provider}
+                ms = [m for m in p.headline_migrations if m["id"] in hit] or p.headline_migrations
+                heads += [(m["shutdown"], m["title"], p) for m in ms]
+        self.deadlines = sorted(heads, key=lambda h: h[0])
+        self.deadline = self.deadlines[0] if heads else None
+
+    def days(self, d):
+        return (dt.date.fromisoformat(d[0]) - self.today).days
+
+    @property
+    def days_left(self):
+        return self.days(self.deadline) if self.deadline else None
+
+    def ft(self):
+        return [f for f in self.findings if f["category"] == "fine_tune"]
+
+    def ft_advice(self, provider):
+        p = next((p for p in self.packs if p.provider == provider), None)
+        return ((p.data.get("report") or {}).get("fine_tune_advice") or []) if p else []
+
+    def next_steps(self):
+        steps = []
+        for p in self.packs:
+            for st in (p.data.get("report") or {}).get("next_steps", []):
+                steps.append((p, st))
+        return steps
+
+
+def build_markdown(c: Ctx) -> str:
+    s = c.s
+    o = [f"# Model migration report: {c.client}", "", f"Prepared by Burnt & Toast Studios on {c.today:%d %B %Y}.", ""]
+    if c.label:
+        o += [f"> **{c.label}**", ""]
+    o += ["## At a glance", ""]
+    for d in c.deadlines:
+        o.append(f"- **Deadline:** {d[1]}: **{dt.date.fromisoformat(d[0]):%d %B %Y}** "
+                 f"({c.days(d)} days from this report).")
+    o += [f"- **Model references found:** {s['total_findings']} across {s['files_with_findings']} files "
+          f"({c.scan['files_scanned']} files scanned).",
+          f"- **High risk:** {s['by_risk'].get('high', 0)} | **Medium:** {s['by_risk'].get('medium', 0)} | "
+          f"**Low:** {s['by_risk'].get('low', 0)} | **Info:** {s['by_risk'].get('info', 0)}",
+          f"- **Providers:** " + ", ".join(f"{k} ({v})" for k, v in sorted(s.get("by_provider", {}).items())),
+          f"- **Fine-tuned models:** {len(s['fine_tuned_models'])} (need a separate decision)"]
+    if s["env_var_model_refs"]:
+        o.append("- **Models set by environment variable:** " + ", ".join(f"`{v}`" for v in s["env_var_model_refs"])
+                 + " (check the live values on your servers)")
+    if c.swap:
+        o.append(f"- **Proposed patch:** {c.swap['replacements']} replacements in {c.swap['files_changed']} files, "
+                 f"{len(c.swap['skipped_fine_tunes'])} fine-tuned references left untouched")
+    if c.ev:
+        o.append(f"- **Regression eval ({c.ev['mode']}):** " + ", ".join(f"{v} {k}" for k, v in sorted(c.ev["summary"].items())))
+    for p in c.packs:
+        f = p.data.get("facts") or {}
+        srcs = ", ".join(f"[{x.get('title', x['url'])}]({x['url']})" for x in p.data["sources"] if "://" in x["url"])
+        o += ["", f"## {p.data['name']}: what's confirmed", "",
+              f"Migration pack `{p.provider}` v{p.version} ({p.data['status']}). Sources: {srcs}.", ""]
+        o += [f"- {x}" for x in f.get("confirmed", [])]
+        if f.get("live"):
+            o += ["", f"**Confirmed by our own live API checks ({f.get('live_checked_on', '')}):**", ""] + [f"- {x}" for x in f["live"]]
+        if f.get("unconfirmed"):
+            o += ["", "**Not confirmed:**", ""] + [f"- {x}" for x in f["unconfirmed"]]
+    o += ["", "## Findings", "", "| Risk | File | Line | Current model | Suggested | Category | Notes |", "|---|---|---|---|---|---|---|"]
+    for f in c.findings:
+        sug = f"`{f['suggested']}`" if f["suggested"] else "decision needed"
+        if f["confidence"] == "inferred" and f["suggested"]:
+            sug += " (inferred)"
+        notes = "<br>".join(n.replace("|", "\\|") for n in f["notes"])
+        o.append(f"| **{f['risk']}** | `{f['file']}` | {f['line']} | `{f['model']}` | {sug} | {CAT_LABEL[f['category']]} | {notes} |")
+    if c.ft():
+        o += ["", "## Fine-tuned models", "", "These can't be swapped automatically. For each one, choose to:", ""]
+        for prov in sorted({f["provider"] for f in c.ft()}):
+            o += [f"{i}. {a}" for i, a in enumerate(c.ft_advice(prov), 1)]
+        o.append("")
+        o += [f"- `{f['model']}` in `{f['file']}` line {f['line']}" for f in c.ft()]
+    if c.diff is not None:
+        o += ["", "## Proposed code change", "", "Nothing has been changed in your repository. This is the patch for review:",
+              "", "```diff", c.diff.strip(), "```"]
+    if c.ev:
+        ev = c.ev
+        o += ["", f"## Regression eval: `{ev['old_model']}` vs `{ev['new_model']}`", ""]
+        if ev["mode"] == "mock":
+            o += ["> **Demo run.** These results use simulated outputs to show the format. A real engagement runs the "
+                  "same suite against both models with the client's API key.", ""]
+        else:
+            o += [f"> **Live run** against the provider API ({ev['api']} endpoint), {ev['run_at']}. {_cost_line(ev)} "
+                  "DRIFT means the new model's output differs and needs a human look; it is not automatically a failure.", ""]
+        o += ["| Case | Type | Status | What changed |", "|---|---|---|---|"]
+        o += [f"| `{x['id']}` | {x['type']} | **{x['status'].upper()}** | {_explain(x)} |" for x in ev["cases"]]
+    steps = c.next_steps()
+    if steps:
+        o += ["", "## Next steps", ""] + [f"{i}. {st}" for i, (_p, st) in enumerate(steps, 1)]
+    o += ["", f"_Migration packs: " + ", ".join(f"{p.provider} v{p.version}" for p in c.packs) + "._", ""]
+    return "\n".join(o)
+
+
 CSS = """
 body{font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;max-width:1100px;margin:2rem auto;padding:0 1.25rem;color:#222;line-height:1.5}
 header{border-bottom:4px solid #c8642a;padding-bottom:.75rem;margin-bottom:1.5rem}
@@ -162,37 +179,43 @@ def _e(x) -> str:
     return html.escape(str(x))
 
 
-def build_html(client: str, scan: dict, swap: dict | None, diff: str | None, ev: dict | None, today: dt.date,
-               label: str | None = None) -> str:
-    s = scan["summary"]
-    findings = sorted(scan["findings"], key=lambda f: (RISK_ORDER.get(f["risk"], 9), f["file"], f["line"]))
-    h = [f"<!doctype html><html lang='en'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>"
-         f"<title>OpenAI migration report - {_e(client)}</title><style>{CSS}</style></head><body>",
-         f"<header><div class='brand'>Burnt &amp; Toast Studios</div><h1>OpenAI model migration report</h1>"
-         f"<div>{_e(client)} &middot; {today:%d %B %Y}</div></header>",
-         *([f"<div class='note banner'><strong>{_e(label)}</strong></div>"] if label else []),
-         "<h2>At a glance</h2><div class='cards'>",
-         f"<div class='card'><div class='n'>{_days_left(today)}</div><div class='l'>days until 14 Jan 2027 shutdown</div></div>",
-         f"<div class='card'><div class='n'>{s['total_findings']}</div><div class='l'>model references in {s['files_with_findings']} files</div></div>",
-         f"<div class='card'><div class='n'>{s['by_risk'].get('high', 0)}</div><div class='l'>high-risk findings</div></div>",
-         f"<div class='card'><div class='n'>{len(s['fine_tuned_models'])}</div><div class='l'>fine-tuned models needing a decision</div></div>"]
-    if ev:
-        ok = ev["summary"].get("pass", 0) + ev["summary"].get("improved", 0)
-        h.append(f"<div class='card'><div class='n'>{ok}/{len(ev['cases'])}</div><div class='l'>eval cases passing{' (demo)' if ev['mode']=='mock' else ''}</div></div>")
+def build_html(c: Ctx) -> str:
+    s = c.s
+    h = ["<!doctype html><html lang='en'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>"
+         f"<title>Model migration report - {_e(c.client)}</title><style>{CSS}</style></head><body>",
+         f"<header><div class='brand'>Burnt &amp; Toast Studios</div><h1>Model migration report</h1>"
+         f"<div>{_e(c.client)} &middot; {c.today:%d %B %Y}</div></header>"]
+    if c.label:
+        h.append(f"<div class='note banner'><strong>{_e(c.label)}</strong></div>")
+    h.append("<h2>At a glance</h2><div class='cards'>")
+    for d in c.deadlines:
+        h.append(f"<div class='card'><div class='n'>{c.days(d)}</div><div class='l'>days until "
+                 f"{dt.date.fromisoformat(d[0]):%d %b %Y}: {_e(d[1])}</div></div>")
+    h += [f"<div class='card'><div class='n'>{s['total_findings']}</div><div class='l'>model references in {s['files_with_findings']} files</div></div>",
+          f"<div class='card'><div class='n'>{s['by_risk'].get('high', 0)}</div><div class='l'>high-risk findings</div></div>",
+          f"<div class='card'><div class='n'>{len(s['fine_tuned_models'])}</div><div class='l'>fine-tuned models needing a decision</div></div>"]
+    if c.ev:
+        ok = c.ev["summary"].get("pass", 0) + c.ev["summary"].get("improved", 0)
+        h.append(f"<div class='card'><div class='n'>{ok}/{len(c.ev['cases'])}</div><div class='l'>eval cases passing"
+                 f"{' (demo)' if c.ev['mode'] == 'mock' else ''}</div></div>")
     h.append("</div>")
     if s["env_var_model_refs"]:
         h.append("<div class='note'>Some models are chosen by environment variable ("
                  + ", ".join(f"<code>{_e(v)}</code>" for v in s["env_var_model_refs"])
                  + "). Their live values are set outside the code and must be checked on your servers.</div>")
-    h.append(f"<h2>What OpenAI has confirmed</h2><p>Source: <a href='{cat.DEPRECATIONS_URL}'>OpenAI deprecations</a> and "
-             f"<a href='{cat.LUNA_URL}'>gpt-6-luna model page</a>, checked {cat.CHECKED_ON}.</p><ul>"
-             + "".join(f"<li>{_e(x)}</li>" for x in CONFIRMED) + "</ul>")
-    h.append(f"<h2>Confirmed by our own live API checks ({cat.LIVE_CHECKED_ON})</h2><ul>"
-             + "".join(f"<li>{_e(x)}</li>" for x in cat.LIVE_FACTS) + "</ul>")
-    h.append("<h2>What we have not been able to confirm</h2><ul>" + "".join(f"<li>{_e(x)}</li>" for x in UNCONFIRMED) + "</ul>")
+    for p in c.packs:
+        f = p.data.get("facts") or {}
+        srcs = ", ".join(f"<a href='{_e(x['url'])}'>{_e(x.get('title', x['url']))}</a>" for x in p.data["sources"] if "://" in x["url"])
+        h.append(f"<h2>{_e(p.data['name'])}: what's confirmed</h2><p>Migration pack <code>{_e(p.provider)}</code> v{_e(p.version)} "
+                 f"({_e(p.data['status'])}). Sources: {srcs}.</p><ul>" + "".join(f"<li>{_e(x)}</li>" for x in f.get("confirmed", [])) + "</ul>")
+        if f.get("live"):
+            h.append(f"<h3>Confirmed by our own live API checks ({_e(f.get('live_checked_on', ''))})</h3><ul>"
+                     + "".join(f"<li>{_e(x)}</li>" for x in f["live"]) + "</ul>")
+        if f.get("unconfirmed"):
+            h.append("<h3>Not confirmed</h3><ul>" + "".join(f"<li>{_e(x)}</li>" for x in f["unconfirmed"]) + "</ul>")
     h.append("<h2>Findings</h2><table><tr><th>Risk</th><th>File</th><th>Line</th><th>Current model</th>"
              "<th>Suggested</th><th>Category</th><th>Notes</th></tr>")
-    for f in findings:
+    for f in c.findings:
         sug = f"<code>{_e(f['suggested'])}</code>" if f["suggested"] else "<em>decision needed</em>"
         if f["confidence"] == "inferred" and f["suggested"]:
             sug += " <small>(inferred)</small>"
@@ -200,60 +223,58 @@ def build_html(client: str, scan: dict, swap: dict | None, diff: str | None, ev:
                  f"<td>{f['line']}</td><td><code>{_e(f['model'])}</code></td><td>{sug}</td>"
                  f"<td>{_e(CAT_LABEL[f['category']])}</td><td>{'<br>'.join(_e(n) for n in f['notes'])}</td></tr>")
     h.append("</table>")
-    ft = [f for f in findings if f["category"] == "fine_tune"]
-    if ft:
-        h.append("<h2>Fine-tuned models</h2><p>These can't be swapped automatically, because gpt-6-luna can't be "
-                 "fine-tuned. For each one, choose to:</p><ol><li>replace it with gpt-6-luna plus a stronger prompt and "
-                 "examples, proven with the regression eval, or</li><li>re-train on another fine-tunable model before new "
-                 "fine-tuning jobs close on 6 January 2027.</li></ol><ul>"
-                 + "".join(f"<li><code>{_e(f['model'])}</code> in <code>{_e(f['file'])}</code> line {f['line']}</li>" for f in ft)
+    if c.ft():
+        adv = []
+        for prov in sorted({f["provider"] for f in c.ft()}):
+            adv += c.ft_advice(prov)
+        h.append("<h2>Fine-tuned models</h2><p>These can't be swapped automatically. For each one, choose to:</p><ol>"
+                 + "".join(f"<li>{_e(a)}</li>" for a in adv) + "</ol><ul>"
+                 + "".join(f"<li><code>{_e(f['model'])}</code> in <code>{_e(f['file'])}</code> line {f['line']}</li>" for f in c.ft())
                  + "</ul>")
-    if diff is not None:
+    if c.diff is not None:
         lines = []
-        for ln in diff.splitlines():
+        for ln in c.diff.splitlines():
             cls = "hdr" if ln.startswith(("---", "+++", "@@")) else "add" if ln.startswith("+") else "del" if ln.startswith("-") else ""
             lines.append(f"<span class='{cls}'>{_e(ln)}</span>" if cls else _e(ln))
-        extra = f" {swap['replacements']} replacements in {swap['files_changed']} files." if swap else ""
+        extra = f" {c.swap['replacements']} replacements in {c.swap['files_changed']} files." if c.swap else ""
         h.append(f"<h2>Proposed code change</h2><p>Nothing has been changed in your repository. This patch is for review.{extra}</p>"
                  f"<pre class='diff'>{chr(10).join(lines)}</pre>")
-    if ev:
+    if c.ev:
+        ev = c.ev
         h.append(f"<h2>Regression eval: <code>{_e(ev['old_model'])}</code> vs <code>{_e(ev['new_model'])}</code></h2>")
         if ev["mode"] == "mock":
             h.append("<div class='note'><strong>Demo run.</strong> These results use simulated outputs to show the format. "
                      "A real engagement runs the same suite against both models with the client's API key.</div>")
         else:
-            h.append(f"<div class='note'><strong>Live run</strong> against the OpenAI API ({_e(ev['api'])} endpoint), "
+            h.append(f"<div class='note'><strong>Live run</strong> against the provider API ({_e(ev['api'])} endpoint), "
                      f"{_e(ev['run_at'])}. {_e(_cost_line(ev))} DRIFT means the new model's output differs and needs a "
                      "human look; it is not automatically a failure.</div>")
         h.append("<table><tr><th>Case</th><th>Type</th><th>Status</th><th>What changed</th></tr>")
-        for c in ev["cases"]:
-            h.append(f"<tr><td><code>{_e(c['id'])}</code></td><td>{_e(c['type'])}</td>"
-                     f"<td><span class='risk {c['status']}'>{_e(c['status'])}</span></td><td>{_e(_explain(c))}</td></tr>")
+        for x in ev["cases"]:
+            h.append(f"<tr><td><code>{_e(x['id'])}</code></td><td>{_e(x['type'])}</td>"
+                     f"<td><span class='risk {x['status']}'>{_e(x['status'])}</span></td><td>{_e(_explain(x))}</td></tr>")
         h.append("</table>")
-    h.append("<h2>Next steps</h2><ol>"
-             "<li><strong>Scan:</strong> confirm the findings, including environment variables set outside the repo.</li>"
-             "<li><strong>Swap:</strong> review and apply the patch on a branch. Then rename <code>max_tokens</code> to "
-             "<code>max_completion_tokens</code>, and add <code>reasoning_effort: \"none\"</code> where Chat Completions uses "
-             "tools or temperature/top_p (or move those calls to the Responses API).</li>"
-             "<li><strong>Eval:</strong> run the regression suite against live models and fix any DRIFT or FAIL.</li>"
-             "<li><strong>Handoff:</strong> merge, deploy, update environment variables, and check your API usage for any "
-             "remaining calls to GPT-4o / 4.1 models. <code>GET /v1/models</code> doesn't show the 14 Jan 2027 date yet, so "
-             "don't rely on <code>shutdown_date</code> alone.</li></ol>")
-    h.append(f"<footer>Generated by the Burnt &amp; Toast Studios OpenAI migration kit. Deprecation data checked {cat.CHECKED_ON}; "
-             "re-verify against OpenAI's documentation before acting.</footer></body></html>")
+    steps = c.next_steps()
+    if steps:
+        h.append("<h2>Next steps</h2><ol>" + "".join(f"<li>{_e(st)}</li>" for _p, st in steps) + "</ol>")
+    h.append(f"<footer>Generated by {_e(brand.PRODUCT_NAME)} ({_e(brand.COMPANY)}). Migration packs: "
+             + ", ".join(f"{_e(p.provider)} v{_e(p.version)}" for p in c.packs)
+             + ". Re-verify against the providers' documentation before acting.</footer></body></html>")
     return "\n".join(h)
 
 
 def generate(client: str, scan_path: str | Path, out_dir: str | Path, swap_path=None, diff_path=None,
-             eval_path=None, today: dt.date | None = None, label: str | None = None) -> tuple[Path, Path]:
+             eval_path=None, today: dt.date | None = None, label: str | None = None,
+             packs: PackSet | None = None) -> tuple[Path, Path]:
     today = today or dt.date.today()
     scan = json.loads(Path(scan_path).read_text())
     swap = json.loads(Path(swap_path).read_text()) if swap_path else None
     diff = Path(diff_path).read_text() if diff_path else None
     ev = json.loads(Path(eval_path).read_text()) if eval_path else None
+    c = Ctx(client, scan, swap, diff, ev, today, label, packs or load_packs())
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
     md, ht = out / "client-report.md", out / "client-report.html"
-    md.write_text(build_markdown(client, scan, swap, diff, ev, today, label))
-    ht.write_text(build_html(client, scan, swap, diff, ev, today, label))
+    md.write_text(build_markdown(c))
+    ht.write_text(build_html(c))
     return md, ht

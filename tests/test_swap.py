@@ -31,6 +31,7 @@ def test_swap_writes_diff_and_never_touches_repo(repo, tmp_path):
     assert "gpt-4o-transcribe" not in [c.old for c in res.changes]
     assert "gpt-4.1-nano" not in [c.old for c in res.changes]
     assert len(res.skipped_fine_tunes) == 2
+    assert "claude-sonnet-4-5-20250929" not in [c.old for c in res.changes]   # not in this mapping file
     assert "README.md" not in res.new_contents           # docs off by default
 
 
@@ -70,3 +71,13 @@ def test_ft_in_mappings_section_rejected(tmp_path):
     m.write_text('mappings: {"ft:gpt-4o:x::y": gpt-6-luna}\n')
     with pytest.raises(ValueError):
         swapper.load_mapping(m)
+
+
+def test_default_mapping_from_packs(repo, tmp_path):
+    from migration_kit.packs import load_packs
+    m = swapper.mapping_from_packs(load_packs())
+    assert m.replacements["gpt-4o-2024-08-06"] == "gpt-6-luna"
+    assert m.replacements["claude-sonnet-4-5-20250929"] == "claude-sonnet-5-5"
+    assert "gpt-4o-transcribe" not in m.replacements and "gpt-4.1-nano" not in m.replacements
+    res = swapper.plan(repo, m)
+    assert "claude-sonnet-4-5-20250929" in [c.old for c in res.changes]

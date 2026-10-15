@@ -400,8 +400,11 @@ def run_suite(suite: dict, provider, old_model: str | None = None, new_model: st
         raise ValueError("Need old and new models (suite 'models:' or --old/--new)")
     results = []
     for case in suite["cases"]:
-        o = provider.run(case, old_m, "old", suite)
-        n = provider.run(case, new_m, "new", suite)
+        if case.get("skip"):
+            continue
+        cm = case.get("models") or {}           # per-case override, e.g. a fine-tune vs the new base model
+        o = provider.run(case, cm.get("old", old_m), "old", suite)
+        n = provider.run(case, cm.get("new", new_m), "new", suite)
         results.append(compare(case, o, n))
     counts: dict[str, int] = {}
     for r in results:
@@ -442,6 +445,10 @@ def usage_and_cost(results: list[CaseResult], pricing: dict, old_m: str, new_m: 
     if all("est_cost_usd" in out[s] for s in ("old", "new")):
         out["total_est_cost_usd"] = round(out["old"]["est_cost_usd"] + out["new"]["est_cost_usd"], 6)
     return out
+
+
+# Provider adapters the eval can call (provider-specific by design; the scanner/report are not).
+ADAPTERS = {"openai"}
 
 
 def make_provider(suite: dict, dry_run: bool):

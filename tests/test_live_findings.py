@@ -2,7 +2,7 @@
 import os
 
 import pytest
-from conftest import ROOT
+from conftest import ROOT, TODAY
 from migration_kit import evaluator as ev
 from migration_kit.scanner import scan
 
@@ -51,7 +51,7 @@ def test_cost_estimate():
 
 
 def test_scan_flags_max_tokens_and_sampling_as_high():
-    fs = {(f.file, f.model): f for f in scan(ROOT / "examples" / "sample-app").findings}
+    fs = {(f.file, f.model): f for f in scan(ROOT / "examples" / "sample-app", today=TODAY).findings}
     s = fs[("app/summarise.py", "gpt-4o-2024-08-06")]
     assert s.risk == "high" and any("max_completion_tokens" in n for n in s.notes)
     assert any("temperature" in n for n in s.notes)
@@ -61,8 +61,8 @@ def test_scan_flags_max_tokens_and_sampling_as_high():
 
 def test_reasoning_effort_none_suppresses_tool_warning(tmp_path):
     (tmp_path / "a.py").write_text('client.chat.completions.create(model="gpt-4o", tools=T, reasoning_effort="none")\n')
-    f = scan(tmp_path).findings[0]
-    assert f.risk == "medium" and not any("reasoning_effort is 'none'" in n for n in f.notes)
+    f = scan(tmp_path, today=TODAY).findings[0]
+    assert f.risk == "medium" and "luna-chat-tools-effort" not in f.rules
 
 
 @pytest.mark.skipif(not os.environ.get("RUN_LIVE_TESTS"), reason="set RUN_LIVE_TESTS=1 (and OPENAI_API_KEY) to hit the real API")

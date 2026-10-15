@@ -1,6 +1,6 @@
 {
-  "files_changed": 7,
-  "replacements": 10,
+  "files_changed": 8,
+  "replacements": 11,
   "skipped_fine_tunes": [
     {
       "file": "app/agent.py",
@@ -31,6 +31,12 @@
       "line": 8,
       "old": "gpt-4o-mini",
       "new": "gpt-6-luna"
+    },
+    {
+      "file": "app/claude_fallback.py",
+      "line": 9,
+      "old": "claude-sonnet-4-5-20250929",
+      "new": "claude-sonnet-5-5"
     },
     {
       "file": "app/summarise.py",

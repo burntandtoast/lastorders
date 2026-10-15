@@ -1,0 +1,6 @@
+include README.md CHANGELOG.md
+recursive-include migration_kit/pack_data *.json
+prune examples
+prune probes
+prune site
+prune tests

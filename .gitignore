@@ -3,3 +3,6 @@ __pycache__/
 *.egg-info/
 migration-out/
 .pytest_cache/
+dist/
+build/
+.cache/

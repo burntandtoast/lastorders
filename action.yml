@@ -1,0 +1,116 @@
+name: "ModelMigrate model retirement scan"
+description: "Free scan for retiring AI model IDs (OpenAI, Anthropic, ...) in your repo. Posts a job summary and uploads scan.json."
+author: "Burnt & Toast Studios"
+branding:
+  icon: "alert-triangle"
+  color: "orange"
+
+inputs:
+  path:
+    description: "Directory to scan, relative to the workspace."
+    default: "."
+  fail-on-high:
+    description: "Fail the job if any high-risk finding is found (true/false)."
+    default: "false"
+  include-docs:
+    description: "Also scan .md/.txt files (true/false)."
+    default: "true"
+  annotations:
+    description: "Show findings as inline annotations on the PR diff (true/false)."
+    default: "true"
+  packs:
+    description: "Comma-separated provider packs to use, e.g. 'openai,anthropic'. Empty = all."
+    default: ""
+  offline:
+    description: "Don't fetch the latest migration packs; use the copies bundled with the tool (true/false)."
+    default: "false"
+  packs-url:
+    description: "Override the base URL for hosted migration packs."
+    default: ""
+  version:
+    description: "Package version from PyPI (e.g. '0.2.0'). Empty = install from this action's own source."
+    default: ""
+  python-version:
+    description: "Python version to run the scan with."
+    default: "3.12"
+  artifact-name:
+    description: "Name of the uploaded artifact."
+    default: "modelmigrate-scan"
+
+outputs:
+  total:
+    description: "Number of model references found."
+    value: ${{ steps.scan.outputs.total }}
+  high:
+    description: "Number of high-risk findings."
+    value: ${{ steps.scan.outputs.high }}
+  report-dir:
+    description: "Directory containing scan.json and scan.md."
+    value: ${{ steps.scan.outputs.dir }}
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Install ModelMigrate
+      shell: bash
+      env:
+        BTM_VERSION: ${{ inputs.version }}
+        BTM_ACTION_PATH: ${{ github.action_path }}
+      run: |
+        python -m pip install --disable-pip-version-check --quiet --upgrade pip
+        if [ -n "$BTM_VERSION" ]; then
+          python -m pip install --disable-pip-version-check --quiet "modelmigrate==$BTM_VERSION"
+        else
+          python -m pip install --disable-pip-version-check --quiet "$BTM_ACTION_PATH"
+        fi
+        modelmigrate --version
+
+    - name: Scan for retiring model IDs
+      id: scan
+      shell: bash
+      env:
+        BTM_PATH: ${{ inputs.path }}
+        BTM_DOCS: ${{ inputs.include-docs }}
+        BTM_ANNOTATIONS: ${{ inputs.annotations }}
+        BTM_PACKS: ${{ inputs.packs }}
+        BTM_OFFLINE: ${{ inputs.offline }}
+        BTM_PACKS_URL: ${{ inputs.packs-url }}
+      run: |
+        out="$RUNNER_TEMP/modelmigrate"
+        args=(scan "$BTM_PATH" --out "$out" --summary-file "$GITHUB_STEP_SUMMARY")
+        [ "$BTM_DOCS" = "true" ] || args+=(--no-docs)
+        [ "$BTM_ANNOTATIONS" = "true" ] && args+=(--annotations)
+        [ -n "$BTM_PACKS" ] && args+=(--pack "$BTM_PACKS")
+        [ "$BTM_OFFLINE" = "true" ] && args+=(--offline)
+        [ -n "$BTM_PACKS_URL" ] && args+=(--packs-url "$BTM_PACKS_URL")
+        modelmigrate "${args[@]}"
+        python - "$out/scan.json" >> "$GITHUB_OUTPUT" <<'PY'
+        import json, sys
+        s = json.load(open(sys.argv[1]))["summary"]
+        print(f"total={s['total_findings']}")
+        print(f"high={s['by_risk'].get('high', 0)}")
+        PY
+        echo "dir=$out" >> "$GITHUB_OUTPUT"
+
+    - name: Upload scan report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: |
+          ${{ runner.temp }}/modelmigrate/scan.json
+          ${{ runner.temp }}/modelmigrate/scan.md
+        if-no-files-found: warn
+
+    - name: Fail on high-risk findings
+      if: inputs.fail-on-high == 'true' && steps.scan.outputs.high != '0'
+      shell: bash
+      env:
+        BTM_HIGH: ${{ steps.scan.outputs.high }}
+      run: |
+        echo "::error::ModelMigrate found $BTM_HIGH high-risk model reference(s). See the job summary and the scan artifact."
+        exit 1

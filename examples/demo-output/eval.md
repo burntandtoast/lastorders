@@ -1,7 +1,7 @@
 # Regression eval: acme-widgets-support-bot
 
 - Old model: `gpt-4o-2024-08-06`  ->  New model: `gpt-6-luna`
-- API: chat | Mode: **mock** | Run: 2026-10-15T09:51:49+0100
+- API: chat | Mode: **mock** | Run: 2026-10-15T10:07:47+0100
 - **Dry run: outputs are simulated, not real model responses.**
 
 | Status | Count |

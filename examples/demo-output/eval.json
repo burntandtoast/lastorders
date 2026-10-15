@@ -19,7 +19,7 @@
   "mode": "mock",
   "old_model": "gpt-4o-2024-08-06",
   "new_model": "gpt-6-luna",
-  "run_at": "2026-10-15T09:51:49+0100",
+  "run_at": "2026-10-15T10:07:47+0100",
   "summary": {
     "pass": 4,
     "drift": 1,

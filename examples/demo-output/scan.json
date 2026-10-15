@@ -1,12 +1,30 @@
 {
+  "tool": "modelmigrate",
   "root": "/workspace/migration-kit/examples/sample-app",
-  "files_scanned": 8,
-  "checked_on": "2026-10-15",
-  "source": "https://developers.openai.com/api/docs/deprecations",
+  "files_scanned": 9,
+  "scanned_on": "2026-10-15",
+  "packs": [
+    {
+      "provider": "anthropic",
+      "name": "Anthropic Claude API (stub)",
+      "version": "2026.10.15.1",
+      "status": "stub",
+      "source": "bundled",
+      "detail": ""
+    },
+    {
+      "provider": "openai",
+      "name": "OpenAI API",
+      "version": "2026.10.15.2",
+      "status": "stable",
+      "source": "bundled",
+      "detail": ""
+    }
+  ],
   "summary": {
-    "total_findings": 17,
+    "total_findings": 18,
     "by_category": {
-      "in_scope": 11,
+      "in_scope": 12,
       "fine_tune": 2,
       "other_deprecated": 3,
       "not_listed": 1
@@ -14,16 +32,24 @@
     "by_risk": {
       "medium": 8,
       "low": 1,
-      "high": 7,
+      "high": 8,
       "info": 1
     },
-    "files_with_findings": 8,
+    "by_provider": {
+      "openai": 17,
+      "anthropic": 1
+    },
+    "files_with_findings": 9,
     "fine_tuned_models": [
       "ft:gpt-4o-mini-2024-07-18:acme-widgets:intent-v3:9xYzAbC1"
     ],
     "env_var_model_refs": [
       "CLASSIFIER_MODEL",
       "OPENAI_MODEL"
+    ],
+    "sdks": [
+      "anthropic:anthropic",
+      "openai:openai"
     ]
   },
   "findings": [
@@ -32,6 +58,7 @@
       "line": 2,
       "column": 14,
       "model": "gpt-4o-mini",
+      "provider": "openai",
       "kind": "env",
       "language": "env",
       "snippet": "OPENAI_MODEL=gpt-4o-mini",
@@ -40,8 +67,10 @@
       "suggested": "gpt-6-luna",
       "confidence": "inferred",
       "risk": "medium",
+      "migration": "gpt4-series-2027-01-14",
+      "rules": [],
       "notes": [
-        "Undated alias. Live check 15 Oct 2026: it still resolves, to a dated snapshot on the 14 Jan 2027 list (gpt-4o -> gpt-4o-2024-08-06, gpt-4o-mini -> gpt-4o-mini-2024-07-18, gpt-4.1 -> gpt-4.1-2025-04-14, gpt-4.1-mini -> gpt-4.1-mini-2025-04-14). OpenAI hasn't said whether the alias is retired or re-pointed, so it's treated as affected."
+        "Undated alias. Live check 15 Oct 2026: it still resolves, to a dated snapshot on the 14 Jan 2027 list. OpenAI hasn't said whether the alias is retired or re-pointed, so it's treated as affected."
       ]
     },
     {
@@ -49,6 +78,7 @@
       "line": 3,
       "column": 18,
       "model": "gpt-4.1-mini",
+      "provider": "openai",
       "kind": "env",
       "language": "env",
       "snippet": "CLASSIFIER_MODEL=gpt-4.1-mini",
@@ -57,8 +87,10 @@
       "suggested": "gpt-6-luna",
       "confidence": "inferred",
       "risk": "medium",
+      "migration": "gpt4-series-2027-01-14",
+      "rules": [],
       "notes": [
-        "Undated alias. Live check 15 Oct 2026: it still resolves, to a dated snapshot on the 14 Jan 2027 list (gpt-4o -> gpt-4o-2024-08-06, gpt-4o-mini -> gpt-4o-mini-2024-07-18, gpt-4.1 -> gpt-4.1-2025-04-14, gpt-4.1-mini -> gpt-4.1-mini-2025-04-14). OpenAI hasn't said whether the alias is retired or re-pointed, so it's treated as affected."
+        "Undated alias. Live check 15 Oct 2026: it still resolves, to a dated snapshot on the 14 Jan 2027 list. OpenAI hasn't said whether the alias is retired or re-pointed, so it's treated as affected."
       ]
     },
     {
@@ -66,6 +98,7 @@
       "line": 4,
       "column": 2,
       "model": "gpt-4o",
+      "provider": "openai",
       "kind": "doc",
       "language": "markdown",
       "snippet": "`gpt-4o` for chat and uses a fine-tuned intent classifier.",
@@ -74,8 +107,10 @@
       "suggested": "gpt-6-luna",
       "confidence": "inferred",
       "risk": "low",
+      "migration": "gpt4-series-2027-01-14",
+      "rules": [],
       "notes": [
-        "Undated alias. Live check 15 Oct 2026: it still resolves, to a dated snapshot on the 14 Jan 2027 list (gpt-4o -> gpt-4o-2024-08-06, gpt-4o-mini -> gpt-4o-mini-2024-07-18, gpt-4.1 -> gpt-4.1-2025-04-14, gpt-4.1-mini -> gpt-4.1-mini-2025-04-14). OpenAI hasn't said whether the alias is retired or re-pointed, so it's treated as affected.",
+        "Undated alias. Live check 15 Oct 2026: it still resolves, to a dated snapshot on the 14 Jan 2027 list. OpenAI hasn't said whether the alias is retired or re-pointed, so it's treated as affected.",
         "Appears in documentation/comment only."
       ]
     },
@@ -84,6 +119,7 @@
       "line": 8,
       "column": 36,
       "model": "gpt-4o-mini",
+      "provider": "openai",
       "kind": "sdk_call",
       "language": "python",
       "snippet": "MODEL = os.getenv(\"OPENAI_MODEL\", \"gpt-4o-mini\")",
@@ -92,9 +128,13 @@
       "suggested": "gpt-6-luna",
       "confidence": "inferred",
       "risk": "high",
+      "migration": "gpt4-series-2027-01-14",
+      "rules": [
+        "luna-chat-tools-effort"
+      ],
       "notes": [
-        "Undated alias. Live check 15 Oct 2026: it still resolves, to a dated snapshot on the 14 Jan 2027 list (gpt-4o -> gpt-4o-2024-08-06, gpt-4o-mini -> gpt-4o-mini-2024-07-18, gpt-4.1 -> gpt-4.1-2025-04-14, gpt-4.1-mini -> gpt-4.1-mini-2025-04-14). OpenAI hasn't said whether the alias is retired or re-pointed, so it's treated as affected.",
-        "Chat Completions + tools in this file: gpt-6-luna returns HTTP 400 for function tools on Chat Completions unless reasoning_effort is 'none' (docs + live-tested). Set it, or move to the Responses API."
+        "Undated alias. Live check 15 Oct 2026: it still resolves, to a dated snapshot on the 14 Jan 2027 list. OpenAI hasn't said whether the alias is retired or re-pointed, so it's treated as affected.",
+        "Chat Completions + tools: gpt-6-luna returns HTTP 400 for function tools on Chat Completions unless reasoning_effort is 'none'. Set it, or move to the Responses API. [live-tested]"
       ]
     },
     {
@@ -102,6 +142,7 @@
       "line": 36,
       "column": 16,
       "model": "ft:gpt-4o-mini-2024-07-18:acme-widgets:intent-v3:9xYzAbC1",
+      "provider": "openai",
       "kind": "sdk_call",
       "language": "python",
       "snippet": "model=\"ft:gpt-4o-mini-2024-07-18:acme-widgets:intent-v3:9xYzAbC1\",",
@@ -110,9 +151,34 @@
       "suggested": null,
       "confidence": "confirmed",
       "risk": "high",
+      "migration": "gpt4-series-2027-01-14",
+      "rules": [],
       "notes": [
-        "Fine-tune of gpt-4o-mini-2024-07-18; per OpenAI it shuts down with its base model on 2027-01-14.",
-        "No automatic replacement: gpt-6-luna does not support fine-tuning. Options are prompting/few-shot on gpt-6-luna validated with `eval`, or re-training on a fine-tunable model (none confirmed by the kit). New fine-tuning jobs stop on 6 Jan 2027."
+        "Fine-tune of gpt-4o-mini-2024-07-18; it shuts down with its base model on 2027-01-14.",
+        "No automatic replacement: gpt-6-luna does not support fine-tuning. Options are prompting/few-shot on gpt-6-luna validated with `eval`, or re-training on a fine-tunable model. New fine-tuning jobs stop on 6 Jan 2027."
+      ]
+    },
+    {
+      "file": "app/claude_fallback.py",
+      "line": 9,
+      "column": 16,
+      "model": "claude-sonnet-4-5-20250929",
+      "provider": "anthropic",
+      "kind": "sdk_call",
+      "language": "python",
+      "snippet": "model=\"claude-sonnet-4-5-20250929\",",
+      "category": "in_scope",
+      "shutdown": "2026-11-30",
+      "suggested": "claude-sonnet-5-5",
+      "confidence": "confirmed",
+      "risk": "high",
+      "migration": "claude-sonnet-4-5-2026-11-30",
+      "rules": [
+        "claude-sampling-deprecated"
+      ],
+      "notes": [
+        "Deprecated 30 Sep 2026; retires 30 Nov 2026 on the Claude API.",
+        "Sets temperature/top_p/top_k: on Claude 4.7 and later models these return HTTP 400 at non-default values, and the anthropic Python SDK v1.0+ raises TypeError. Remove them and guide behaviour with prompting. [inferred]"
       ]
     },
     {
@@ -120,6 +186,7 @@
       "line": 20,
       "column": 16,
       "model": "gpt-4o-2024-08-06",
+      "provider": "openai",
       "kind": "sdk_call",
       "language": "python",
       "snippet": "model=\"gpt-4o-2024-08-06\",",
@@ -128,10 +195,16 @@
       "suggested": "gpt-6-luna",
       "confidence": "confirmed",
       "risk": "high",
+      "migration": "gpt4-series-2027-01-14",
+      "rules": [
+        "luna-max-tokens",
+        "luna-sampling",
+        "luna-structured"
+      ],
       "notes": [
-        "Uses `max_tokens`: gpt-6-luna rejects it with HTTP 400 (live-tested). Rename to `max_completion_tokens` (Chat Completions) or `max_output_tokens` (Responses).",
-        "Structured output in this file: gpt-6-luna lists structured_outputs as supported; verify schemas with `eval`.",
-        "Sets temperature/top_p/logprobs: gpt-6-luna accepts these only with reasoning_effort 'none'; at other efforts temperature must be 1 and top_p/logprobs return HTTP 400 (live-tested)."
+        "Uses `max_tokens`: gpt-6-luna rejects it with HTTP 400. Rename to `max_completion_tokens` (Chat Completions) or `max_output_tokens` (Responses). [live-tested]",
+        "Sets temperature/top_p/logprobs: gpt-6-luna accepts these only with reasoning_effort 'none'; at other efforts temperature must be 1 and top_p/logprobs return HTTP 400. [live-tested]",
+        "Structured output: gpt-6-luna lists structured_outputs as supported (and it worked in our live eval); verify schemas with `eval`."
       ]
     },
     {
@@ -139,6 +212,7 @@
       "line": 2,
       "column": 12,
       "model": "gpt-4o",
+      "provider": "openai",
       "kind": "config",
       "language": "yaml",
       "snippet": "default: gpt-4o",
@@ -147,8 +221,10 @@
       "suggested": "gpt-6-luna",
       "confidence": "inferred",
       "risk": "medium",
+      "migration": "gpt4-series-2027-01-14",
+      "rules": [],
       "notes": [
-        "Undated alias. Live check 15 Oct 2026: it still resolves, to a dated snapshot on the 14 Jan 2027 list (gpt-4o -> gpt-4o-2024-08-06, gpt-4o-mini -> gpt-4o-mini-2024-07-18, gpt-4.1 -> gpt-4.1-2025-04-14, gpt-4.1-mini -> gpt-4.1-mini-2025-04-14). OpenAI hasn't said whether the alias is retired or re-pointed, so it's treated as affected."
+        "Undated alias. Live check 15 Oct 2026: it still resolves, to a dated snapshot on the 14 Jan 2027 list. OpenAI hasn't said whether the alias is retired or re-pointed, so it's treated as affected."
       ]
     },
     {
@@ -156,6 +232,7 @@
       "line": 3,
       "column": 13,
       "model": "gpt-4o-mini-2024-07-18",
+      "provider": "openai",
       "kind": "config",
       "language": "yaml",
       "snippet": "fallback: gpt-4o-mini-2024-07-18",
@@ -164,6 +241,8 @@
       "suggested": "gpt-6-luna",
       "confidence": "confirmed",
       "risk": "medium",
+      "migration": "gpt4-series-2027-01-14",
+      "rules": [],
       "notes": []
     },
     {
@@ -171,6 +250,7 @@
       "line": 4,
       "column": 17,
       "model": "gpt-4.1-2025-04-14",
+      "provider": "openai",
       "kind": "config",
       "language": "yaml",
       "snippet": "long_context: gpt-4.1-2025-04-14",
@@ -179,6 +259,8 @@
       "suggested": "gpt-6-luna",
       "confidence": "confirmed",
       "risk": "medium",
+      "migration": "gpt4-series-2027-01-14",
+      "rules": [],
       "notes": []
     },
     {
@@ -186,6 +268,7 @@
       "line": 5,
       "column": 18,
       "model": "gpt-4.1-nano",
+      "provider": "openai",
       "kind": "config",
       "language": "yaml",
       "snippet": "cheap_tagging: gpt-4.1-nano",
@@ -194,9 +277,12 @@
       "suggested": "gpt-5.6-luna",
       "confidence": "confirmed",
       "risk": "high",
+      "migration": null,
+      "rules": [],
       "notes": [
         "Shuts down 23 Oct 2026, before the main deadline.",
-        "Outside the GPT-4o/4.1 migration; OpenAI's listed replacement is gpt-5.6-luna."
+        "Shuts down in 8 days.",
+        "Outside the headline migration; the listed replacement is gpt-5.6-luna."
       ]
     },
     {
@@ -204,6 +290,7 @@
       "line": 6,
       "column": 22,
       "model": "ft:gpt-4o-mini-2024-07-18:acme-widgets:intent-v3:9xYzAbC1",
+      "provider": "openai",
       "kind": "config",
       "language": "yaml",
       "snippet": "intent_classifier: ft:gpt-4o-mini-2024-07-18:acme-widgets:intent-v3:9xYzAbC1",
@@ -212,9 +299,11 @@
       "suggested": null,
       "confidence": "confirmed",
       "risk": "high",
+      "migration": "gpt4-series-2027-01-14",
+      "rules": [],
       "notes": [
-        "Fine-tune of gpt-4o-mini-2024-07-18; per OpenAI it shuts down with its base model on 2027-01-14.",
-        "No automatic replacement: gpt-6-luna does not support fine-tuning. Options are prompting/few-shot on gpt-6-luna validated with `eval`, or re-training on a fine-tunable model (none confirmed by the kit). New fine-tuning jobs stop on 6 Jan 2027."
+        "Fine-tune of gpt-4o-mini-2024-07-18; it shuts down with its base model on 2027-01-14.",
+        "No automatic replacement: gpt-6-luna does not support fine-tuning. Options are prompting/few-shot on gpt-6-luna validated with `eval`, or re-training on a fine-tunable model. New fine-tuning jobs stop on 6 Jan 2027."
       ]
     },
     {
@@ -222,6 +311,7 @@
       "line": 8,
       "column": 18,
       "model": "gpt-4o-transcribe",
+      "provider": "openai",
       "kind": "config",
       "language": "yaml",
       "snippet": "transcription: gpt-4o-transcribe",
@@ -230,9 +320,11 @@
       "suggested": "gpt-live-transcribe or gpt-transcribe",
       "confidence": "confirmed",
       "risk": "medium",
+      "migration": null,
+      "rules": [],
       "notes": [
-        "Not a chat model. Do not map to gpt-6-luna (Luna does not support transcription).",
-        "Outside the GPT-4o/4.1 migration; OpenAI's listed replacement is gpt-live-transcribe or gpt-transcribe."
+        "Not a chat model. Do not map to gpt-6-luna. (Transcription model.)",
+        "Outside the headline migration; the listed replacement is gpt-live-transcribe or gpt-transcribe."
       ]
     },
     {
@@ -240,6 +332,7 @@
       "line": 2,
       "column": 28,
       "model": "gpt-4o-2024-11-20",
+      "provider": "openai",
       "kind": "config",
       "language": "json",
       "snippet": "\"assistant\": { \"model\": \"gpt-4o-2024-11-20\", \"max_tokens\": 800 },",
@@ -248,8 +341,12 @@
       "suggested": "gpt-6-luna",
       "confidence": "confirmed",
       "risk": "high",
+      "migration": "gpt4-series-2027-01-14",
+      "rules": [
+        "luna-max-tokens"
+      ],
       "notes": [
-        "Uses `max_tokens`: gpt-6-luna rejects it with HTTP 400 (live-tested). Rename to `max_completion_tokens` (Chat Completions) or `max_output_tokens` (Responses)."
+        "Uses `max_tokens`: gpt-6-luna rejects it with HTTP 400. Rename to `max_completion_tokens` (Chat Completions) or `max_output_tokens` (Responses). [live-tested]"
       ]
     },
     {
@@ -257,6 +354,7 @@
       "line": 3,
       "column": 26,
       "model": "gpt-5.6-sol",
+      "provider": "openai",
       "kind": "config",
       "language": "json",
       "snippet": "\"reports\": { \"model\": \"gpt-5.6-sol\" }",
@@ -265,8 +363,10 @@
       "suggested": null,
       "confidence": "n/a",
       "risk": "info",
+      "migration": null,
+      "rules": [],
       "notes": [
-        "Not in the kit's deprecation catalogue. Leave as-is unless the client wants to consolidate."
+        "Not listed as retiring in the openai pack (v2026.10.15.2)."
       ]
     },
     {
@@ -274,6 +374,7 @@
       "line": 7,
       "column": 13,
       "model": "gpt-4.1",
+      "provider": "openai",
       "kind": "sdk_call",
       "language": "typescript",
       "snippet": "model: \"gpt-4.1\",",
@@ -282,9 +383,13 @@
       "suggested": "gpt-6-luna",
       "confidence": "inferred",
       "risk": "high",
+      "migration": "gpt4-series-2027-01-14",
+      "rules": [
+        "luna-chat-tools-effort"
+      ],
       "notes": [
-        "Undated alias. Live check 15 Oct 2026: it still resolves, to a dated snapshot on the 14 Jan 2027 list (gpt-4o -> gpt-4o-2024-08-06, gpt-4o-mini -> gpt-4o-mini-2024-07-18, gpt-4.1 -> gpt-4.1-2025-04-14, gpt-4.1-mini -> gpt-4.1-mini-2025-04-14). OpenAI hasn't said whether the alias is retired or re-pointed, so it's treated as affected.",
-        "Chat Completions + tools in this file: gpt-6-luna returns HTTP 400 for function tools on Chat Completions unless reasoning_effort is 'none' (docs + live-tested). Set it, or move to the Responses API."
+        "Undated alias. Live check 15 Oct 2026: it still resolves, to a dated snapshot on the 14 Jan 2027 list. OpenAI hasn't said whether the alias is retired or re-pointed, so it's treated as affected.",
+        "Chat Completions + tools: gpt-6-luna returns HTTP 400 for function tools on Chat Completions unless reasoning_effort is 'none'. Set it, or move to the Responses API. [live-tested]"
       ]
     },
     {
@@ -292,6 +397,7 @@
       "line": 24,
       "column": 55,
       "model": "gpt-4o-transcribe",
+      "provider": "openai",
       "kind": "sdk_call",
       "language": "typescript",
       "snippet": "return openai.audio.transcriptions.create({ model: \"gpt-4o-transcribe\", file });",
@@ -300,9 +406,11 @@
       "suggested": "gpt-live-transcribe or gpt-transcribe",
       "confidence": "confirmed",
       "risk": "medium",
+      "migration": null,
+      "rules": [],
       "notes": [
-        "Not a chat model. Do not map to gpt-6-luna (Luna does not support transcription).",
-        "Outside the GPT-4o/4.1 migration; OpenAI's listed replacement is gpt-live-transcribe or gpt-transcribe."
+        "Not a chat model. Do not map to gpt-6-luna. (Transcription model.)",
+        "Outside the headline migration; the listed replacement is gpt-live-transcribe or gpt-transcribe."
       ]
     },
     {
@@ -310,6 +418,7 @@
       "line": 4,
       "column": 48,
       "model": "gpt-4.1-mini-2025-04-14",
+      "provider": "openai",
       "kind": "sdk_call",
       "language": "javascript",
       "snippet": "const MODEL = process.env.CLASSIFIER_MODEL ?? 'gpt-4.1-mini-2025-04-14';",
@@ -318,6 +427,8 @@
       "suggested": "gpt-6-luna",
       "confidence": "confirmed",
       "risk": "medium",
+      "migration": "gpt4-series-2027-01-14",
+      "rules": [],
       "notes": []
     }
   ],
@@ -338,23 +449,52 @@
   "file_signals": {
     "app/agent.py": [
       "chat_completions",
+      "openai_sdk",
       "tools"
+    ],
+    "app/claude_fallback.py": [
+      "anthropic_sdk",
+      "claude_sampling",
+      "max_tokens",
+      "messages_api",
+      "sampling_params"
     ],
     "app/summarise.py": [
       "chat_completions",
-      "structured_output",
+      "claude_sampling",
+      "max_tokens",
+      "openai_sdk",
       "sampling_params",
-      "max_tokens"
+      "structured_output"
     ],
     "config/settings.json": [
       "max_tokens"
     ],
     "web/src/chat.ts": [
       "chat_completions",
+      "openai_sdk",
       "tools"
     ],
     "web/src/classify.js": [
+      "openai_sdk",
       "responses_api"
+    ]
+  },
+  "file_sdks": {
+    "app/agent.py": [
+      "openai:openai"
+    ],
+    "app/claude_fallback.py": [
+      "anthropic:anthropic"
+    ],
+    "app/summarise.py": [
+      "openai:openai"
+    ],
+    "web/src/chat.ts": [
+      "openai:openai"
+    ],
+    "web/src/classify.js": [
+      "openai:openai"
     ]
   }
 }

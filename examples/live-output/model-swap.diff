@@ -17,6 +17,17 @@
  
  TOOLS = [{
      "type": "function",
+--- a/app/claude_fallback.py
++++ b/app/claude_fallback.py
+@@ -6,7 +6,7 @@
+ 
+ def summarise_with_claude(ticket: str) -> str:
+     msg = client.messages.create(
+-        model="claude-sonnet-4-5-20250929",
++        model="claude-sonnet-5-5",
+         max_tokens=400,
+         temperature=0.3,
+         messages=[{"role": "user", "content": ticket}],
 --- a/app/summarise.py
 +++ b/app/summarise.py
 @@ -17,7 +17,7 @@
