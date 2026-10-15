@@ -1,4 +1,4 @@
-"""CLI: scan | swap | init-evals | eval | report | packs | mapping | demo"""
+"""CLI: scan | swap | fix | init-evals | eval | report | packs | mapping | licence | demo"""
 from __future__ import annotations
 
 import argparse
@@ -15,6 +15,26 @@ HERE = Path(__file__).resolve().parent.parent
 def _packs(a):
     provs = [p.strip() for x in (a.pack or []) for p in x.split(",") if p.strip()] or None
     return load_packs(provs, offline=a.offline or None, url=a.packs_url, extra_files=a.pack_file)
+
+
+def _off(a):
+    """--offline if given, else None so <PREFIX>_OFFLINE decides."""
+    return True if getattr(a, "offline", False) else None
+
+
+def cmd_licence(a) -> int:
+    if a.action == "buy":
+        print(licence.buy_url(licence.repo_identity(a.repo)))
+        return 0
+    lic = licence.resolve(a.licence, a.repo)
+    if a.action == "forget":
+        if lic.key and lic.repo_id:
+            licence.clear_cache(lic.key, lic.repo_id)
+        print("Cleared the cached licence verification for this repo." if lic.key else "No licence key set.")
+        return 0
+    lic = licence.require("licence check", a.licence, a.repo, offline=_off(a))
+    print(licence.describe(lic))
+    return 0
 
 
 def cmd_scan(a) -> int:
@@ -42,7 +62,7 @@ def cmd_scan(a) -> int:
 def cmd_swap(a) -> int:
     from . import swapper
     if a.apply or licence.GATE_SWAP_PATCH:
-        print(licence.describe(licence.require("swap-apply", a.licence, a.repo)), file=sys.stderr)
+        print(licence.describe(licence.require("swap-apply", a.licence, a.repo, offline=_off(a))), file=sys.stderr)
     packs = _packs(a)
     mapping = swapper.load_mapping(a.mapping) if a.mapping else swapper.mapping_from_packs(packs)
     if a.include_docs:
@@ -75,9 +95,9 @@ def cmd_fix(a) -> int:
     from . import fixer, swapper
     from .fixer import verify as fverify
     if a.apply or licence.GATE_FIX_PATCH:
-        print(licence.describe(licence.require("fix-apply", a.licence, a.repo)), file=sys.stderr)
+        print(licence.describe(licence.require("fix-apply", a.licence, a.repo, offline=_off(a))), file=sys.stderr)
     if a.verify and a.live and not a._demo:
-        print(licence.describe(licence.require("eval", a.licence, a.repo)), file=sys.stderr)
+        print(licence.describe(licence.require("eval", a.licence, a.repo, offline=_off(a))), file=sys.stderr)
     packs = _packs(a)
     mapping = swapper.load_mapping(a.mapping) if a.mapping else None
     res = fixer.plan_fixes(a.repo, packs, mapping=mapping, model_swap=not a.no_model_swap,
@@ -112,7 +132,7 @@ def cmd_fix(a) -> int:
 def cmd_init_evals(a) -> int:
     from . import initevals
     if not a._demo:
-        print(licence.describe(licence.require("init-evals", a.licence, a.repo)), file=sys.stderr)
+        print(licence.describe(licence.require("init-evals", a.licence, a.repo, offline=_off(a))), file=sys.stderr)
     packs = _packs(a)
     suite, skipped = initevals.build_suite(a.repo, packs=packs)
     out = initevals.write_suite(suite, skipped, a.out)
@@ -127,7 +147,7 @@ def cmd_init_evals(a) -> int:
 def cmd_eval(a) -> int:
     from . import evaluator
     if not a._demo:
-        print(licence.describe(licence.require("eval", a.licence, ".")), file=sys.stderr)
+        print(licence.describe(licence.require("eval", a.licence, ".", offline=_off(a))), file=sys.stderr)
     suite = evaluator.load_suite(a.suite)
     if a.api:
         suite["api"] = a.api
@@ -150,7 +170,7 @@ def cmd_report(a) -> int:
     from . import report
     if not a._demo:
         root = json.loads(Path(a.scan).read_text()).get("root", ".")
-        print(licence.describe(licence.require("report", a.licence, root if Path(root).exists() else ".")), file=sys.stderr)
+        print(licence.describe(licence.require("report", a.licence, root if Path(root).exists() else ".", offline=_off(a))), file=sys.stderr)
     md, ht = report.generate(a.client, a.scan, a.out, a.swap_summary, a.diff, a.eval, label=a.label, packs=_packs(a),
                              fix_plan_path=a.fix_plan, fix_verify_path=a.fix_verify)
     print(f"  {ht}\n  {md}")
@@ -316,6 +336,13 @@ def build_parser() -> argparse.ArgumentParser:
     mp.add_argument("--out")
     _pack_opts(mp)
     mp.set_defaults(fn=cmd_mapping)
+
+    li = sub.add_parser("licence", aliases=["license"], help="check this repo's licence, print the buy link, or forget the cached check")
+    li.add_argument("action", choices=["status", "buy", "forget"])
+    li.add_argument("repo", nargs="?", default=".")
+    li.add_argument("--offline", action="store_true", help="use only the cached verification")
+    _lic_opt(li)
+    li.set_defaults(fn=cmd_licence)
 
     d = sub.add_parser("demo", help="run everything on examples/ offline (source checkout)")
     d.add_argument("--out", default=str(HERE / "examples" / "demo-output"))

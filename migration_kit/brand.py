@@ -10,9 +10,10 @@ PRODUCT_NAME = "ModelMigrate"          # working title / placeholder
 CLI_NAME = "modelmigrate"              # console command + PyPI distribution name
 ENV_PREFIX = "MODELMIGRATE"            # env vars: MODELMIGRATE_OFFLINE, MODELMIGRATE_LICENCE, ...
 COMPANY = "Burnt & Toast Studios"
-PACKS_URL = "https://packs.burntandtoast.com/v1"   # planned; NOT deployed yet
-LICENCE_URL = ""                                   # phase 2: licence-check endpoint (empty = no network check)
-BUY_URL = "https://burntandtoast.com"              # phase 2: Stripe checkout link
+SERVICE_URL = "https://packs.burntandtoast.com"    # planned host of server/ (pack site + licence API); NOT deployed yet
+PACKS_URL = f"{SERVICE_URL}/v1"
+LICENCE_URL = f"{SERVICE_URL}/api/licence/verify"   # override: $MODELMIGRATE_LICENCE_URL
+BUY_URL = f"{SERVICE_URL}/buy"                      # Stripe Checkout (append ?repo=github.com/owner/name to prefill)
 CACHE_DIR_NAME = CLI_NAME
 
 

@@ -14,12 +14,13 @@ SAMPLE = ROOT / "examples" / "sample-app"
 
 
 def test_only_pack_fetch_talks_to_us():
-    """urllib may only appear in packs.py (pack download) and evaluator.py (customer's own provider key)."""
-    for f in (ROOT / "migration_kit").glob("*.py"):
+    """urllib may only appear in packs.py (pack download), licence.py (key + repo check) and evaluator.py
+    (the customer's own provider key)."""
+    for f in (ROOT / "migration_kit").rglob("*.py"):
         src = f.read_text()
         if re.search(r"\burllib\b|\brequests\b|\bhttp\.client\b|\bsocket\b", src):
-            assert f.name in {"packs.py", "evaluator.py"}, f"network code in {f.name}"
-    assert brand.LICENCE_URL == ""           # no licence network call until phase 2
+            assert f.name in {"packs.py", "licence.py", "evaluator.py"}, f"network code in {f.name}"
+    assert brand.LICENCE_URL.startswith(brand.SERVICE_URL) and brand.PACKS_URL.startswith(brand.SERVICE_URL)
 
 
 def test_offline_makes_no_network_calls(tmp_path, monkeypatch):
@@ -57,7 +58,7 @@ def test_licence_is_per_repo_including_monorepo_subfolders(tmp_path, monkeypatch
     assert a.valid and a.repo_id == b.repo_id == "github.com/acme/mono"
     monkeypatch.setenv("GITHUB_REPOSITORY", "Acme/Mono")
     assert licence.resolve(TEST_LICENCE, tmp_path).repo_id == "github.com/acme/mono"
-    assert "placeholder" in licence.describe(a)
+    assert "placeholder" not in licence.__doc__.lower()
 
 
 def test_init_evals_from_call_sites():
