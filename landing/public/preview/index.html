@@ -183,6 +183,34 @@ code{background:#F4EAD6;color:#7A3E1D}
 .subnav .btn{min-height:40px;padding:6px 16px;margin-left:16px;color:#2B1D14}
 .site-foot .foot-note{margin-top:10px;font-size:.875rem;opacity:.85}
 .site-foot .foot-note a{color:inherit}
+/* ---- "What happens" timeline (preview redesign): horizontal partner to the vertical dates timeline ---- */
+.timeline{list-style:none;padding:0;margin:44px 0 52px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:28px;position:relative}
+.timeline:before{content:"";position:absolute;left:0;right:0;top:15px;height:4px;border-radius:4px;background:#2B1D14;z-index:0}
+.tl{position:relative;z-index:1;display:flex;flex-direction:column;gap:22px;text-align:left;padding:0;margin:0}
+.tl .dot{width:34px;height:34px;margin:0 0 0 24px;border-radius:50%;background:#F4C95D;border:3px solid #2B1D14;box-shadow:none}
+.tl.soon .dot{background:#C23B3B;border-color:#2B1D14;box-shadow:0 0 0 6px #F4EAD6,0 0 0 9px #C23B3B}
+.tl-card{flex:1;background:#FFFCF5;border:2.5px solid #2B1D14;border-radius:14px;box-shadow:5px 6px 0 #2B1D14;padding:24px 24px 26px;display:flex;flex-direction:column;gap:12px}
+.tl.soon .tl-card{background:#FFF1E6;border-color:#B5471B;box-shadow:5px 6px 0 #B5471B}
+.tl .when{font-family:var(--display);font-weight:800;font-size:1.5rem;line-height:1.05;letter-spacing:-.03em;color:#2B1D14;white-space:nowrap}
+.tl.soon .when{color:#C23B3B}
+.tl .what{font-size:1rem;line-height:1.6;color:#4A382C;margin:0}
+.tl .who{display:inline-flex;align-items:center;min-height:26px;padding:2px 10px;margin:0 8px 8px 0;border:1.5px solid #2B1D14;border-radius:999px;background:#F4EAD6;color:#2B1D14;font-size:.8125rem;font-weight:700;line-height:1.2;vertical-align:middle}
+.tl code{font-size:.84rem;white-space:nowrap}
+@media (max-width:980px){.timeline{grid-template-columns:repeat(2,minmax(0,1fr));gap:30px 28px}.timeline:before{display:none}}
+@media (max-width:620px){
+ .timeline{grid-template-columns:1fr;gap:26px;padding-left:46px}
+ .timeline:before{display:block;left:12px;right:auto;top:26px;bottom:26px;width:4px;height:auto}
+ .tl .dot{position:absolute;left:-46px;top:24px;margin:0;width:30px;height:30px}
+ .tl-card{padding:22px 22px 24px}}
+.tl.soon{background:none;border:0;box-shadow:none;border-radius:0;padding:0}
+.tl .who{display:flex;width:fit-content;margin:0 0 10px}
+.cons-grid{gap:28px;margin-bottom:40px}
+.cons-card{padding:28px 28px 30px;box-shadow:5px 6px 0 #2B1D14}
+.cons-card h3{font-size:1.3rem;line-height:1.15;margin:0 0 12px;color:#2B1D14;text-wrap:pretty}
+.cons-card p{font-size:1rem;line-height:1.6;color:#4A382C}
+.cons-card code{white-space:nowrap}
+.err-label{margin:0 0 12px}
+@media (max-width:620px){.cons-grid{gap:24px}.cons-card{padding:24px 22px 26px}}
 /* ---- Shutdown-dates timeline (preview redesign): vertical line, one roomy studio card per date ---- */
 .deadlines{list-style:none;margin:64px 0 12px;padding:0 0 0 64px;display:flex;flex-direction:column;gap:30px;position:relative;max-width:980px}
 .deadlines:before{content:"";position:absolute;left:17px;top:30px;bottom:30px;width:4px;border-radius:4px;background:#2B1D14}
@@ -249,12 +277,12 @@ code{background:#F4EAD6;color:#7A3E1D}
   <h2>What happens if you do nothing</h2>
   <p class="lede-soft">On the shutdown date the retired model stops working. OpenAI's own wording: at shut down, &ldquo;the model or endpoint will no longer be accessible.&rdquo; Anthropic's: &ldquo;Requests to retired models will fail.&rdquo; Anything still calling those IDs — a chatbot, a summariser, a classifier, a background automation — starts getting errors that day. In a queue or cron job that can look like silence until someone notices the backlog.</p>
 
-  <div class="timeline" aria-label="Retirement timeline">
-    <div class="tl soon"><div class="dot"></div><div class="when">23 Oct 2026</div><div class="what">OpenAI: <code>gpt-4.1-nano</code>, <code>gpt-4o-2024-05-13</code> no longer accessible</div></div>
-    <div class="tl"><div class="dot"></div><div class="when">30 Nov 2026</div><div class="what">Anthropic: Claude Sonnet 4.5 retired; requests fail</div></div>
-    <div class="tl"><div class="dot"></div><div class="when">6 Jan 2027</div><div class="what">OpenAI: last day for new fine-tuning jobs</div></div>
-    <div class="tl"><div class="dot"></div><div class="when">14 Jan 2027</div><div class="what">OpenAI: remaining GPT-4o / 4.1 snapshots and their fine-tunes no longer accessible</div></div>
-  </div>
+  <ol class="timeline" aria-label="Retirement timeline">
+    <li class="tl soon"><span class="dot" aria-hidden="true"></span><div class="tl-card"><div class="when">23 Oct 2026</div><div class="what"><span class="who">OpenAI:</span> <code>gpt-4.1-nano</code>, <code>gpt-4o-2024-05-13</code> no longer accessible</div></div></li>
+    <li class="tl"><span class="dot" aria-hidden="true"></span><div class="tl-card"><div class="when">30 Nov 2026</div><div class="what"><span class="who">Anthropic:</span> Claude Sonnet 4.5 retired; requests fail</div></div></li>
+    <li class="tl"><span class="dot" aria-hidden="true"></span><div class="tl-card"><div class="when">6 Jan 2027</div><div class="what"><span class="who">OpenAI:</span> last day for new fine-tuning jobs</div></div></li>
+    <li class="tl"><span class="dot" aria-hidden="true"></span><div class="tl-card"><div class="when">14 Jan 2027</div><div class="what"><span class="who">OpenAI:</span> remaining GPT-4o / 4.1 snapshots and their fine-tunes no longer accessible</div></div></li>
+  </ol>
 
   <div class="cons-grid">
     <div class="cons-card"><h3>The feature stops responding</h3><p>Requests to the retired model ID fail. Chat UIs go blank, summaries never arrive, classifiers never return a label. Background jobs often fail quietly until something downstream breaks.</p></div>
