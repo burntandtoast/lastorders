@@ -183,6 +183,30 @@ code{background:#F4EAD6;color:#7A3E1D}
 .subnav .btn{min-height:40px;padding:6px 16px;margin-left:16px;color:#2B1D14}
 .site-foot .foot-note{margin-top:10px;font-size:.875rem;opacity:.85}
 .site-foot .foot-note a{color:inherit}
+/* ---- Shutdown-dates timeline (preview redesign): vertical line, one roomy studio card per date ---- */
+.deadlines{list-style:none;margin:64px 0 12px;padding:0 0 0 64px;display:flex;flex-direction:column;gap:30px;position:relative;max-width:980px}
+.deadlines:before{content:"";position:absolute;left:17px;top:30px;bottom:30px;width:4px;border-radius:4px;background:#2B1D14}
+.deadline,.deadline.soon{position:relative;display:block;background:none;border:0;box-shadow:none;padding:0;margin:0}
+.deadline .mark{position:absolute;z-index:1;left:-62px;top:30px;width:34px;height:34px;border-radius:50%;background:#F4C95D;border:3px solid #2B1D14}
+.deadline.soon .mark{background:#C23B3B;box-shadow:0 0 0 6px #FBF4E6,0 0 0 9px #C23B3B}
+.dl-card{background:#FFFCF5;border:2.5px solid #2B1D14;border-radius:14px;box-shadow:5px 6px 0 #2B1D14;padding:30px 34px;display:grid;grid-template-columns:200px minmax(0,1fr) minmax(0,1fr);grid-template-areas:"next what repl" "date what repl";grid-template-rows:auto 1fr;column-gap:36px;row-gap:10px;align-items:start}
+.deadline.soon .dl-card{background:#FFF1E6;border-color:#B5471B;box-shadow:5px 6px 0 #B5471B}
+.deadline b{grid-area:date;display:block;font-family:var(--display);font-weight:800;font-size:2.1rem;line-height:1.02;letter-spacing:-.035em;color:#2B1D14}
+.deadline.soon b{color:#C23B3B}
+.deadline .what{grid-area:what;font-weight:400;font-size:1.0625rem;line-height:1.6;color:#4A382C;margin:0}
+.dl-card:not(:has(.repl)) .what{grid-column:2 / 4}
+.deadline .repl{grid-area:repl;padding-left:28px;border-left:2px dashed #DCC6A0;font-size:1rem;line-height:1.6;color:#2B1D14;font-weight:600}
+.deadline code{font-size:.84rem;white-space:nowrap}
+.deadline .next{grid-area:next;justify-self:start;border:1.5px solid #2B1D14;border-radius:999px;background:#C23B3B;color:#FFFCF5;font-size:.75rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:4px 12px}
+.dl-card:not(:has(.next)) b{grid-row:1 / 3}
+@media (max-width:860px){
+ .deadlines{padding-left:52px;gap:26px}
+ .deadlines:before{left:13px}
+ .deadline .mark{left:-52px;top:26px;width:30px;height:30px}
+ .dl-card,.dl-card:not(:has(.repl)){display:flex;flex-direction:column;gap:14px;padding:24px 22px 26px}
+ .deadline .repl{padding:14px 0 0;border-left:0;border-top:2px dashed #DCC6A0}
+ .deadline .next{align-self:flex-start}}
+@media (max-width:480px){.deadline b{font-size:1.8rem}.deadlines{margin-top:44px;padding-left:46px}.deadline .mark{left:-46px}.deadlines:before{left:12px}.deadline code{font-size:.8rem}}
 </style>
 </head>
 <body id="top">
@@ -212,12 +236,12 @@ code{background:#F4EAD6;color:#7A3E1D}
     <span><b>From £1,500</b> · we do it for you</span>
   </div>
 
-  <div class="deadlines">
-    <div class="deadline soon"><b>23 Oct 2026</b><div class="what"><code>gpt-4.1-nano</code> and <code>gpt-4o-2024-05-13</code> are switched off. Replacements: <code>gpt-5.6-luna</code> / <code>gpt-5.6-sol</code>. That's next week.</div></div>
-    <div class="deadline"><b>30 Nov 2026</b><div class="what">Anthropic retires <code>claude-sonnet-4-5-20250929</code> (Claude Sonnet 4.5). Replacement: <code>claude-sonnet-5-5</code>.</div></div>
-    <div class="deadline"><b>6 Jan 2027</b><div class="what">No new OpenAI fine-tuning jobs. If you have a fine-tune, decide before this.</div></div>
-    <div class="deadline"><b>14 Jan 2027</b><div class="what">The remaining GPT-4o, GPT-4o mini, GPT-4.1 and GPT-4.1 mini snapshots are removed, along with fine-tunes built on them. Replacement: <code>gpt-6-luna</code>.</div></div>
-  </div>
+  <ol class="deadlines" aria-label="Shutdown dates">
+    <li class="deadline soon"><span class="mark" aria-hidden="true"></span><div class="dl-card"><span class="next">Next up</span><b>23 Oct 2026</b><div class="what"><code>gpt-4.1-nano</code> and <code>gpt-4o-2024-05-13</code> are switched off.</div><div class="repl">Replacements: <code>gpt-5.6-luna</code> / <code>gpt-5.6-sol</code>. That's next week.</div></div></li>
+    <li class="deadline"><span class="mark" aria-hidden="true"></span><div class="dl-card"><b>30 Nov 2026</b><div class="what">Anthropic retires <code>claude-sonnet-4-5-20250929</code> (Claude Sonnet 4.5).</div><div class="repl">Replacement: <code>claude-sonnet-5-5</code>.</div></div></li>
+    <li class="deadline"><span class="mark" aria-hidden="true"></span><div class="dl-card"><b>6 Jan 2027</b><div class="what">No new OpenAI fine-tuning jobs. If you have a fine-tune, decide before this.</div></div></li>
+    <li class="deadline"><span class="mark" aria-hidden="true"></span><div class="dl-card"><b>14 Jan 2027</b><div class="what">The remaining GPT-4o, GPT-4o mini, GPT-4.1 and GPT-4.1 mini snapshots are removed, along with fine-tunes built on them.</div><div class="repl">Replacement: <code>gpt-6-luna</code>.</div></div></li>
+  </ol>
   <p class="src">OpenAI dates from their <a href="https://platform.openai.com/docs/deprecations">deprecations page</a>; Anthropic from theirs (<a href="https://docs.anthropic.com/en/docs/about-claude/model-deprecations">model deprecations</a>), both checked 15 October 2026. Undated names like <code>gpt-4o</code> still resolve to a dated snapshot on the list; the scan tells you which.</p>
 </div></div>
 
