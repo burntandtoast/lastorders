@@ -112,6 +112,10 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .ladder-hint b{color:var(--crust)}
 .cmd{background:var(--crust);color:var(--butter);border-radius:var(--r);padding:16px 18px;font:14px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;overflow-x:auto;margin:0 0 12px;white-space:pre}
 .cmd .c{color:#c9a876}
+.soon{margin:0 0 16px;font:600 15px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;background:var(--butter);border:1px solid var(--golden);border-radius:var(--r);padding:10px 14px}
+.soon a{color:var(--crust)}
+.prerelease .cmd{opacity:.55;filter:grayscale(.6)}
+.prerelease h3{color:var(--soft)}
 .rung{position:relative}
 .rung .num{position:absolute;top:-14px;left:22px;background:var(--golden);color:var(--crust);font:800 13px/1 -apple-system,Segoe UI,Arial,sans-serif;padding:6px 10px;border-radius:999px;letter-spacing:.04em}
 .price.featured{border:2px solid var(--golden);background:#fff;box-shadow:0 14px 34px -22px #3b231488}
@@ -213,7 +217,8 @@ section.alt .price.featured{background:#fff}
         <li>Environment variables that pick the model at runtime, so you can check their live values.</li>
       </ul>
     </div>
-    <div>
+    <div class="prerelease">
+      <p class="soon"><a href="#remind">Scanner release coming this week. Get a reminder below.</a></p>
       <h3 class="sans" style="margin-bottom:10px">On your machine</h3>
       <div class="cmd">pipx install lastorders
 lastorders scan .</div>
