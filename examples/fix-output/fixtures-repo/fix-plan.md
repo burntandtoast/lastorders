@@ -5,7 +5,7 @@
 - Files changed: **5** | model ID replacements: 17
 - Items: Fixed: **10**, Fixed (deploy with the model switch): **1**, Info: **1**, Needs a decision: **11**
 
-Nothing has been changed on disk. Review `fix.diff`, then apply it with `git apply` or `modelmigrate fix --apply` (licensed).
+Nothing has been changed on disk. Review `fix.diff`, then apply it with `git apply` or `lastorders fix --apply` (licensed).
 
 ## Fixed (10)
 

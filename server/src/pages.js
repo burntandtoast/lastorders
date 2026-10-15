@@ -14,9 +14,9 @@ export function successPage({ key, email, productName, cliName, baseUrl }) {
   return page(`Your ${productName} licence`, `<h1>Thanks — you're licensed</h1>
 <p>Your licence key:</p><p class="key">${escapeHtml(key)}</p>
 <p>We're also emailing it to <strong>${escapeHtml(email)}</strong>. It covers one repository (a monorepo counts as one), bound the first time you use it.</p>
-<pre>export MODELMIGRATE_LICENCE=${escapeHtml(key)}
+<pre>export LASTORDERS_LICENCE=${escapeHtml(key)}
 ${escapeHtml(cliName)} fix . --verify --apply</pre>
-<p>In GitHub Actions, add it as a repository secret named <code>MODELMIGRATE_LICENCE</code>.</p>
+<p>In GitHub Actions, add it as a repository secret named <code>LASTORDERS_LICENCE</code>.</p>
 <p class="muted">Keep this key private. <a href="${escapeHtml(baseUrl)}">Back to ${escapeHtml(productName)}</a></p>`);
 }
 

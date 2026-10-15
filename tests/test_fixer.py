@@ -243,7 +243,7 @@ def test_cli_fix_gating_and_apply(tmp_path, monkeypatch, capsys):
     assert "max_tokens=400" in (repo / "app" / "summarise.py").read_text()          # nothing touched
     assert main(["fix", str(repo), "--out", str(out), "--apply"]) == 4             # licence needed
     assert main(["fix", str(repo), "--out", str(out), "--verify", "--live"]) == 4  # live eval needs a licence too
-    monkeypatch.setenv("MODELMIGRATE_LICENCE", "BTM-TEST-0000-0000")
+    monkeypatch.setenv("LASTORDERS_LICENCE", "BTM-TEST-0000-0000")
     subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
     subprocess.run(["git", "add", "-A"], cwd=repo, check=True)
     subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qm", "init"], cwd=repo, check=True)
@@ -281,6 +281,6 @@ def test_outputs_inside_repo_are_skipped(tmp_path, monkeypatch):
     assert main(["fix", ".", "--verify"]) == 0               # default out dir lands inside the repo
     assert main(["scan", "."]) == 0
     assert main(["fix", ".", "--verify"]) == 0               # and is ignored on the next runs
-    plan = json.loads((repo / "modelmigrate-out" / "fix-plan.json").read_text())
-    assert not any(i["file"].startswith("modelmigrate-out") for i in plan["items"])
-    assert "modelmigrate-out" not in (repo / "modelmigrate-out" / "fix.diff").read_text()
+    plan = json.loads((repo / "lastorders-out" / "fix-plan.json").read_text())
+    assert not any(i["file"].startswith("lastorders-out") for i in plan["items"])
+    assert "lastorders-out" not in (repo / "lastorders-out" / "fix.diff").read_text()

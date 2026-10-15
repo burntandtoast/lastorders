@@ -27,14 +27,14 @@ def test_offline_makes_no_network_calls(tmp_path, monkeypatch):
     def boom(*a, **k):
         raise AssertionError("network used")
     monkeypatch.setattr(urllib.request, "urlopen", boom)
-    monkeypatch.delenv("MODELMIGRATE_OFFLINE", raising=False)
+    monkeypatch.delenv("LASTORDERS_OFFLINE", raising=False)
     assert main(["scan", str(SAMPLE), "--out", str(tmp_path), "--offline"]) == 0
     assert main(["swap", str(SAMPLE), "--out", str(tmp_path), "--offline"]) == 0
 
 
 def test_offline_env_var(tmp_path, monkeypatch):
     monkeypatch.setattr(urllib.request, "urlopen", lambda *a, **k: (_ for _ in ()).throw(AssertionError("net")))
-    monkeypatch.setenv("MODELMIGRATE_OFFLINE", "1")
+    monkeypatch.setenv("LASTORDERS_OFFLINE", "1")
     assert main(["scan", str(SAMPLE), "--out", str(tmp_path)]) == 0
 
 

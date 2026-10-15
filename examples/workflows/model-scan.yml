@@ -17,10 +17,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: ModelMigrate free scan
+      - name: Last Orders free scan
         id: btm
         # TODO: replace with the published repo, pinned to a tag or commit SHA
-        uses: burntandtoast/modelmigrate@v0
+        uses: burntandtoast/lastorders@v0
         with:
           fail-on-high: "true"
           # packs: "openai,anthropic"

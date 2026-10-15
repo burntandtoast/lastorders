@@ -10,10 +10,10 @@ export function licenceEmail({ key, productName, cliName, buyerEmail, baseUrl, s
     "",
     "It covers one repository (a monorepo counts as one). The repo is bound the first time you use the key:",
     "",
-    `  export MODELMIGRATE_LICENCE=${key}`,
+    `  export LASTORDERS_LICENCE=${key}`,
     `  ${cliName} fix . --verify --apply`,
     "",
-    "In GitHub Actions, store it as a repository secret named MODELMIGRATE_LICENCE.",
+    "In GitHub Actions, store it as a repository secret named LASTORDERS_LICENCE.",
     "",
     `Receipt and docs: ${baseUrl}`,
     supportEmail ? `Questions or a repo move: reply to this email or write to ${supportEmail}.` : "Questions or a repo move: reply to this email.",
@@ -25,9 +25,9 @@ export function licenceEmail({ key, productName, cliName, buyerEmail, baseUrl, s
 <p>Your licence key:</p>
 <p style="font:600 20px/1.4 ui-monospace,Menlo,monospace;background:#f4f1ea;padding:12px 16px;border-radius:6px;display:inline-block">${escapeHtml(key)}</p>
 <p>It covers one repository (a monorepo counts as one). The repo is bound the first time you use the key:</p>
-<pre style="background:#f4f1ea;padding:12px 16px;border-radius:6px">export MODELMIGRATE_LICENCE=${escapeHtml(key)}
+<pre style="background:#f4f1ea;padding:12px 16px;border-radius:6px">export LASTORDERS_LICENCE=${escapeHtml(key)}
 ${escapeHtml(cliName)} fix . --verify --apply</pre>
-<p>In GitHub Actions, store it as a repository secret named <code>MODELMIGRATE_LICENCE</code>.</p>
+<p>In GitHub Actions, store it as a repository secret named <code>LASTORDERS_LICENCE</code>.</p>
 <p>Docs: <a href="${escapeHtml(baseUrl)}">${escapeHtml(baseUrl)}</a><br>
 ${supportEmail ? `Questions or a repo move: reply, or write to ${escapeHtml(supportEmail)}.` : "Questions or a repo move: reply to this email."}</p>
 <p>Burnt &amp; Toast Studios</p></body></html>`;

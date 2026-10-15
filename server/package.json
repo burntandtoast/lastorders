@@ -1,14 +1,14 @@
 {
-  "name": "modelmigrate-licence-server",
+  "name": "lastorders-licence-server",
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "Licence server + Stripe Checkout + pack hosting for the ModelMigrate CLI (Cloudflare Worker).",
+  "description": "Licence server + Stripe Checkout + pack hosting for the Last Orders CLI (Cloudflare Worker).",
   "scripts": {
     "test": "node --test --no-warnings test/*.test.js",
     "dev": "wrangler dev",
-    "db:migrate:local": "wrangler d1 migrations apply modelmigrate-licences --local",
-    "db:migrate:remote": "wrangler d1 migrations apply modelmigrate-licences --remote",
+    "db:migrate:local": "wrangler d1 migrations apply lastorders-licences --local",
+    "db:migrate:remote": "wrangler d1 migrations apply lastorders-licences --remote",
     "check": "wrangler deploy --dry-run --outdir dist",
     "keys": "node scripts/gen-signing-key.mjs"
   },

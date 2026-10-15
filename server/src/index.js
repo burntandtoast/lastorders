@@ -1,4 +1,4 @@
-// ModelMigrate licence server: Cloudflare Worker + D1 (+ static pack site via assets).
+// Last Orders licence server: Cloudflare Worker + D1 (+ static pack site via assets).
 //
 //   GET  /buy?repo=&email=          -> 303 to Stripe Checkout
 //   POST /api/checkout               -> {id, url}
@@ -21,9 +21,9 @@ const DAY = 86400;
 
 function config(env) {
   return {
-    productName: env.PRODUCT_NAME || "ModelMigrate",
-    cliName: env.CLI_NAME || "modelmigrate",
-    productCode: env.PRODUCT_CODE || "modelmigrate-repo",
+    productName: env.PRODUCT_NAME || "Last Orders",
+    cliName: env.CLI_NAME || "lastorders",
+    productCode: env.PRODUCT_CODE || "lastorders-repo",
     currency: (env.CURRENCY || "gbp").toLowerCase(),
     amount: Number.parseInt(env.PRICE_AMOUNT || "14900", 10),     // minor units: 14900 = £149.00
     priceId: env.STRIPE_PRICE_ID || "",

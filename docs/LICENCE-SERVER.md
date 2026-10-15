@@ -48,7 +48,7 @@ CLI ──POST /api/licence/verify {key, repo}──▶ bind repo on first use �
 - `checkout.session.async_payment_failed`: logged.
 - `charge.refunded`: a **full** refund revokes the licence. Partial refunds don't.
 
-Sessions from other products on the same Stripe account are ignored (`metadata.product` must be `modelmigrate-repo`).
+Sessions from other products on the same Stripe account are ignored (`metadata.product` must be `lastorders-repo`).
 If the email fails, the webhook returns 500, so Stripe retries, for up to 3 days. The retry sends the email
 without creating a second key. Resend also gets an idempotency key, so a duplicate email isn't possible.
 
@@ -69,15 +69,15 @@ Adding a provider means implementing `send(msg)` in `src/email.js`.
 ### CLI side (`migration_kit/licence.py`)
 
 - The only request it makes is `POST {key, repo}` to `https://packs.burntandtoast.com/api/licence/verify`.
-  Override it with `MODELMIGRATE_LICENCE_URL`.
-- The token is checked against `PUBLIC_KEYS` built into the CLI and cached in `~/.cache/modelmigrate/licence/`.
+  Override it with `LASTORDERS_LICENCE_URL`.
+- The token is checked against `PUBLIC_KEYS` built into the CLI and cached in `~/.cache/lastorders/licence/`.
 - No request is made while the cached token is less than a day old. After that it re-checks when online.
 - If the server can't be reached, the token works until it expires (7 days), then for a **14-day grace period**.
-- `--offline` / `MODELMIGRATE_OFFLINE=1` never contacts the server. It accepts a cached token, plus the grace period.
+- `--offline` / `LASTORDERS_OFFLINE=1` never contacts the server. It accepts a cached token, plus the grace period.
 - `scan` never touches licensing.
 - "Unknown", "revoked" and "bound to another repo" clear the cache immediately.
-- Repo identity comes from `GITHUB_REPOSITORY`, then the git `origin` remote, then `MODELMIGRATE_REPO`.
-- `modelmigrate licence status|buy|forget`.
+- Repo identity comes from `GITHUB_REPOSITORY`, then the git `origin` remote, then `LASTORDERS_REPO`.
+- `lastorders licence status|buy|forget`.
 
 ### Tests
 
@@ -110,7 +110,7 @@ Adding a provider means implementing `send(msg)` in `src/email.js`.
 |---|---|---|
 | **Test secret key** `sk_test_…`. A restricted key `rk_test_…` is better, with **Checkout Sessions: Write** (that covers create and retrieve) and nothing else. | Dashboard → Developers → API keys (test mode toggle on, or a Sandbox) | `wrangler secret put STRIPE_SECRET_KEY` |
 | **Webhook signing secret** `whsec_…` | Dashboard → Developers → Webhooks (Workbench → Event destinations) → Add endpoint, as below | `wrangler secret put STRIPE_WEBHOOK_SECRET` |
-| (optional) **Price ID** `price_…` | Product catalogue → "ModelMigrate licence: one repository", one-off £149 | `STRIPE_PRICE_ID` in `wrangler.toml` (otherwise the Worker uses inline `price_data` from `PRICE_AMOUNT`/`CURRENCY`) |
+| (optional) **Price ID** `price_…` | Product catalogue → "Last Orders licence: one repository", one-off £149 | `STRIPE_PRICE_ID` in `wrangler.toml` (otherwise the Worker uses inline `price_data` from `PRICE_AMOUNT`/`CURRENCY`) |
 
 **Webhook endpoint settings:**
 - URL: `https://packs.burntandtoast.com/api/stripe/webhook`, or the `*.workers.dev` URL until DNS is ready.
@@ -130,7 +130,7 @@ Adding a provider means implementing `send(msg)` in `src/email.js`.
 
 - Verify the sending domain (`burntandtoast.com`, or a subdomain such as `mail.burntandtoast.com`) by adding the DKIM/SPF records Resend gives you.
 - Create an API key with **Sending access**, restricted to that domain. Then run `wrangler secret put RESEND_API_KEY`, and set `EMAIL_PROVIDER = "resend"`.
-- Set `EMAIL_FROM` to an address on the verified domain (default `ModelMigrate <licences@burntandtoast.com>`).
+- Set `EMAIL_FROM` to an address on the verified domain (default `Last Orders <licences@burntandtoast.com>`).
 - Optionally set `EMAIL_REPLY_TO` / `SUPPORT_EMAIL` to the inbox that handles repo moves.
 
 ### Cloudflare
@@ -153,7 +153,7 @@ Adding a provider means implementing `send(msg)` in `src/email.js`.
 cd server
 npm ci
 npx wrangler login
-npx wrangler d1 create modelmigrate-licences        # paste database_id into wrangler.toml
+npx wrangler d1 create lastorders-licences        # paste database_id into wrangler.toml
 npm run db:migrate:remote                           # creates the tables
 npm run keys                                        # see above: secret + PUBLIC_KEYS
 npx wrangler secret put LICENCE_SIGNING_KEY
@@ -163,7 +163,7 @@ npx wrangler secret put RESEND_API_KEY
 npx wrangler secret put ADMIN_TOKEN
 # wrangler.toml: EMAIL_PROVIDER="resend", PUBLIC_BASE_URL="https://packs.burntandtoast.com",
 #                uncomment the routes line for the custom domain
-cd .. && modelmigrate packs build-site --out site && cd server   # refresh the pack site
+cd .. && lastorders packs build-site --out site && cd server   # refresh the pack site
 npm test && npm run check
 npx wrangler deploy
 ```
@@ -174,7 +174,7 @@ npx wrangler deploy
    `curl …/v1/index.json` returns the packs.
 2. Open `https://packs.burntandtoast.com/buy?repo=github.com/you/test-repo` and pay with `4242 4242 4242 4242`
    (any future date, any CVC). The success page should show a key and the email should arrive.
-3. `MODELMIGRATE_LICENCE=<key> modelmigrate licence status` in that repo should say "verified online".
+3. `LASTORDERS_LICENCE=<key> lastorders licence status` in that repo should say "verified online".
    In another repo it should say "bound to …".
 4. Refund in the Dashboard. The next `licence status` after the cached token's daily refresh says "revoked".
    Use `licence forget` to check straight away.
@@ -182,8 +182,8 @@ npx wrangler deploy
 
 **Local trial without any accounts:** `cd server && node scripts/local-server.mjs`. It prints a URL, a dev
 public key and a test-issued key. Point the CLI at it with:
-- `MODELMIGRATE_LICENCE_URL=<url>/api/licence/verify`;
-- `MODELMIGRATE_LICENCE_DEV_PUBLIC_KEYS='{"dev":"<x>"}'`, which is honoured only for localhost URLs.
+- `LASTORDERS_LICENCE_URL=<url>/api/licence/verify`;
+- `LASTORDERS_LICENCE_DEV_PUBLIC_KEYS='{"dev":"<x>"}'`, which is honoured only for localhost URLs.
 
 **Local trial with real Stripe test mode:**
 1. Copy `.dev.vars.example` to `.dev.vars`.
@@ -191,7 +191,7 @@ public key and a test-issued key. Point the CLI at it with:
 3. Run `stripe listen --forward-to localhost:8787/api/stripe/webhook`.
 4. Open `http://localhost:8787/buy`.
 
-`stripe trigger checkout.session.completed --add checkout_session:metadata.product=modelmigrate-repo` also works
+`stripe trigger checkout.session.completed --add checkout_session:metadata.product=lastorders-repo` also works
 (without the metadata, the event is ignored as "not this product").
 
 ## Going live
@@ -199,7 +199,7 @@ public key and a test-issued key. Point the CLI at it with:
 1. In Stripe live mode, create the same webhook endpoint. It gets a **new** `whsec_`.
 2. `wrangler secret put STRIPE_SECRET_KEY` (`sk_live_` / `rk_live_`) and `STRIPE_WEBHOOK_SECRET` (the live `whsec_`).
 3. Optional: remove test licences with
-   `npx wrangler d1 execute modelmigrate-licences --remote --command "UPDATE licences SET status='revoked', revoke_reason='test mode' WHERE livemode = 0"`.
+   `npx wrangler d1 execute lastorders-licences --remote --command "UPDATE licences SET status='revoked', revoke_reason='test mode' WHERE livemode = 0"`.
 4. `/healthz` should report `"stripe_mode":"live"`. Do one real purchase and refund it.
 
 ## Operations

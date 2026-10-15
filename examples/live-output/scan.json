@@ -1,5 +1,5 @@
 {
-  "tool": "modelmigrate",
+  "tool": "lastorders",
   "root": "/workspace/migration-kit/examples/sample-app",
   "files_scanned": 9,
   "scanned_on": "2026-10-15",

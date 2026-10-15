@@ -1,5 +1,5 @@
 {
-  "tool": "modelmigrate",
+  "tool": "lastorders",
   "root": "sample-app",
   "packs": [
     {

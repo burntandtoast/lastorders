@@ -13,10 +13,10 @@ TEST_REPO = "github.com/test/repo"
 
 @pytest.fixture(autouse=True)
 def _isolate(monkeypatch, tmp_path_factory):
-    monkeypatch.setenv("MODELMIGRATE_OFFLINE", "1")
+    monkeypatch.setenv("LASTORDERS_OFFLINE", "1")
     monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path_factory.mktemp("cache")))
-    for var in ("MODELMIGRATE_LICENCE", "MODELMIGRATE_PACKS_URL", "MODELMIGRATE_LICENCE_URL", "MODELMIGRATE_REPO",
-                "MODELMIGRATE_LICENCE_DEV_PUBLIC_KEYS", "GITHUB_REPOSITORY"):
+    for var in ("LASTORDERS_LICENCE", "LASTORDERS_PACKS_URL", "LASTORDERS_LICENCE_URL", "LASTORDERS_REPO",
+                "LASTORDERS_LICENCE_DEV_PUBLIC_KEYS", "GITHUB_REPOSITORY"):
         monkeypatch.delenv(var, raising=False)
 
 
@@ -30,8 +30,8 @@ def licence_server(monkeypatch):
     srv = FakeLicenceServer()
     monkeypatch.setattr(licence, "PUBLIC_KEYS", {srv.kid: srv.public_x})
     monkeypatch.setattr(licence, "_transport", srv.transport)
-    monkeypatch.setenv("MODELMIGRATE_LICENCE_URL", "https://licence.invalid/api/licence/verify")
-    monkeypatch.setenv("MODELMIGRATE_REPO", TEST_REPO)
+    monkeypatch.setenv("LASTORDERS_LICENCE_URL", "https://licence.invalid/api/licence/verify")
+    monkeypatch.setenv("LASTORDERS_REPO", TEST_REPO)
     srv.add(TEST_LICENCE, TEST_REPO)
     licence._save(TEST_LICENCE, TEST_REPO, srv.token(TEST_LICENCE, TEST_REPO))
     return srv
@@ -39,4 +39,4 @@ def licence_server(monkeypatch):
 
 @pytest.fixture
 def licensed(monkeypatch):
-    monkeypatch.setenv("MODELMIGRATE_LICENCE", TEST_LICENCE)
+    monkeypatch.setenv("LASTORDERS_LICENCE", TEST_LICENCE)

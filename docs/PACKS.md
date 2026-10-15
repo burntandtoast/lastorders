@@ -45,7 +45,7 @@ Modifiers:
 
 ## Hosting
 
-`modelmigrate packs build-site --out site` writes:
+`lastorders packs build-site --out site` writes:
 
 ```
 site/index.html            human landing page
@@ -57,12 +57,12 @@ site/_headers              the same for Cloudflare Pages
 ```
 
 The client fetches `index.json` and only downloads packs newer than its bundled copy. It checks the SHA-256
-and the schema, then caches the result for 24 hours in `~/.cache/modelmigrate/packs/`. If anything fails, it
+and the schema, then caches the result for 24 hours in `~/.cache/lastorders/packs/`. If anything fails, it
 silently keeps the bundled pack.
 
 ## Adding a provider
 
 1. Copy `anthropic.json` as a template and set `provider`, `id_patterns`, `signals` and `models`.
-2. Run `modelmigrate packs validate path/to/pack.json`.
-3. Try it locally with `modelmigrate scan . --pack-file path/to/pack.json`.
+2. Run `lastorders packs validate path/to/pack.json`.
+3. Try it locally with `lastorders scan . --pack-file path/to/pack.json`.
 4. Drop it in `migration_kit/pack_data/` and rebuild the site.

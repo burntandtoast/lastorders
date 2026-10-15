@@ -79,7 +79,7 @@ export async function makeEnv(overrides = {}) {
     EMAIL_PROVIDER: "resend",
     RESEND_API_KEY: "re_dummy",
     RESEND_API_BASE: "https://resend.test",
-    EMAIL_FROM: "ModelMigrate <licences@example.test>",
+    EMAIL_FROM: "Last Orders <licences@example.test>",
     LICENCE_SIGNING_KEY: JSON.stringify(await devSigningKey()),
     ADMIN_TOKEN: "admin-token-that-is-long-enough-123",
     PUBLIC_BASE_URL: "https://licence.example.test",
@@ -102,7 +102,7 @@ export function harness(env, net, { clock } = {}) {
 }
 
 let evN = 0;
-export function paidSessionEvent(id, { email = "buyer@example.com", type = "checkout.session.completed", payment_status = "paid", product = "modelmigrate-repo", pi = "pi_123" } = {}) {
+export function paidSessionEvent(id, { email = "buyer@example.com", type = "checkout.session.completed", payment_status = "paid", product = "lastorders-repo", pi = "pi_123" } = {}) {
   return {
     id: `evt_${++evN}`, object: "event", type, livemode: false,
     data: { object: { id, object: "checkout.session", mode: "payment", status: "complete", payment_status, customer_details: { email },

@@ -1,8 +1,8 @@
 # Internal: done-for-you migration service and live findings
 
 > Internal notes for Burnt & Toast Studios. The public README covers the free scan.
-> CLI renamed from `modelmigrate` to the placeholder `modelmigrate`; env vars now use the `MODELMIGRATE_` prefix.
-> The Install/Usage/Layout sections below describe v0.1 and are superseded by the README and `modelmigrate --help`.
+> The product is now **Last Orders**: CLI/PyPI name `lastorders`, env vars `LASTORDERS_*` (was the placeholder ModelMigrate / `modelmigrate` / `MODELMIGRATE_*`).
+> The Install/Usage/Layout sections below describe v0.1 and are superseded by the README and `lastorders --help`.
 
 ## What OpenAI has confirmed (checked 15 Oct 2026)
 
@@ -63,7 +63,7 @@ lexically different (but on-brief) apology text. Neither model knows today's dat
 
 ```bash
 python3 -m venv .venv && .venv/bin/pip install -e '.[dev]'
-.venv/bin/modelmigrate --help          # or: python -m migration_kit --help
+.venv/bin/lastorders --help          # or: python -m migration_kit --help
 .venv/bin/pytest -q
 ```
 
@@ -74,7 +74,7 @@ Needs Python 3.10+, `pyyaml` and `jsonschema`. HTTP calls use the standard libra
 ### 1. Scan
 
 ```bash
-modelmigrate scan /path/to/client-repo --out out/
+lastorders scan /path/to/client-repo --out out/
 ```
 
 Walks `.py .js .mjs .cjs .jsx .ts .tsx`, `.env*`, YAML/JSON/TOML/INI and docs (skip with `--no-docs`),
@@ -93,7 +93,7 @@ line, current model, suggested replacement, shutdown date, risk and notes for ea
 ### 2. Swap
 
 ```bash
-modelmigrate swap /path/to/client-repo --mapping mappings/gpt4-series-to-gpt-6-luna.yaml --out out/
+lastorders swap /path/to/client-repo --mapping mappings/gpt4-series-to-gpt-6-luna.yaml --out out/
 git -C /path/to/client-repo apply --check out/model-swap.diff   # then apply on a branch
 ```
 
@@ -106,8 +106,8 @@ and we make them by hand.
 ### 3. Eval
 
 ```bash
-OPENAI_API_KEY=sk-... modelmigrate eval examples/evals/sample-suite.yaml --out out/
-modelmigrate eval examples/evals/sample-suite.yaml --dry-run --out out/   # offline, simulated
+OPENAI_API_KEY=sk-... lastorders eval examples/evals/sample-suite.yaml --out out/
+lastorders eval examples/evals/sample-suite.yaml --dry-run --out out/   # offline, simulated
 ```
 
 The suite is YAML: `models: {old, new}`, `api: chat|responses`, `max_output_tokens` (sent as
@@ -131,7 +131,7 @@ and every result is labelled as simulated. Live runs record the resolved model, 
 ### 4. Report
 
 ```bash
-modelmigrate report --client "Client Ltd" --scan out/scan.json --swap-summary out/swap-summary.json \
+lastorders report --client "Client Ltd" --scan out/scan.json --swap-summary out/swap-summary.json \
   --diff out/model-swap.diff --eval out/eval.json --out out/
 ```
 
@@ -140,7 +140,7 @@ example to mark a demo or a live run.
 
 ### Demo
 
-`modelmigrate demo` runs the whole pipeline on `examples/sample-app` (a fictional "Acme Widgets" codebase) and
+`lastorders demo` runs the whole pipeline on `examples/sample-app` (a fictional "Acme Widgets" codebase) and
 writes to `examples/demo-output/`. The demo eval is a dry run with one deliberate DRIFT and one FAIL, so
 the report shows what problems look like.
 

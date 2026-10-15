@@ -1,6 +1,9 @@
 # Changelog
 
 ## 0.4.0 (unreleased)
+- **Renamed to Last Orders.** Package, CLI and PyPI name `lastorders`; env vars `LASTORDERS_*` (was the placeholder
+  `modelmigrate` / `MODELMIGRATE_*`); output marker `.lastorders-output`; Action `burntandtoast/lastorders@v0`;
+  Worker `lastorders-licence`, D1 database `lastorders-licences`, Stripe metadata product `lastorders-repo`.
 - **Licence server** (`server/`). This is a Cloudflare Worker with D1:
   - Stripe Checkout at £149 per repo (configurable);
   - a signed webhook that issues `BTM-XXXX-XXXX-XXXX` keys, stores them with the buyer's email, and emails them through Resend (the email provider is pluggable);
@@ -16,7 +19,7 @@
   - a 14-day grace period applies if the server is unreachable;
   - `--offline` uses the cached token only;
   - the free `scan` is unaffected.
-- New `licence status|buy|forget` command and the `MODELMIGRATE_REPO` fallback. New dependency: `cryptography`.
+- New `licence status|buy|forget` command and the `LASTORDERS_REPO` fallback. New dependency: `cryptography`.
 
 ## 0.3.0 (unreleased)
 - `fix`: automatic code fixes driven entirely by pack rules. It renames `max_tokens` per endpoint, adds
@@ -32,15 +35,15 @@
 - Client report: an "Automatic fixes" section with the verification results.
 
 ## 0.2.0 (unreleased)
-- Free `scan` packaged for `pip`/`pipx` (`modelmigrate` entry point; the name is a placeholder, see `scripts/rename_product.py`); no licence or API key needed.
+- Free `scan` packaged for `pip`/`pipx` (entry point then called `modelmigrate`, a placeholder name); no licence or API key needed.
 - Provider-neutral **migration packs** (JSON + JSON Schema): OpenAI (full), Anthropic (stub). Fetched from a
   hosted URL at runtime with sha256 check, 24h cache and bundled offline fallback.
 - Scanner, swap and report are generic engines driven by pack data (model IDs, aliases, families, shutdown dates,
   replacements, SDK/call-site signals, parameter/endpoint/tool-calling rules).
 - GitHub Action (`action.yml`, composite): job summary, PR annotations, artifact upload, optional fail on high risk.
-- Placeholder licence gate for `swap --apply`, `eval` and `report` (`MODELMIGRATE_LICENCE` / `--licence`). One licence = one GitHub repo (monorepos included).
+- Placeholder licence gate for `swap --apply`, `eval` and `report` (`LASTORDERS_LICENCE` / `--licence`). One licence = one GitHub repo (monorepos included).
 - `init-evals`: generate a starter regression suite from the scan's call sites (prompts, schemas, tools read statically).
-- Network policy: only the pack fetch (and, later, the licence check) contacts us; no telemetry. `--offline` / `MODELMIGRATE_OFFLINE=1`.
+- Network policy: only the pack fetch (and, later, the licence check) contacts us; no telemetry. `--offline` / `LASTORDERS_OFFLINE=1`.
 - `packs list|validate|build-site`; deployable static pack site for Vercel / Cloudflare Pages.
 
 ## 0.1.0

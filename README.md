@@ -1,4 +1,4 @@
-# ModelMigrate (working name)
+# Last Orders (working name)
 
 **Find retiring AI model IDs in your code before they break.** One command scans your repo for OpenAI
 (and, as a preview, Anthropic) model IDs that are being shut down. For each one it tells you the
@@ -14,7 +14,7 @@ The scan is free. You don't need an account, a licence or an API key, and your c
 ## Install
 
 ```bash
-pipx install modelmigrate        # or: pip install modelmigrate
+pipx install lastorders        # or: pip install lastorders
 ```
 
 You need Python 3.10 or later.
@@ -22,12 +22,12 @@ You need Python 3.10 or later.
 ## Scan
 
 ```bash
-modelmigrate scan .              # scan the current repo
-modelmigrate scan path/to/repo --out scan-results
-modelmigrate scan . --offline    # no network at all (uses the bundled migration pack)
+lastorders scan .              # scan the current repo
+lastorders scan path/to/repo --out scan-results
+lastorders scan . --offline    # no network at all (uses the bundled migration pack)
 ```
 
-You get `scan.md`, a readable report, and `scan.json`, the same data for tools. They go in `modelmigrate-out/`, or wherever `--out` points. Each finding includes:
+You get `scan.md`, a readable report, and `scan.json`, the same data for tools. They go in `lastorders-out/`, or wherever `--out` points. Each finding includes:
 
 - **File, line and model ID**, from code (Python, JS, TS), `.env` files, YAML, JSON, TOML and docs
 - **Shutdown date and recommended replacement**, from the provider's published deprecations
@@ -54,9 +54,9 @@ Useful flags:
 ## Fix (patch preview)
 
 ```bash
-modelmigrate fix .                 # writes modelmigrate-out/fix.diff + fix-plan.md; changes nothing on disk
-modelmigrate fix . --verify        # also checks the patch on a scratch copy (see below)
-git apply modelmigrate-out/fix.diff
+lastorders fix .                 # writes lastorders-out/fix.diff + fix-plan.md; changes nothing on disk
+lastorders fix . --verify        # also checks the patch on a scratch copy (see below)
+git apply lastorders-out/fix.diff
 ```
 
 `fix` swaps the retiring model IDs and then makes the code changes the new model needs at each API call:
@@ -105,7 +105,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: burntandtoast/modelmigrate@v0     # placeholder until published
+      - uses: burntandtoast/lastorders@v0     # available once the repo is published
         with:
           fail-on-high: "true"
 ```
@@ -125,7 +125,7 @@ as an artifact. Inputs:
 | `version` | action source | install this version from PyPI instead |
 | `python-version` | `3.12` | |
 | `fix-preview` | `false` | also attach the automatic-fix patch + plan (simulated verify, no key) |
-| `artifact-name` | `modelmigrate-scan` | |
+| `artifact-name` | `lastorders-scan` | |
 
 Outputs: `total`, `high` and `report-dir`.
 
@@ -142,7 +142,7 @@ against the live API are marked `live-tested`, and anything we assumed is marked
 - Gemini, Azure OpenAI and Bedrock: planned
 
 The tool checks for a newer pack once a day and falls back to the copy bundled with the package.
-`modelmigrate packs list` shows which version and source you're using. The format is documented in
+`lastorders packs list` shows which version and source you're using. The format is documented in
 [docs/PACKS.md](docs/PACKS.md), with a JSON Schema in `migration_kit/pack_data/pack.schema.json`.
 
 ## Privacy and network use
@@ -152,7 +152,7 @@ The tool checks for a newer pack once a day and falls back to the copy bundled w
 - The tool only ever contacts us to **download the latest migration pack** (a plain GET of a static JSON file,
   with no identifiers) and, for paid features, to **check a licence key**. That check sends only the key and the
   repo name (`github.com/owner/repo`), and the signed answer is cached for a week, with a 14-day offline grace period after that.
-- `--offline` (or `MODELMIGRATE_OFFLINE=1`) turns off all network access and uses the bundled pack.
+- `--offline` (or `LASTORDERS_OFFLINE=1`) turns off all network access and uses the bundled pack.
 - The paid `eval` command calls the AI provider directly **with your own API key**. Nothing goes through us.
 
 ## Paid features
@@ -164,10 +164,10 @@ The tool checks for a newer pack once a day and falls back to the copy bundled w
 | We do the migration, evals and handoff | | | ✓ |
 
 One licence covers **one GitHub repository, monorepos included**. It's bound to the repo the first time
-you use it. Buy one with `modelmigrate licence buy` (it prints a Stripe Checkout link for this repo), then pass the key
-with `MODELMIGRATE_LICENCE` (a repository secret in Actions) or `--licence`. `modelmigrate licence status` shows
+you use it. Buy one with `lastorders licence buy` (it prints a Stripe Checkout link for this repo), then pass the key
+with `LASTORDERS_LICENCE` (a repository secret in Actions) or `--licence`. `lastorders licence status` shows
 whether it's verified. Paid commands work `--offline` from the cached check. Repos without an `origin` remote
-can set `MODELMIGRATE_REPO=github.com/owner/repo`. The licence server lives in `server/`; see
+can set `LASTORDERS_REPO=github.com/owner/repo`. The licence server lives in `server/`; see
 [docs/LICENCE-SERVER.md](docs/LICENCE-SERVER.md).
 
 `init-evals` reads the call sites the scan found, including prompts, JSON schemas and tool definitions where

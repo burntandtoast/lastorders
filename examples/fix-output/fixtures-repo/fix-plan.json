@@ -1,5 +1,5 @@
 {
-  "tool": "modelmigrate",
+  "tool": "lastorders",
   "root": "fixer-repo",
   "packs": [
     {

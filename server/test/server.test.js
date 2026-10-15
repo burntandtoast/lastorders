@@ -65,7 +65,7 @@ test("checkout: £149 inline price by default, configurable amount, price id, re
   assert.equal(p.get("line_items[0][quantity]"), "1");
   assert.equal(p.get("success_url"), "https://licence.example.test/success?session_id={CHECKOUT_SESSION_ID}");
   assert.equal(p.get("cancel_url"), "https://licence.example.test/cancel");
-  assert.equal(p.get("metadata[product]"), "modelmigrate-repo");
+  assert.equal(p.get("metadata[product]"), "lastorders-repo");
   assert.equal(p.get("metadata[repo_hint]"), "github.com/acme/shop");
   assert.equal(p.get("customer_email"), "dev@acme.test");
 

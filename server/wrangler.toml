@@ -1,5 +1,5 @@
-# ModelMigrate licence server + pack site. Nothing here is secret; secrets go in `wrangler secret put` (see docs/LICENCE-SERVER.md).
-name = "modelmigrate-licence"
+# Last Orders licence server + pack site. Nothing here is secret; secrets go in `wrangler secret put` (see docs/LICENCE-SERVER.md).
+name = "lastorders-licence"
 main = "src/index.js"
 compatibility_date = "2026-10-01"
 workers_dev = true
@@ -12,17 +12,17 @@ run_worker_first = ["/api/*", "/buy", "/success", "/cancel", "/healthz"]
 
 [[d1_databases]]
 binding = "DB"
-database_name = "modelmigrate-licences"
-database_id = "REPLACE_WITH_D1_DATABASE_ID"      # from `wrangler d1 create modelmigrate-licences`
+database_name = "lastorders-licences"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"      # from `wrangler d1 create lastorders-licences`
 migrations_dir = "migrations"
 
 # Custom domain (uncomment once the zone is on Cloudflare):
 # routes = [{ pattern = "packs.burntandtoast.com", custom_domain = true }]
 
 [vars]
-PRODUCT_NAME = "ModelMigrate"
-CLI_NAME = "modelmigrate"
-PRODUCT_CODE = "modelmigrate-repo"
+PRODUCT_NAME = "Last Orders"
+CLI_NAME = "lastorders"
+PRODUCT_CODE = "lastorders-repo"
 CURRENCY = "gbp"
 PRICE_AMOUNT = "14900"            # minor units (14900 = £149.00). Ignored if STRIPE_PRICE_ID is set.
 STRIPE_PRICE_ID = ""              # optional: a Price from the Stripe Dashboard instead of inline price_data
@@ -32,7 +32,7 @@ STRIPE_INVOICE_CREATION = "false" # "true" emails a Stripe invoice (useful for B
 TOKEN_TTL_DAYS = "7"
 LICENCE_FEATURES = "*"
 EMAIL_PROVIDER = "log"            # resend | log | none
-EMAIL_FROM = "ModelMigrate <licences@burntandtoast.com>"
+EMAIL_FROM = "Last Orders <licences@burntandtoast.com>"
 EMAIL_REPLY_TO = ""
 SUPPORT_EMAIL = ""
 PUBLIC_BASE_URL = ""              # e.g. https://packs.burntandtoast.com (defaults to the request origin)

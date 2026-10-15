@@ -20,8 +20,8 @@ SAMPLE = ROOT / "examples" / "sample-app"
 
 @pytest.fixture
 def online(monkeypatch, licence_server):
-    monkeypatch.delenv("MODELMIGRATE_OFFLINE", raising=False)
-    monkeypatch.setenv("MODELMIGRATE_REPO", REPO)
+    monkeypatch.delenv("LASTORDERS_OFFLINE", raising=False)
+    monkeypatch.setenv("LASTORDERS_REPO", REPO)
     licence_server.add(KEY)
     return licence_server
 
@@ -75,7 +75,7 @@ def test_offline_flag_uses_cache_only(online):
 
 
 def test_env_offline_is_respected(online, monkeypatch):
-    monkeypatch.setenv("MODELMIGRATE_OFFLINE", "1")
+    monkeypatch.setenv("LASTORDERS_OFFLINE", "1")
     with pytest.raises(licence.LicenceError, match="--offline"):
         licence.require("eval", KEY, ".")
     assert online.calls == []
@@ -83,7 +83,7 @@ def test_env_offline_is_respected(online, monkeypatch):
 
 def test_other_repo_rejected_and_cache_cleared(online, monkeypatch):
     licence.require("eval", KEY, ".")
-    monkeypatch.setenv("MODELMIGRATE_REPO", "github.com/acme/other")
+    monkeypatch.setenv("LASTORDERS_REPO", "github.com/acme/other")
     with pytest.raises(licence.LicenceError, match="already bound to github.com/acme/shop"):
         licence.require("eval", KEY, ".")
 
@@ -135,25 +135,25 @@ def test_server_token_it_cannot_verify_is_not_trusted(online, monkeypatch):
 
 
 def test_no_repo_identity_explains_how_to_fix(online, monkeypatch, tmp_path):
-    monkeypatch.delenv("MODELMIGRATE_REPO")
-    with pytest.raises(licence.LicenceError, match="MODELMIGRATE_REPO"):
+    monkeypatch.delenv("LASTORDERS_REPO")
+    with pytest.raises(licence.LicenceError, match="LASTORDERS_REPO"):
         licence.require("eval", KEY, tmp_path)
 
 
 def test_repo_override_and_github_actions(monkeypatch, tmp_path):
-    monkeypatch.setenv("MODELMIGRATE_REPO", "Acme/Shop")
+    monkeypatch.setenv("LASTORDERS_REPO", "Acme/Shop")
     assert licence.repo_identity(tmp_path) == "github.com/acme/shop"
-    monkeypatch.setenv("MODELMIGRATE_REPO", "https://gitlab.com/acme/shop.git")
+    monkeypatch.setenv("LASTORDERS_REPO", "https://gitlab.com/acme/shop.git")
     assert licence.repo_identity(tmp_path) == "gitlab.com/acme/shop"
     monkeypatch.setenv("GITHUB_REPOSITORY", "Acme/Actions")
     assert licence.repo_identity(tmp_path) == "github.com/acme/actions"
 
 
 def test_dev_public_keys_only_for_loopback(monkeypatch):
-    monkeypatch.setenv("MODELMIGRATE_LICENCE_DEV_PUBLIC_KEYS", json.dumps({"dev": "x"}))
-    monkeypatch.setenv("MODELMIGRATE_LICENCE_URL", "https://evil.example/verify")
+    monkeypatch.setenv("LASTORDERS_LICENCE_DEV_PUBLIC_KEYS", json.dumps({"dev": "x"}))
+    monkeypatch.setenv("LASTORDERS_LICENCE_URL", "https://evil.example/verify")
     assert licence._dev_keys() == {}
-    monkeypatch.setenv("MODELMIGRATE_LICENCE_URL", "http://127.0.0.1:8787/api/licence/verify")
+    monkeypatch.setenv("LASTORDERS_LICENCE_URL", "http://127.0.0.1:8787/api/licence/verify")
     assert licence._dev_keys() == {"dev": "x"}
 
 
@@ -168,12 +168,12 @@ def test_free_scan_needs_no_licence_and_no_network(monkeypatch, tmp_path, licenc
         raise AssertionError("network used")
     monkeypatch.setattr(urllib.request, "urlopen", boom)
     monkeypatch.setattr(licence, "_transport", boom)
-    monkeypatch.delenv("MODELMIGRATE_OFFLINE")
+    monkeypatch.delenv("LASTORDERS_OFFLINE")
     assert main(["scan", str(SAMPLE), "--out", str(tmp_path), "--offline"]) == 0
 
 
 def test_cli_licence_status_and_paid_command_offline(capsys, monkeypatch, tmp_path):
-    # conftest pre-verified TEST_LICENCE for TEST_REPO; MODELMIGRATE_OFFLINE=1 so this is the cache path
+    # conftest pre-verified TEST_LICENCE for TEST_REPO; LASTORDERS_OFFLINE=1 so this is the cache path
     assert main(["licence", "status", str(tmp_path), "--licence", TEST_LICENCE]) == 0
     assert "--offline: cached verification" in capsys.readouterr().out
     assert main(["licence", "buy", str(tmp_path)]) == 0
@@ -201,16 +201,16 @@ def test_end_to_end_against_the_real_worker(monkeypatch, tmp_path):
     try:
         info = json.loads(proc.stdout.readline())
         key = info["keys"][0]
-        monkeypatch.delenv("MODELMIGRATE_OFFLINE")
+        monkeypatch.delenv("LASTORDERS_OFFLINE")
         monkeypatch.setattr(licence, "_transport", licence._http_post)
         monkeypatch.setattr(licence, "PUBLIC_KEYS", {})
-        monkeypatch.setenv("MODELMIGRATE_LICENCE_URL", info["url"] + "/api/licence/verify")
-        monkeypatch.setenv("MODELMIGRATE_LICENCE_DEV_PUBLIC_KEYS", json.dumps(info["public_keys"]))
-        monkeypatch.setenv("MODELMIGRATE_REPO", "github.com/e2e/one")
+        monkeypatch.setenv("LASTORDERS_LICENCE_URL", info["url"] + "/api/licence/verify")
+        monkeypatch.setenv("LASTORDERS_LICENCE_DEV_PUBLIC_KEYS", json.dumps(info["public_keys"]))
+        monkeypatch.setenv("LASTORDERS_REPO", "github.com/e2e/one")
         lic = licence.require("fix-apply", key, tmp_path)
         assert lic.mode == "online" and lic.test and lic.expires - time.time() > 6 * 86400
         assert licence.require("fix-apply", key, tmp_path).mode == "cached"
-        monkeypatch.setenv("MODELMIGRATE_REPO", "github.com/e2e/two")
+        monkeypatch.setenv("LASTORDERS_REPO", "github.com/e2e/two")
         with pytest.raises(licence.LicenceError, match="already bound to github.com/e2e/one"):
             licence.require("fix-apply", key, tmp_path)
         with urllib.request.urlopen(info["url"] + "/api/licence/public-key", timeout=5) as r:

@@ -1,4 +1,4 @@
-name: "ModelMigrate model retirement scan"
+name: "Last Orders model retirement scan"
 description: "Free scan for retiring AI model IDs (OpenAI, Anthropic, ...) in your repo. Posts a job summary and uploads scan.json."
 author: "Burnt & Toast Studios"
 branding:
@@ -38,7 +38,7 @@ inputs:
     default: "false"
   artifact-name:
     description: "Name of the uploaded artifact."
-    default: "modelmigrate-scan"
+    default: "lastorders-scan"
 
 outputs:
   total:
@@ -58,7 +58,7 @@ runs:
       with:
         python-version: ${{ inputs.python-version }}
 
-    - name: Install ModelMigrate
+    - name: Install Last Orders
       shell: bash
       env:
         BTM_VERSION: ${{ inputs.version }}
@@ -66,11 +66,11 @@ runs:
       run: |
         python -m pip install --disable-pip-version-check --quiet --upgrade pip
         if [ -n "$BTM_VERSION" ]; then
-          python -m pip install --disable-pip-version-check --quiet "modelmigrate==$BTM_VERSION"
+          python -m pip install --disable-pip-version-check --quiet "lastorders==$BTM_VERSION"
         else
           python -m pip install --disable-pip-version-check --quiet "$BTM_ACTION_PATH"
         fi
-        modelmigrate --version
+        lastorders --version
 
     - name: Scan for retiring model IDs
       id: scan
@@ -83,14 +83,14 @@ runs:
         BTM_OFFLINE: ${{ inputs.offline }}
         BTM_PACKS_URL: ${{ inputs.packs-url }}
       run: |
-        out="$RUNNER_TEMP/modelmigrate"
+        out="$RUNNER_TEMP/lastorders"
         args=(scan "$BTM_PATH" --out "$out" --summary-file "$GITHUB_STEP_SUMMARY")
         [ "$BTM_DOCS" = "true" ] || args+=(--no-docs)
         [ "$BTM_ANNOTATIONS" = "true" ] && args+=(--annotations)
         [ -n "$BTM_PACKS" ] && args+=(--pack "$BTM_PACKS")
         [ "$BTM_OFFLINE" = "true" ] && args+=(--offline)
         [ -n "$BTM_PACKS_URL" ] && args+=(--packs-url "$BTM_PACKS_URL")
-        modelmigrate "${args[@]}"
+        lastorders "${args[@]}"
         python - "$out/scan.json" >> "$GITHUB_OUTPUT" <<'PY'
         import json, sys
         s = json.load(open(sys.argv[1]))["summary"]
@@ -108,12 +108,12 @@ runs:
         BTM_OFFLINE: ${{ inputs.offline }}
         BTM_PACKS_URL: ${{ inputs.packs-url }}
       run: |
-        out="$RUNNER_TEMP/modelmigrate"
+        out="$RUNNER_TEMP/lastorders"
         args=(fix "$BTM_PATH" --out "$out" --verify)
         [ -n "$BTM_PACKS" ] && args+=(--pack "$BTM_PACKS")
         [ "$BTM_OFFLINE" = "true" ] && args+=(--offline)
         [ -n "$BTM_PACKS_URL" ] && args+=(--packs-url "$BTM_PACKS_URL")
-        modelmigrate "${args[@]}" || true
+        lastorders "${args[@]}" || true
         python - "$out" >> "$GITHUB_STEP_SUMMARY" <<'PY'
         import json, sys, pathlib
         out = pathlib.Path(sys.argv[1])
@@ -133,12 +133,12 @@ runs:
       with:
         name: ${{ inputs.artifact-name }}
         path: |
-          ${{ runner.temp }}/modelmigrate/scan.json
-          ${{ runner.temp }}/modelmigrate/scan.md
-          ${{ runner.temp }}/modelmigrate/fix.diff
-          ${{ runner.temp }}/modelmigrate/fix-plan.md
-          ${{ runner.temp }}/modelmigrate/fix-plan.json
-          ${{ runner.temp }}/modelmigrate/verify/verify.md
+          ${{ runner.temp }}/lastorders/scan.json
+          ${{ runner.temp }}/lastorders/scan.md
+          ${{ runner.temp }}/lastorders/fix.diff
+          ${{ runner.temp }}/lastorders/fix-plan.md
+          ${{ runner.temp }}/lastorders/fix-plan.json
+          ${{ runner.temp }}/lastorders/verify/verify.md
         if-no-files-found: warn
 
     - name: Fail on high-risk findings
@@ -147,5 +147,5 @@ runs:
       env:
         BTM_HIGH: ${{ steps.scan.outputs.high }}
       run: |
-        echo "::error::ModelMigrate found $BTM_HIGH high-risk model reference(s). See the job summary and the scan artifact."
+        echo "::error::Last Orders found $BTM_HIGH high-risk model reference(s). See the job summary and the scan artifact."
         exit 1

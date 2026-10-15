@@ -3,7 +3,7 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "modelmigrate"
+name = "lastorders"
 dynamic = ["version"]
 description = "Free scanner for retiring AI model IDs (OpenAI, Anthropic, ...) in your code, with CI support."
 readme = "README.md"
@@ -28,7 +28,7 @@ dependencies = ["pyyaml>=6", "jsonschema>=4", "libcst>=1.1", "cryptography>=41"]
 dev = ["pytest>=8", "build>=1"]
 
 [project.scripts]
-modelmigrate = "migration_kit.cli:main"
+lastorders = "migration_kit.cli:main"
 
 [project.urls]
 # TODO: set once the repo / site exist

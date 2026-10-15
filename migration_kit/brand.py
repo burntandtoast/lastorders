@@ -1,18 +1,18 @@
-"""Product naming in ONE place. The product name is undecided (candidates: Last Orders,
-Sunsetter, ModelMove), so everything user-visible reads from here.
+"""Product naming in ONE place: everything user-visible reads from here.
 
-To rename: run `python scripts/rename_product.py "New Name" newcli` which updates this
-file plus the static places Python can't read at build time (pyproject.toml, action.yml,
-workflows, README)."""
+The product is "Last Orders" (CLI, package and PyPI name `lastorders`, env prefix LASTORDERS_),
+chosen 15 Oct 2026. To rename again, run `python scripts/rename_product.py "New Name" newcli`, which
+updates this file plus every static place Python can't read at build time (pyproject.toml,
+action.yml, workflows, docs, tests, examples, site/ and server/)."""
 import os
 
-PRODUCT_NAME = "ModelMigrate"          # working title / placeholder
-CLI_NAME = "modelmigrate"              # console command + PyPI distribution name
-ENV_PREFIX = "MODELMIGRATE"            # env vars: MODELMIGRATE_OFFLINE, MODELMIGRATE_LICENCE, ...
+PRODUCT_NAME = "Last Orders"
+CLI_NAME = "lastorders"                # console command, package and PyPI distribution name
+ENV_PREFIX = "LASTORDERS"              # env vars: LASTORDERS_OFFLINE, LASTORDERS_LICENCE, ...
 COMPANY = "Burnt & Toast Studios"
 SERVICE_URL = "https://packs.burntandtoast.com"    # planned host of server/ (pack site + licence API); NOT deployed yet
 PACKS_URL = f"{SERVICE_URL}/v1"
-LICENCE_URL = f"{SERVICE_URL}/api/licence/verify"   # override: $MODELMIGRATE_LICENCE_URL
+LICENCE_URL = f"{SERVICE_URL}/api/licence/verify"   # override: $LASTORDERS_LICENCE_URL
 BUY_URL = f"{SERVICE_URL}/buy"                      # Stripe Checkout (append ?repo=github.com/owner/name to prefill)
 CACHE_DIR_NAME = CLI_NAME
 
