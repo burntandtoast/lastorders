@@ -1,0 +1,23 @@
+# Landing page for Last Orders: lastorders.burntandtoast.com.
+# public/index.html is a copy of launch/landing-selfserve.html (Chad's original) plus the "Remind me" sign-up box.
+# Secret (never in this file): BUTTONDOWN_API_KEY  (wrangler secret put BUTTONDOWN_API_KEY)
+name = "lastorders-landing"
+main = "src/worker.js"
+compatibility_date = "2026-10-01"
+workers_dev = true
+routes = [{ pattern = "lastorders.burntandtoast.com", custom_domain = true }]
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+html_handling = "auto-trailing-slash"
+not_found_handling = "404-page"
+run_worker_first = ["/subscribe", "/buy", "/buy/", "/terms", "/terms/", "/success", "/success/", "/cancel", "/cancel/", "/preview", "/preview/*", "/studio-assets/*"]
+
+[observability]
+enabled = true
+
+# /buy, /terms, /success, /cancel are handled by the licence Worker (server/), so customers only see this host.
+[[services]]
+binding = "LICENCE"
+service = "lastorders-licence"

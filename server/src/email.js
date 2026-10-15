@@ -1,5 +1,6 @@
 // Pluggable licence-email delivery. Provider chosen by EMAIL_PROVIDER: resend | log | none.
 import { escapeHtml } from "./util.js";
+import { REFUND_LINE } from "./terms.js";
 
 export function licenceEmail({ key, productName, cliName, buyerEmail, baseUrl, supportEmail }) {
   const subject = `Your ${productName} licence key`;
@@ -18,6 +19,8 @@ export function licenceEmail({ key, productName, cliName, buyerEmail, baseUrl, s
     `Receipt and docs: ${baseUrl}`,
     supportEmail ? `Questions or a repo move: reply to this email or write to ${supportEmail}.` : "Questions or a repo move: reply to this email.",
     "",
+    `${REFUND_LINE} Terms: ${baseUrl}/terms`,
+    "",
     "Burnt & Toast Studios",
   ].join("\n");
   const html = `<!doctype html><html><body style="font-family:system-ui,sans-serif;line-height:1.5;color:#1b1b1b">
@@ -30,6 +33,7 @@ ${escapeHtml(cliName)} fix . --verify --apply</pre>
 <p>In GitHub Actions, store it as a repository secret named <code>LASTORDERS_LICENCE</code>.</p>
 <p>Docs: <a href="${escapeHtml(baseUrl)}">${escapeHtml(baseUrl)}</a><br>
 ${supportEmail ? `Questions or a repo move: reply, or write to ${escapeHtml(supportEmail)}.` : "Questions or a repo move: reply to this email."}</p>
+<p style="font-size:13px;color:#555">${escapeHtml(REFUND_LINE)} <a href="${escapeHtml(baseUrl)}/terms">Terms</a></p>
 <p>Burnt &amp; Toast Studios</p></body></html>`;
   return { to: buyerEmail, subject, text, html };
 }

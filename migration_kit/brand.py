@@ -10,10 +10,12 @@ PRODUCT_NAME = "Last Orders"
 CLI_NAME = "lastorders"                # console command, package and PyPI distribution name
 ENV_PREFIX = "LASTORDERS"              # env vars: LASTORDERS_OFFLINE, LASTORDERS_LICENCE, ...
 COMPANY = "Burnt & Toast Studios"
-SERVICE_URL = "https://packs.burntandtoast.com"    # planned host of server/ (pack site + licence API); NOT deployed yet
+SERVICE_URL = "https://packs.burntandtoast.com"    # CLI-facing: licence API, pack files (server/)
+SITE_URL = "https://lastorders.burntandtoast.com"  # customer-facing: landing page, buy, terms
 PACKS_URL = f"{SERVICE_URL}/v1"
 LICENCE_URL = f"{SERVICE_URL}/api/licence/verify"   # override: $LASTORDERS_LICENCE_URL
-BUY_URL = f"{SERVICE_URL}/buy"                      # Stripe Checkout (append ?repo=github.com/owner/name to prefill)
+BUY_URL = f"{SITE_URL}/buy"                         # Stripe Checkout (append ?repo=github.com/owner/name to prefill)
+TERMS_URL = f"{SITE_URL}/terms"                     # licence terms and refund policy
 CACHE_DIR_NAME = CLI_NAME
 
 

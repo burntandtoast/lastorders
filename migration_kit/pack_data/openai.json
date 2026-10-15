@@ -3,7 +3,7 @@
   "pack_format": 1,
   "provider": "openai",
   "name": "OpenAI API",
-  "version": "2026.10.15.4",
+  "version": "2026.10.15.6",
   "updated": "2026-10-15",
   "status": "stable",
   "notes": [
@@ -51,6 +51,9 @@
     {
       "pattern": "o[1-9](?:-(?:mini|pro|preview|deep-research)(?:-[0-9]{4}-[0-9]{2}-[0-9]{2})?|-[0-9]{4}-[0-9]{2}-[0-9]{2})?",
       "quoted_only": true
+    },
+    {
+      "pattern": "gpt-image-[0-9][A-Za-z0-9._-]*[A-Za-z0-9]|gpt-image-[0-9]"
     }
   ],
   "fine_tune": {
@@ -59,6 +62,80 @@
     "risk": "high",
     "notes": [
       "No automatic replacement: gpt-6-luna does not support fine-tuning. Options are prompting/few-shot on gpt-6-luna validated with `eval`, or re-training on a fine-tunable model. New fine-tuning jobs stop on 6 Jan 2027."
+    ],
+    "bases": [
+      {
+        "base": "o4-mini-2025-04-16",
+        "match": "exact",
+        "shutdown": "2026-10-23",
+        "replacement": "gpt-5.6-terra",
+        "section": "2026-04-22: Legacy GPT model snapshots (23 Oct 2026), fine-tuned versions",
+        "confidence": "confirmed",
+        "source": "deprecations",
+        "notes": [
+          "No direct successor: a fine-tune can't be switched automatically. Options are prompting/few-shot on gpt-5.6-terra validated with `eval`, or re-training on a fine-tunable model. New fine-tuning jobs stop on 6 Jan 2027."
+        ]
+      },
+      {
+        "base": "gpt-3.5-turbo",
+        "match": "prefix",
+        "shutdown": "2026-10-23",
+        "replacement": "gpt-5.6-terra",
+        "section": "2026-04-22: Legacy GPT model snapshots (23 Oct 2026), fine-tuned versions",
+        "confidence": "confirmed",
+        "source": "deprecations",
+        "notes": [
+          "No direct successor: a fine-tune can't be switched automatically. Options are prompting/few-shot on gpt-5.6-terra validated with `eval`, or re-training on a fine-tunable model. New fine-tuning jobs stop on 6 Jan 2027."
+        ]
+      },
+      {
+        "base": "gpt-4",
+        "match": "prefix",
+        "shutdown": "2026-10-23",
+        "replacement": "gpt-5.6-sol",
+        "section": "2026-04-22: Legacy GPT model snapshots (23 Oct 2026), fine-tuned versions",
+        "confidence": "confirmed",
+        "source": "deprecations",
+        "notes": [
+          "No direct successor: a fine-tune can't be switched automatically. Options are prompting/few-shot on gpt-5.6-sol validated with `eval`, or re-training on a fine-tunable model. New fine-tuning jobs stop on 6 Jan 2027."
+        ]
+      },
+      {
+        "base": "gpt-4.1-nano-2025-04-14",
+        "match": "exact",
+        "shutdown": "2026-10-23",
+        "replacement": "gpt-5.6-luna",
+        "section": "2026-04-22: Legacy GPT model snapshots (23 Oct 2026), fine-tuned versions",
+        "confidence": "confirmed",
+        "source": "deprecations",
+        "notes": [
+          "No direct successor: a fine-tune can't be switched automatically. Options are prompting/few-shot on gpt-5.6-luna validated with `eval`, or re-training on a fine-tunable model. New fine-tuning jobs stop on 6 Jan 2027."
+        ]
+      },
+      {
+        "base": "babbage-002",
+        "match": "exact",
+        "shutdown": "2026-10-23",
+        "replacement": "gpt-5.6-terra",
+        "section": "2026-04-22: Legacy GPT model snapshots (23 Oct 2026), fine-tuned versions",
+        "confidence": "confirmed",
+        "source": "deprecations",
+        "notes": [
+          "No direct successor: a fine-tune can't be switched automatically. Options are prompting/few-shot on gpt-5.6-terra validated with `eval`, or re-training on a fine-tunable model. New fine-tuning jobs stop on 6 Jan 2027."
+        ]
+      },
+      {
+        "base": "davinci-002",
+        "match": "exact",
+        "shutdown": "2026-10-23",
+        "replacement": "gpt-5.6-terra",
+        "section": "2026-04-22: Legacy GPT model snapshots (23 Oct 2026), fine-tuned versions",
+        "confidence": "confirmed",
+        "source": "deprecations",
+        "notes": [
+          "No direct successor: a fine-tune can't be switched automatically. Options are prompting/few-shot on gpt-5.6-terra validated with `eval`, or re-training on a fine-tunable model. New fine-tuning jobs stop on 6 Jan 2027."
+        ]
+      }
     ]
   },
   "migrations": [
@@ -298,6 +375,45 @@
       "kind": "snapshot"
     },
     {
+      "id": "o1-pro",
+      "shutdown": "2026-10-23",
+      "replacement": "gpt-5.6-sol",
+      "section": "2026-04-22: Legacy GPT model snapshots (23 Oct 2026)",
+      "confidence": "confirmed",
+      "kind": "alias",
+      "alias_of": "o1-pro-2025-03-19",
+      "note": "OpenAI's recommended replacement is gpt-5.6-sol with `reasoning.mode: pro`; a plain name swap drops pro mode, so set it explicitly.",
+      "map_automatically": false
+    },
+    {
+      "id": "o1-pro-2025-03-19",
+      "shutdown": "2026-10-23",
+      "replacement": "gpt-5.6-sol",
+      "section": "2026-04-22: Legacy GPT model snapshots (23 Oct 2026)",
+      "confidence": "confirmed",
+      "kind": "snapshot",
+      "note": "OpenAI's recommended replacement is gpt-5.6-sol with `reasoning.mode: pro`; a plain name swap drops pro mode, so set it explicitly.",
+      "map_automatically": false
+    },
+    {
+      "id": "gpt-image-1",
+      "shutdown": "2026-10-23",
+      "replacement": "gpt-image-2.5-sunburst or gpt-image-2.5-flare",
+      "section": "2026-04-22: Legacy GPT model snapshots (23 Oct 2026)",
+      "confidence": "confirmed",
+      "note": "Image model. Do not map to a text model.",
+      "map_automatically": false
+    },
+    {
+      "id": "gpt-4-1106-preview",
+      "shutdown": "2026-10-23",
+      "replacement": "gpt-5.6-sol",
+      "section": "2026-04-22: Legacy GPT model snapshots (23 Oct 2026)",
+      "confidence": "confirmed",
+      "kind": "snapshot",
+      "note": "Also listed in OpenAI's 26 Sep 2025 notice with a 26 Mar 2026 shutdown; the 22 Apr 2026 notice gives 23 Oct 2026."
+    },
+    {
       "id": "gpt-5-2025-08-07",
       "shutdown": "2026-12-11",
       "replacement": "gpt-5.6-sol",
@@ -330,6 +446,26 @@
       "kind": "snapshot"
     },
     {
+      "id": "gpt-5-pro-2025-10-06",
+      "shutdown": "2026-12-11",
+      "replacement": "gpt-5.6-sol",
+      "section": "2026-06-11: GPT-5 and o3 model deprecations",
+      "confidence": "confirmed",
+      "kind": "snapshot",
+      "note": "OpenAI's recommended replacement is gpt-5.6-sol with `reasoning.mode: pro`; a plain name swap drops pro mode, so set it explicitly.",
+      "map_automatically": false
+    },
+    {
+      "id": "o3-pro-2025-06-10",
+      "shutdown": "2026-12-11",
+      "replacement": "gpt-5.6-sol",
+      "section": "2026-06-11: GPT-5 and o3 model deprecations",
+      "confidence": "confirmed",
+      "kind": "snapshot",
+      "note": "OpenAI's recommended replacement is gpt-5.6-sol with `reasoning.mode: pro`; a plain name swap drops pro mode, so set it explicitly.",
+      "map_automatically": false
+    },
+    {
       "id": "gpt-5.3-codex",
       "shutdown": "2027-04-01",
       "replacement": "gpt-6-sol",
@@ -349,6 +485,33 @@
       "replacement": "gpt-6-sol",
       "section": "2026-10-01: GPT-5.3-Codex, GPT-5.1, GPT-5.4-Nano",
       "confidence": "confirmed"
+    },
+    {
+      "id": "gpt-image-1-mini",
+      "shutdown": "2026-12-01",
+      "replacement": "gpt-image-2.5-sunburst or gpt-image-2.5-flare",
+      "section": "2026-06-02: GPT Image model deprecations",
+      "confidence": "confirmed",
+      "note": "Image model. Do not map to a text model.",
+      "map_automatically": false
+    },
+    {
+      "id": "gpt-image-1.5",
+      "shutdown": "2026-12-01",
+      "replacement": "gpt-image-2.5-sunburst or gpt-image-2.5-flare",
+      "section": "2026-06-02: GPT Image model deprecations",
+      "confidence": "confirmed",
+      "note": "Image model. Do not map to a text model.",
+      "map_automatically": false
+    },
+    {
+      "id": "chatgpt-image-latest",
+      "shutdown": "2026-12-01",
+      "replacement": "gpt-image-2.5-sunburst or gpt-image-2.5-flare",
+      "section": "2026-06-02: GPT Image model deprecations",
+      "confidence": "confirmed",
+      "note": "Image model. Do not map to a text model.",
+      "map_automatically": false
     },
     {
       "id": "gpt-4o-transcribe",

@@ -204,7 +204,15 @@ def assess(f: Finding, pack: Pack, sig: list[str], today: dt.date) -> None:
         f.category = "fine_tune"
         ft = pack.data.get("fine_tune") or {}
         f.risk = ft.get("risk", "high")
+        fb = pack.fine_tune_override(base)
         bm = pack.lookup(base)
+        if fb:
+            f.shutdown, f.confidence = fb["shutdown"], fb.get("confidence", "confirmed")
+            f.migration = bm.migration if bm else None
+            f.notes.append(f"Fine-tune of {base}; {pack.provider} shuts down fine-tunes of this base on {fb['shutdown']}."
+                           + (f" Recommended replacement base model: {fb['replacement']}." if fb.get("replacement") else ""))
+            f.notes += fb.get("notes") or ft.get("notes", [])
+            return
         if bm:
             f.shutdown, f.migration = bm.shutdown, bm.migration
             f.notes.append(f"Fine-tune of {base}; it shuts down with its base model on {bm.shutdown}.")

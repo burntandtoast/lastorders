@@ -54,7 +54,7 @@ PAID_FEATURES = {"swap-apply": "applying the patch in place", "fix-apply": "appl
 # Generate the pair with `cd server && npm run keys`; the private half goes into the Worker secret
 # LICENCE_SIGNING_KEY, the public half is pasted here. Keep old kids here while rotating.
 PUBLIC_KEYS: dict[str, str] = {
-    # "k20261015": "<paste the x value printed by npm run keys>",
+    "k20261015": "n2qke10mwj6KK8HoIVzWyd4-7GpRGGLV9bYYHTlFiek",
 }
 
 TIMEOUT = 5.0                    # seconds for the verify request

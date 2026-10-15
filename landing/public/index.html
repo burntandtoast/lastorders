@@ -1,0 +1,493 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Last Orders: free scan for retiring GPT-4o and GPT-4.1 models | Burnt &amp; Toast</title>
+<link rel="icon" href="https://burntandtoast.com/favicon.svg" type="image/svg+xml">
+<meta name="description" content="OpenAI is retiring GPT-4o and GPT-4.1; Anthropic is retiring Claude Sonnet 4.5. Run a free scan in your own repo to find retiring model IDs and their dates. Fix it yourself, buy a licence for the automatic patch and regression report, or have us do it.">
+<link rel="preload" href="/studio-assets/fonts/bricolage-grotesque-latin.woff2" as="font" type="font/woff2" crossorigin fetchpriority="high">
+<link rel="stylesheet" href="/studio-assets/chrome.css">
+<link rel="stylesheet" href="/studio-assets/site.css">
+<style>
+/* Metric-matched fallback for Bricolage Grotesque (Arial/Helvetica sized to match), so the font swap doesn't shift text. */
+@font-face{font-family:"Bricolage fallback";src:local("Arial"),local("Helvetica"),local("Liberation Sans");size-adjust:103.3%;ascent-override:90.1%;descent-override:26.1%;line-gap-override:0%}
+:root{--display:"Bricolage Grotesque","Bricolage fallback",ui-rounded,"Arial Rounded MT Bold",system-ui,sans-serif;--body:"Bricolage Grotesque","Bricolage fallback",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+:root{
+  --crust:#2B1D14; --toast:#B5471B; --golden:#F4C95D; --butter:#F4EAD6; --crumb:#FBF4E6; --ink:#2B1D14; --soft:#5E4B3E; --line:#E4D3B5; --burnt:#7A3E1D; --ok:#3C6B47; --warn:#C23B3B;
+  --r:14px; --max:1080px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--crumb);color:var(--ink);font:17px/1.6 var(--body);-webkit-font-smoothing:antialiased}
+.sans,main h1,main h2,main h3,.subnav,.btn,.tag,.kicker,table,.price,.step-n,.deadline{font-family:var(--body)}
+main a{color:var(--toast)}
+.wrap{max-width:var(--max);margin:0 auto;padding:0 22px}
+.subnav a{color:var(--soft);text-decoration:none;margin-left:20px;font-size:15px}
+.subnav a:hover{color:var(--toast)}
+@media (max-width:720px){.subnav a:not(.btn){display:none}}
+.btn{display:inline-block;background:var(--crust);color:#fff;text-decoration:none;padding:12px 20px;border-radius:999px;font-weight:600;font-size:15px;border:2px solid var(--crust)}
+.btn:hover{background:var(--burnt)}
+.btn.ghost{background:transparent;color:var(--crust)}
+.subnav .btn{padding:8px 16px;margin-left:20px;color:#fff}
+.hero{padding:72px 0 56px;background:radial-gradient(1200px 400px at 85% -10%,#f3d79c55,transparent),var(--crumb)}
+.kicker{display:inline-block;font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--toast);background:var(--butter);padding:5px 12px;border-radius:999px}
+main h1{font-size:clamp(34px,5.4vw,58px);line-height:1.08;margin:18px 0 18px;color:var(--crust);letter-spacing:-.02em;max-width:17ch}
+.lede{font-size:clamp(18px,2.2vw,21px);color:var(--soft);max-width:60ch;margin:0 0 28px}
+.cta-row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.deadlines{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin-top:44px}
+.deadline{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:18px 20px}
+.deadline b{display:block;font-size:26px;color:var(--crust);letter-spacing:-.01em}
+.deadline .what{font-size:14px;color:var(--soft);margin-top:4px}
+.deadline code{font-size:12.5px}
+.deadline.soon{border-color:var(--warn);box-shadow:0 0 0 3px #a2461f14}
+.deadline.soon b{color:var(--warn)}
+.src{font-size:13px;color:var(--soft);margin-top:14px}
+main section{padding:68px 0;border-top:1px solid var(--line)}
+section.alt{background:#fff}
+main h2{font-size:clamp(26px,3.4vw,36px);color:var(--crust);margin:0 0 14px;letter-spacing:-.015em;line-height:1.15}
+main h3{font-size:19px;color:var(--crust);margin:0 0 6px}
+.intro{color:var(--soft);max-width:64ch;margin:0 0 30px}
+.grid{display:grid;gap:18px}
+.g3{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.g2{grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
+.card{background:var(--crumb);border:1px solid var(--line);border-radius:var(--r);padding:22px}
+section.alt .card{background:var(--crumb)}
+.card p{margin:0;color:var(--soft)}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.9em;background:var(--butter);padding:1px 6px;border-radius:5px;color:var(--burnt)}
+.trap{border-left:4px solid var(--warn);background:#fff7ef}
+.report{background:#fff;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;box-shadow:0 10px 30px -18px #3b231455}
+.report .bar{background:var(--crust);color:var(--butter);padding:10px 16px;font:600 13px/1.4 ui-monospace,Menlo,Consolas,monospace}
+.report table{width:100%;border-collapse:collapse;font-size:14px}
+.report th,.report td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+.report th{background:var(--crumb);color:var(--soft);font-weight:600;font-size:12.5px;text-transform:uppercase;letter-spacing:.05em}
+.pill{display:inline-block;font-size:12px;font-weight:700;padding:2px 9px;border-radius:999px}
+.pill.ok{background:#e3efdc;color:var(--ok)}
+.pill.chg{background:#fbe9c9;color:#8a5a12}
+.pill.fix{background:#f7ddd0;color:var(--warn)}
+.report .foot{padding:12px 16px;font-size:13px;color:var(--soft)}
+ul.ticks{list-style:none;padding:0;margin:0}
+ul.ticks li{padding-left:28px;position:relative;margin:0 0 10px}
+ul.ticks li:before{content:"";position:absolute;left:4px;top:.55em;width:11px;height:11px;border-radius:50%;background:var(--golden);box-shadow:inset 0 0 0 3px #f6e3b4}
+.steps{counter-reset:s}
+.step{display:flex;gap:18px;align-items:flex-start}
+.step-n{flex:0 0 46px;height:46px;border-radius:50%;background:var(--butter);color:var(--crust);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;border:2px solid var(--golden)}
+.step p{margin:0;color:var(--soft)}
+.price{display:flex;flex-direction:column}
+.price .tier{font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--toast)}
+.price .amt{font-size:40px;font-weight:800;color:var(--crust);margin:6px 0 2px;letter-spacing:-.02em}
+.price .per{font-size:14px;color:var(--soft);margin-bottom:16px}
+.price ul{margin-bottom:22px}
+.price .btn{margin-top:auto;align-self:flex-start}
+.price.premium{background:var(--crust);color:var(--butter);border-color:var(--crust)}
+.price.premium .tier{color:var(--golden)}
+.price.premium .amt,.price.premium h3{color:#fff}
+.price.premium .per,.price.premium li{color:#f3e4c8}
+.price.premium .btn{background:var(--golden);border-color:var(--golden);color:var(--crust)}
+.price.premium code{background:#5a3a24;color:var(--butter)}
+.note{font-size:14px;color:var(--soft);margin-top:18px}
+main details{background:var(--crumb);border:1px solid var(--line);border-radius:var(--r);padding:16px 20px;margin-bottom:12px}
+main details[open]{background:#fff}
+main summary{cursor:pointer;font:600 17px/1.4 var(--body);color:var(--crust);list-style:none}
+main summary::-webkit-details-marker{display:none}
+main summary:after{content:"+";float:right;color:var(--toast);font-weight:700}
+main details[open] summary:after{content:"–"}
+main details p{color:var(--soft);margin:10px 0 0}
+.contact{background:var(--crust);color:var(--butter);text-align:center}
+.contact h2{color:#fff}
+.contact p{color:#f0dfc2;max-width:56ch;margin:0 auto 24px}
+.contact .btn{background:var(--golden);border-color:var(--golden);color:var(--crust);font-size:17px;padding:14px 26px}
+.remind{max-width:560px;margin:40px auto 0;padding-top:32px;border-top:1px solid #ffffff26}
+.remind p{margin:0 auto 14px}
+.remind form{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.remind input[type=email]{flex:1 1 260px;min-width:0;padding:12px 18px;border-radius:999px;border:2px solid var(--golden);background:#fff;color:var(--ink);font:16px var(--body)}
+.remind input[type=email]:focus{outline:3px solid #d99a4e66;outline-offset:1px}
+.remind button.btn{cursor:pointer;font-family:var(--body)}
+.remind button.btn:disabled{opacity:.7;cursor:default}
+.remind .hp{position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden}
+.remind .msg{min-height:1.6em;margin:12px auto 0;font-size:15px;font-family:var(--body)}
+.remind .msg.ok{color:#cfe6c4}.remind .msg.err{color:#ffc9a8}
+
+.ladder-hint{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px;font-size:14px;color:var(--soft)}
+.ladder-hint span{background:#fff;border:1px solid var(--line);border-radius:999px;padding:5px 12px}
+.ladder-hint b{color:var(--crust)}
+.cmd{background:var(--crust);color:var(--butter);border-radius:var(--r);padding:16px 18px;font:14px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;overflow-x:auto;margin:0 0 12px;white-space:pre}
+.cmd .c{color:#c9a876}
+.soon{margin:0 0 16px;font:600 15px/1.4 var(--body);background:var(--butter);border:1px solid var(--golden);border-radius:var(--r);padding:10px 14px}
+.soon a{color:var(--crust)}
+.prerelease .cmd{opacity:.55;filter:grayscale(.6)}
+.prerelease h3{color:var(--soft)}
+.rung{position:relative}
+.rung .num{position:absolute;top:-14px;left:22px;background:var(--golden);color:var(--crust);font:800 13px/1 var(--body);padding:6px 10px;border-radius:999px;letter-spacing:.04em}
+.price.featured{border:2px solid var(--golden);background:#fff;box-shadow:0 14px 34px -22px #3b231488}
+.g3p{grid-template-columns:repeat(auto-fit,minmax(280px,1fr));align-items:stretch}
+.early{display:inline-block;margin:-6px 0 14px;font-size:13px;font-weight:700;color:var(--crust);background:var(--golden);padding:4px 10px;border-radius:999px}
+section.alt .price.premium{background:var(--crust)}
+section.alt .price.featured{background:#fff}
+.private{border-left:4px solid var(--ok);background:#f2f7ef}
+.consequences{background:#fff}
+.consequences .lede-soft{color:var(--soft);max-width:64ch;margin:0 0 28px}
+.cons-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-bottom:22px}
+.cons-card{background:var(--crumb);border:1px solid var(--line);border-radius:var(--r);padding:18px 20px}
+.cons-card h3{font-size:17px;margin:0 0 8px;color:var(--crust)}
+.cons-card p{margin:0;color:var(--soft);font-size:15.5px}
+.err-block{background:var(--crust);color:var(--butter);border-radius:var(--r);padding:16px 18px;font:13px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;overflow-x:auto;margin:0 0 10px;white-space:pre}
+.err-label{font:600 13px/1.4 var(--body);color:var(--soft);margin:0 0 8px}
+@media (max-width:720px){.hero{padding:48px 0 40px}main section{padding:52px 0}.price .amt{font-size:34px}}
+/* ---- Studio look (burntandtoast.com): tokens above, plus outlined pill buttons, inked cards, Bricolage headings ---- */
+main{padding-bottom:0}
+main p{margin:0 0 1em}
+main ul:not(.ticks){list-style:disc;padding-left:1.3em;margin:0 0 1em}
+main h1,main h2,main h3{font-family:var(--display);font-weight:800;letter-spacing:-0.03em;text-wrap:balance}
+main h1{line-height:.98;letter-spacing:-0.045em}
+main h2{line-height:1.02;letter-spacing:-0.04em}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:10px 20px;border:2.5px solid #2B1D14;border-radius:999px;background:#E8742C;color:#2B1D14;font-family:var(--body);font-weight:700;font-size:1rem;line-height:1.15;text-decoration:none;box-shadow:0 4px 0 #2B1D14;transition:transform .12s ease,box-shadow .12s ease,background-color .2s ease}
+.btn:hover{background:#EE8540;transform:translateY(-2px);box-shadow:0 6px 0 #2B1D14}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 #2B1D14}
+.btn.ghost{background:#FFFCF5;color:#2B1D14}.btn.ghost:hover{background:#fff}
+.price.premium .btn,.contact .btn{background:#F4C95D;border-color:#2B1D14;color:#2B1D14;box-shadow:0 4px 0 #000}
+.contact .btn{font-size:1.0625rem;padding:12px 26px}
+.card,.deadline,.cons-card,.report,main details,.price.featured{border:2.5px solid #2B1D14;box-shadow:4px 5px 0 #2B1D14;border-radius:14px}
+.card,.cons-card,main details{background:#FFFCF5}
+section.alt,.consequences{background:#F4EAD6}
+main section{border-top:3px solid #2B1D14}
+.price.premium{background:#2B1D14;color:#F4EAD6}
+.price.premium .tier{color:#F4C95D}
+.deadline.soon{border-color:#B5471B;box-shadow:4px 5px 0 #B5471B;background:#FFF1E6}
+.kicker,.early,.rung .num,.pill{border:1.5px solid #2B1D14}
+.kicker{background:#F4C95D;color:#2B1D14}
+.rung .num{background:#F4C95D;color:#2B1D14}
+.early{background:#F4C95D;color:#2B1D14}
+code{background:#F4EAD6;color:#7A3E1D}
+.cmd,.err-block{border:2.5px solid #2B1D14;box-shadow:4px 5px 0 #2B1D14}
+.soon{border:2.5px solid #2B1D14;background:#F4C95D;box-shadow:3px 4px 0 #2B1D14}
+.hero{background:#FBF4E6}
+.ladder-hint span{border:1.5px solid #2B1D14;background:#FFFCF5}
+.contact{background:#2B1D14}
+.remind input[type=email]{border:2.5px solid #2B1D14;font-family:var(--body)}
+.step-n{border:2.5px solid #2B1D14;background:#F4C95D;color:#2B1D14}
+/* the page's section links, kept as a sub-bar under the studio header */
+.subnav{border-bottom:2.5px solid #2B1D14;background:#F4EAD6}
+.subnav .wrap{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:56px;flex-wrap:wrap}
+.subnav .title{font-family:var(--display);font-weight:800;letter-spacing:-0.03em;font-size:1.15rem;color:#2B1D14;text-decoration:none;margin:0}
+.subnav a{color:#4A382C;font-weight:600}
+.subnav .btn{min-height:40px;padding:6px 16px;margin-left:16px;color:#2B1D14}
+.remind-small{margin:10px 0 0;font-size:.875rem;color:#D9CDB9}.remind-small a{color:inherit}
+.site-foot .foot-note{margin-top:10px;font-size:.875rem;opacity:.85}
+.site-foot .foot-note a{color:inherit}
+.cons-grid{gap:28px;margin-bottom:40px}
+.cons-card{padding:28px 28px 30px;box-shadow:5px 6px 0 #2B1D14}
+.cons-card h3{font-size:1.3rem;line-height:1.15;margin:0 0 12px;color:#2B1D14;text-wrap:pretty}
+.cons-card p{font-size:1rem;line-height:1.6;color:#4A382C}
+.cons-card code{white-space:nowrap}
+.err-label{margin:0 0 12px}
+@media (max-width:620px){.cons-grid{gap:24px}.cons-card{padding:24px 22px 26px}}
+/* ---- Shutdown-dates timeline (preview redesign): vertical line, one roomy studio card per date ---- */
+.deadlines{list-style:none;margin:48px 0 18px;padding:0 0 0 64px;display:flex;flex-direction:column;gap:30px;position:relative;max-width:980px}
+.deadlines:before{content:"";position:absolute;left:17px;top:30px;bottom:30px;width:4px;border-radius:4px;background:#2B1D14}
+.deadline,.deadline.soon{position:relative;display:block;background:none;border:0;box-shadow:none;padding:0;margin:0}
+.deadline .mark{position:absolute;z-index:1;left:-62px;top:30px;width:34px;height:34px;border-radius:50%;background:#F4C95D;border:3px solid #2B1D14}
+.deadline.soon .mark{background:#C23B3B;box-shadow:0 0 0 6px #F4EAD6,0 0 0 9px #C23B3B}
+.dl-card{background:#FFFCF5;border:2.5px solid #2B1D14;border-radius:14px;box-shadow:5px 6px 0 #2B1D14;padding:30px 34px;display:grid;grid-template-columns:200px minmax(0,1fr) minmax(0,1fr);grid-template-areas:"next what repl" "date what repl";grid-template-rows:auto 1fr;column-gap:36px;row-gap:10px;align-items:start}
+.deadline.soon .dl-card{background:#FFF1E6;border-color:#B5471B;box-shadow:5px 6px 0 #B5471B}
+.deadline b{grid-area:date;display:block;font-family:var(--display);font-weight:800;font-size:2.1rem;line-height:1.02;letter-spacing:-.035em;color:#2B1D14}
+.deadline.soon b{color:#C23B3B}
+.deadline .what{grid-area:what;font-weight:400;font-size:1.0625rem;line-height:1.6;color:#4A382C;margin:0}
+.dl-card:not(:has(.repl)) .what{grid-column:2 / 4}
+.deadline .repl{grid-area:repl;padding-left:28px;border-left:2px dashed #DCC6A0;font-size:1rem;line-height:1.6;color:#2B1D14;font-weight:600}
+.deadline code{font-size:.84rem;white-space:nowrap}
+.deadline .next{grid-area:next;justify-self:start;border:1.5px solid #2B1D14;border-radius:999px;background:#C23B3B;color:#FFFCF5;font-size:.75rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:4px 12px}
+.dl-card:not(:has(.next)) b{grid-row:1 / 3}
+.deadline .who{display:flex;width:fit-content;min-height:26px;align-items:center;padding:2px 10px;margin:0 0 10px;border:1.5px solid #2B1D14;border-radius:999px;background:#F4EAD6;color:#2B1D14;font-size:.8125rem;font-weight:700;line-height:1.2}
+.dl-src{max-width:980px;margin:0 0 52px}
+@media (max-width:860px){
+ .deadlines{padding-left:52px;gap:26px}
+ .deadlines:before{left:13px}
+ .deadline .mark{left:-52px;top:26px;width:30px;height:30px}
+ .dl-card,.dl-card:not(:has(.repl)){display:flex;flex-direction:column;gap:14px;padding:24px 22px 26px}
+ .deadline .repl{padding:14px 0 0;border-left:0;border-top:2px dashed #DCC6A0}
+ .deadline .next{align-self:flex-start}}
+@media (max-width:480px){.deadline b{font-size:1.8rem}.deadlines{margin-top:36px;padding-left:46px}.deadline .mark{left:-46px}.deadlines:before{left:12px}.deadline code{font-size:.8rem}}
+</style>
+</head>
+<body id="top">
+
+<header class="site-head"><div class="head-row">
+<a class="brand" href="https://burntandtoast.com/" aria-label="Burnt and Toast Studios, home"><svg viewBox="40 40 220 220" aria-hidden="true" focusable="false"><defs><linearGradient id="hm-char" x1="0.2" y1="0.95" x2="0.95" y2="0.05"><stop offset="0%" stop-color="#4A1E0C" stop-opacity="0"/><stop offset="22%" stop-color="#4A1E0C" stop-opacity="0.92"/><stop offset="58%" stop-color="#8A3A1E"/><stop offset="84%" stop-color="#C4551F"/><stop offset="100%" stop-color="#F0873A"/></linearGradient><clipPath id="hm-clip"><path d="M82 250 Q72 250 72 240 L72 138 C40 132 40 92 66 76 C88 62 112 56 150 56 C188 56 212 62 234 76 C260 92 260 132 228 138 L228 240 Q228 250 218 250 Z"/></clipPath></defs><g class="mark-slice"><g clip-path="url(#hm-clip)"><path d="M300 214 C262 208 252 178 234 161 C216 144 208 127 191 111 C175 95 160 85 149 62 C141 45 138 25 133 0 L300 0 Z" fill="url(#hm-char)"/><path d="M300 214 C262 208 252 178 234 161 C216 144 208 127 191 111 C175 95 160 85 149 62 C141 45 138 25 133 0" fill="none" stroke="#F0873A" stroke-width="5" stroke-opacity="0.6"/></g><path d="M82 250 Q72 250 72 240 L72 138 C40 132 40 92 66 76 C88 62 112 56 150 56 C188 56 212 62 234 76 C260 92 260 132 228 138 L228 240 Q228 250 218 250 Z" fill="none" stroke="#2B1D14" stroke-width="13" stroke-linejoin="round" stroke-linecap="round"/></g></svg><span>Burnt &amp; Toast</span></a>
+<nav class="nav" aria-label="Main"><ul class="nav-wide">
+<li><a href="https://burntandtoast.com/#games">Games</a></li><li><a href="https://burntandtoast.com/#studio">Studio</a></li><li><a href="https://burntandtoast.com/blog">Journal</a></li>
+<li><a class="nav-play" href="https://lastorders.burntandtoast.com/">Last Orders</a></li><li><a class="nav-hello" href="https://burntandtoast.com/#contact">Say hello</a></li></ul>
+<details class="menu"><summary><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="M4 7 H20 M4 12 H20 M4 17 H20" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg><span>Menu</span></summary>
+<ul><li><a class="menu-play" href="https://lastorders.burntandtoast.com/">Last Orders</a></li><li><a href="https://burntandtoast.com/#games">Games</a></li><li><a href="https://burntandtoast.com/#studio">Studio</a></li><li><a href="https://burntandtoast.com/blog">Journal</a></li><li><a href="https://burntandtoast.com/#contact">Say hello</a></li></ul></details>
+</nav></div></header>
+<div class="subnav"><div class="wrap"><p class="title">Last Orders</p><nav aria-label="Last Orders"><a href="#if-nothing">If you do nothing</a><a href="#scan">Free scan</a><a href="#problem">The problem</a><a href="#pricing">Pricing</a><a href="#faq">FAQ</a><a class="btn" href="#scan">Run the free scan</a></nav></div></div>
+
+<main>
+<div class="hero"><div class="wrap">
+  <span class="kicker">Last Orders · OpenAI model retirements</span>
+  <h1>Is your code pinned to a model OpenAI is retiring? Find out for free.</h1>
+  <p class="lede">Some GPT-4o and GPT-4.1 snapshots are switched off on 23&nbsp;October 2026, the rest on 14&nbsp;January 2027. Last Orders scans your repo, on your machine or in your own CI, lists every retiring model ID and tells you the date that applies. If it's a one-line fix, it says so. If it isn't, you can fix it yourself, buy the automatic patch, or have us do it.</p>
+  <div class="cta-row">
+    <a class="btn" href="#scan">Run the free scan</a>
+    <a class="btn ghost" href="#report">See a sample report</a>
+  </div>
+  <div class="ladder-hint">
+    <span><b>Free</b> scan</span>
+    <span><b>£149</b> per repo · automatic patch + regression report</span>
+    <span><b>From £1,500</b> · we do it for you</span>
+  </div>
+
+</div></div>
+
+<section id="if-nothing" class="consequences"><div class="wrap">
+  <h2>What happens if you do nothing</h2>
+  <p class="lede-soft">On the shutdown date the retired model stops working. OpenAI's own wording: at shut down, &ldquo;the model or endpoint will no longer be accessible.&rdquo; Anthropic's: &ldquo;Requests to retired models will fail.&rdquo; Anything still calling those IDs — a chatbot, a summariser, a classifier, a background automation — starts getting errors that day. In a queue or cron job that can look like silence until someone notices the backlog.</p>
+
+  <ol class="deadlines" aria-label="Shutdown dates">
+    <li class="deadline soon"><span class="mark" aria-hidden="true"></span><div class="dl-card"><span class="next">Next up</span><b>23 Oct 2026</b><div class="what"><span class="who">OpenAI</span><code>gpt-4.1-nano</code> and <code>gpt-4o-2024-05-13</code> are switched off.</div><div class="repl">Replacements: <code>gpt-5.6-luna</code> / <code>gpt-5.6-sol</code>. That's next week.</div></div></li>
+    <li class="deadline"><span class="mark" aria-hidden="true"></span><div class="dl-card"><b>30 Nov 2026</b><div class="what"><span class="who">Anthropic</span>Anthropic retires <code>claude-sonnet-4-5-20250929</code> (Claude Sonnet 4.5). Requests fail.</div><div class="repl">Replacement: <code>claude-sonnet-5-5</code>.</div></div></li>
+    <li class="deadline"><span class="mark" aria-hidden="true"></span><div class="dl-card"><b>6 Jan 2027</b><div class="what"><span class="who">OpenAI</span>No new OpenAI fine-tuning jobs. If you have a fine-tune, decide before this.</div></div></li>
+    <li class="deadline"><span class="mark" aria-hidden="true"></span><div class="dl-card"><b>14 Jan 2027</b><div class="what"><span class="who">OpenAI</span>The remaining GPT-4o, GPT-4o mini, GPT-4.1 and GPT-4.1 mini snapshots are removed, along with fine-tunes built on them.</div><div class="repl">Replacement: <code>gpt-6-luna</code>.</div></div></li>
+  </ol>
+  <p class="src dl-src">OpenAI dates from their <a href="https://platform.openai.com/docs/deprecations">deprecations page</a>; Anthropic from theirs (<a href="https://docs.anthropic.com/en/docs/about-claude/model-deprecations">model deprecations</a>), both checked 15 October 2026. Undated names like <code>gpt-4o</code> still resolve to a dated snapshot on the list; the scan tells you which.</p>
+
+  <div class="cons-grid">
+    <div class="cons-card"><h3>The feature stops responding</h3><p>Requests to the retired model ID fail. Chat UIs go blank, summaries never arrive, classifiers never return a label. Background jobs often fail quietly until something downstream breaks.</p></div>
+    <div class="cons-card"><h3>Fine-tunes go with the base model</h3><p>Fine-tuned models built on those bases are switched off on the same day, and <code>gpt-6-luna</code> can't be fine-tuned, so you can't recreate them there. New fine-tuning jobs stop on 6&nbsp;January 2027.</p></div>
+    <div class="cons-card"><h3>A hurried name-only swap breaks too</h3><p>Changing only the model string is not enough. In our own API checks, <code>gpt-6-luna</code> rejects <code>max_tokens</code>, and Chat Completions tool calls fail unless <code>reasoning_effort</code> is set to <code>none</code>.</p></div>
+  </div>
+
+  <p class="err-label">A real error from our own API checks when a call is only renamed (not a post-shutdown error — this is what a name-only swap to <code>gpt-6-luna</code> returns today):</p>
+  <div class="err-block">HTTP 400
+{
+  "error": {
+    "message": "Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead.",
+    "type": "invalid_request_error",
+    "param": "max_tokens",
+    "code": "unsupported_parameter"
+  }
+}</div>
+  <p class="src" style="margin-top:14px">Shutdown wording: OpenAI <a href="https://platform.openai.com/docs/deprecations">deprecations</a> (&ldquo;no longer be accessible&rdquo;); Anthropic <a href="https://docs.anthropic.com/en/docs/about-claude/model-deprecations">model deprecations</a> (&ldquo;Requests to retired models will fail&rdquo;). Both checked 15&nbsp;October 2026. The HTTP&nbsp;400 above is from our own live check on a sample call renamed to <code>gpt-6-luna</code> without fixing its parameters.</p>
+</div></section>
+
+<section id="scan" class="alt"><div class="wrap">
+  <div class="grid g2" style="align-items:start">
+    <div>
+      <h2>Start with the free scan</h2>
+      <p class="intro">No sign-up, no account, no card. It reads your code where it already lives and prints what it finds.</p>
+      <ul class="ticks">
+        <li>Every pinned or aliased GPT-4o and GPT-4.1 model ID, plus Anthropic Claude IDs, in code, config, env templates, seeds, tests and docs.</li>
+        <li>The retirement date and the provider's recommended replacement for each one.</li>
+        <li>Fine-tuned model IDs, listed separately, because they need a plan rather than a patch.</li>
+        <li>The call sites likely to break on a plain name swap: <code>max_tokens</code>, sampling parameters, and tool calls on Chat Completions.</li>
+        <li>Environment variables that pick the model at runtime, so you can check their live values.</li>
+      </ul>
+    </div>
+    <div class="prerelease">
+      <p class="soon"><a href="#remind">Scanner release coming this week. Get a reminder below.</a></p>
+      <h3 class="sans" style="margin-bottom:10px">On your machine</h3>
+      <div class="cmd">pipx install lastorders
+lastorders scan .</div>
+      <h3 class="sans" style="margin:20px 0 10px">Or in GitHub Actions</h3>
+      <div class="cmd"><span class="c"># .github/workflows/model-check.yml</span>
+name: Retiring model check
+on: [pull_request, workflow_dispatch]
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      <span class="c"># repo: github.com/burntandtoast/lastorders</span>
+      - uses: burntandtoast/lastorders@v0
+        with:
+          fail-on-high: true
+          include-docs: true
+          annotations: true</div>
+      <p class="note" style="margin-top:6px">Source and full instructions: <a href="https://github.com/burntandtoast/lastorders">https://github.com/burntandtoast/lastorders</a>. Posts a job summary and inline PR annotations; set <code>fail-on-high: true</code> to fail the build on high-risk findings. Other inputs: <code>path</code>, <code>packs</code>, <code>offline</code>, <code>packs-url</code>, <code>version</code>, <code>python-version</code>, <code>artifact-name</code>. No API key needed, no telemetry; pass <code>--offline</code> (or <code>offline: true</code>) for the bundled list.</p>
+    </div>
+  </div>
+</div></section>
+
+<section id="problem"><div class="wrap">
+  <h2>Why it isn't just find-and-replace</h2>
+  <p class="intro">Swapping the model name looks like a five-minute job. Usually it's mostly that, plus the bits that break quietly.</p>
+  <div class="grid g3">
+    <div class="card trap"><h3>Tool calls can stop working</h3><p>On Chat Completions, the January replacement <code>gpt-6-luna</code> only supports function calling when <code>reasoning_effort</code> is set to <code>none</code>. The default is <code>medium</code>. Change only the model string and your tool calls break. The fix is a code change, or a move to the Responses API.</p></div>
+    <div class="card trap"><h3><code>max_tokens</code> and sampling parameters break</h3><p><code>gpt-6-luna</code> rejects <code>max_tokens</code> outright. <code>temperature</code>, <code>top_p</code> and <code>logprobs</code> only work with <code>reasoning_effort</code> set to <code>none</code>. Nearly any production code breaks on a plain name swap. Use <code>max_completion_tokens</code> (or <code>max_output_tokens</code> on the Responses API) and set <code>reasoning_effort</code> where you still need those parameters.</p></div>
+    <div class="card trap"><h3>Fine-tunes have no direct replacement</h3><p><code>gpt-6-luna</code> can't be fine-tuned. Your fine-tuned model is switched off with its base model on 14 January, and new fine-tuning jobs stop on 6 January. You need a plan before then, not a patch afterwards.</p></div>
+    <div class="card"><h3>Outputs drift</h3><p>A new model answers slightly differently. JSON fields get renamed, a classifier sorts things into different buckets, a summary runs longer. Nothing errors, but something downstream does the wrong thing.</p></div>
+    <div class="card"><h3>Model IDs hide everywhere</h3><p>Config files, environment variables, database seeds, test fixtures, settings migrations, docs your users copy. The ones you forget about turn up on shutdown day.</p></div>
+    <div class="card"><h3>Undated aliases</h3><p><code>gpt-4o</code> or <code>gpt-4.1-mini</code> with no date still resolves to a snapshot on the list. Live check: <code>gpt-4o</code> currently points to <code>gpt-4o-2024-08-06</code>, which retires on 14&nbsp;January 2027. And the API's <code>shutdown_date</code> field is still empty for that batch, so an empty date doesn't mean you're safe.</p></div>
+  </div>
+</div></section>
+
+<section id="licence" class="alt"><div class="wrap">
+  <div class="grid g2" style="align-items:start">
+    <div>
+      <h2>Then fix it yourself, with the licence</h2>
+      <p class="intro">If the scan finds work to do, a one-off licence for that repo unlocks the automatic fix and a before-and-after report. You run it, you review it, you merge it.</p>
+      <ul class="ticks">
+        <li><b>The swap patch.</b> <code>fix</code> rewrites the model ID and the settings that break, as a reviewable patch for Python and JS/TS. Nothing is edited behind your back. Anything it can't safely change — fine-tunes, Assistants, legacy function calls — it flags for a decision rather than guessing.</li>
+        <li><b>The parameter fixes.</b> <code>max_tokens</code> becomes <code>max_completion_tokens</code>; calls using <code>temperature</code>, <code>top_p</code> or <code>logprobs</code>, and Chat Completions tool calls, get <code>reasoning_effort: "none"</code>. The settings changes and the model switch ship together; Last Orders won't do one without the other.</li>
+        <li><b>The regression report.</b> A command builds a starter test file from the model calls the scan finds. You trim it to 10 to 20 real examples, then run them on the old model and the new one with your own API key. Each case is marked pass, drift or fail.</li>
+        <li><b>Future retirements.</b> Last Orders reads a retirement list we keep up to date, so the same repo is covered the next time OpenAI retires something.</li>
+      </ul>
+      <p class="note" style="margin-top:18px">In a test on our own sample repo (a small test project we wrote ourselves, not customer code), all 4 patched calls were accepted by <code>gpt-6-luna</code>, while all 3 changed calls were rejected outright without the fix.</p>
+      <div class="card private" style="margin-top:22px"><h3>Your code never leaves you</h3><p>Everything runs on your machine or in your own CI, against OpenAI with your own API key. There's no telemetry, and your code and prompts never leave your machine. The only things Last Orders ever contacts us for are the retirement list and a check that your licence key is valid. Prefer no network at all? Pass <code>--offline</code> and it uses the bundled list instead.</p></div>
+    </div>
+    <div id="report">
+      <div class="report">
+        <div class="bar">client-report.html · live run</div>
+        <table>
+          <tr><th>Check</th><th>Before → after</th><th>Status</th></tr>
+          <tr><td>Model references</td><td>17 found in 8 files · 7 high-risk · 1 fine-tune</td><td><span class="pill fix">Scan</span></td></tr>
+          <tr><td><code>ticket-summary-refund</code> (structured)</td><td>tags fields differ</td><td><span class="pill chg">Drift</span></td></tr>
+          <tr><td><code>ticket-summary-question</code> (structured)</td><td>tags differ</td><td><span class="pill chg">Drift</span></td></tr>
+          <tr><td><code>book-table-simple</code> (tool call)</td><td>no material difference</td><td><span class="pill ok">Pass</span></td></tr>
+          <tr><td><code>book-table-relative-date</code> (tool call)</td><td>date &quot;2023-11-03&quot; → &quot;2026-10-23&quot;, time &quot;19:30&quot; → &quot;7:30 PM&quot;</td><td><span class="pill chg">Drift</span></td></tr>
+          <tr><td><code>order-lookup</code> (tool call)</td><td>no material difference</td><td><span class="pill ok">Pass</span></td></tr>
+          <tr><td><code>apology-tone</code> (text)</td><td>text similarity 0.343</td><td><span class="pill chg">Drift</span></td></tr>
+        </table>
+        <div class="foot">Live run on our own fictional sample repo (Acme Widgets). Real <code>gpt-4o-2024-08-06</code> vs <code>gpt-6-luna</code> responses via Chat Completions, 15&nbsp;October 2026. Eval: 2/6 cases passing; drift means the new output differs and needs a human look. <a href="client-report-sample.html">See the full sample report</a>.</div>
+      </div>
+    </div>
+  </div>
+</div></section>
+
+<section id="dfy"><div class="wrap">
+  <h2>Or have us do it</h2>
+  <p class="intro">Some teams would rather hand it over, and fine-tuned models need judgement more than a patch. We work on a copy or a branch, and hand back something you can review and merge.</p>
+  <div class="grid g3">
+    <div class="card"><h3>A branch, ready to review</h3><p>One pull request with the model swap and the code changes, each commit doing one thing.</p></div>
+    <div class="card"><h3>A suite built from your real prompts</h3><p>We record current behaviour while the old model still runs, then re-run it on the replacement and fix prompts or schemas until every drift is understood.</p></div>
+    <div class="card"><h3>A short handover</h3><p>The regression report, the test set to keep, and half a page in plain English: what we did and what to watch for.</p></div>
+  </div>
+</div></section>
+
+<section id="pricing" class="alt"><div class="wrap">
+  <h2>Pricing</h2>
+  <p class="intro">Start free and only pay if you need more. Prices are final: we aren't VAT registered, so there's no VAT to add.</p>
+  <div class="grid g3p grid">
+    <div class="card price rung">
+      <span class="num">1</span>
+      <span class="tier">Free scan</span>
+      <h3>Find out where you stand</h3>
+      <div class="amt">£0</div>
+      <div class="per">CLI or GitHub Action · no sign-up</div>
+      <ul class="ticks">
+        <li>Every retiring model ID, with its date and replacement</li>
+        <li>Fine-tunes and risky call sites flagged</li>
+        <li>Runs in your repo; your code stays put</li>
+      </ul>
+      <a class="btn ghost" href="#scan">Run the free scan</a>
+    </div>
+    <div class="card price featured rung">
+      <span class="num">2</span>
+      <span class="tier">Self-serve licence</span>
+      <h3>Automatic patch + regression report</h3>
+      <!-- PRICE: £149 per repo, one-off. Leigh can change this figure here and in the hero/ladder line above. -->
+      <div class="amt">£149</div>
+      <div class="per">per repo · one-off, not a subscription</div>
+      <ul class="ticks">
+        <li><code>fix</code> writes a reviewable patch for Python and JS/TS</li>
+        <li>Auto-fixes for <code>max_tokens</code>, sampling parameters and Chat Completions tool calls; flags fine-tunes, Assistants and legacy function calls</li>
+        <li>Starter test file from the scan, trimmed by you to 10–20 real examples</li>
+        <li>Before-and-after report on your code, with your API key</li>
+        <li>One licence per GitHub repo (monorepos included)</li>
+        <li>Kept current for future retirements</li>
+      </ul>
+      <a class="btn" href="/buy">Buy a licence · £149</a>
+      <p class="note" style="margin-top:10px">Full refund if the key is never activated. <a href="/terms">Licence terms and refund policy</a></p>
+    </div>
+    <div class="card price premium rung">
+      <span class="num">3</span>
+      <span class="tier">Done for you</span>
+      <h3>We do the migration</h3>
+      <div class="amt">from £1,500</div>
+      <div class="per">fixed price, agreed after the scan · fine-tuned models from £3,500</div>
+      <span class="early">Early bird: £1,250 if booked by 31 Oct 2026</span>
+      <ul class="ticks">
+        <li>Everything in the licence, done by us on a branch</li>
+        <li>Test suite built from your real prompts and tools</li>
+        <li>Fine-tunes: a snapshot of what yours does now, your options set out plainly, and the chosen route measured against it</li>
+      </ul>
+      <a class="btn" href="mailto:hello@burntandtoast.com?subject=Done-for-you%20migration">Email us</a>
+    </div>
+  </div>
+  <p class="note">Several repos or services? Email us and we'll quote plainly. No retainers, nothing to sign up to.</p>
+</div></section>
+
+<section id="faq"><div class="wrap">
+  <h2>Questions</h2>
+  <p class="intro">If yours isn't here, email us. A person reads it.</p>
+  <details><summary>Is the scan really free? What's the catch?</summary><p>It's free, with no account and no card. It tells you what's affected and when. If that's a one-line fix, it says so, and you can make it yourself. You only pay if you want the automatic patch and the regression report, or want us to do the work.</p></details>
+  <details><summary>Does my code leave my machine?</summary><p>No. The scan and the licensed fix both run where your code already is, on your laptop or in your own CI. There's no telemetry, and your code and prompts never leave your machine. The only contact with us is to fetch the retirement list and check a licence key; pass <code>--offline</code> to use the bundled list instead. The regression report calls OpenAI with your own API key, so your prompts go to OpenAI as they do today and nowhere else.</p></details>
+  <details><summary>Can't we just change the model name ourselves?</summary><p>Often you can, and the scan will say so. The traps are tool calls on Chat Completions (which need <code>reasoning_effort</code> set to <code>none</code> on <code>gpt-6-luna</code>), <code>max_tokens</code> (which <code>gpt-6-luna</code> rejects outright), sampling parameters that only work with <code>reasoning_effort: "none"</code>, fine-tunes, and quiet output drift. The report exists so you can see whether any of those apply to you.</p></details>
+  <details><summary>Can I change the settings first and switch models later?</summary><p>No. GPT-4o and GPT-4.1 reject <code>reasoning_effort</code>, and <code>gpt-6-luna</code> needs it (and rejects <code>max_tokens</code>), so the settings changes and the model switch must ship together in one change; Last Orders enforces this. Found in our own API checks.</p></details>
+  <details><summary>We use a fine-tuned GPT-4o or GPT-4.1 model. What happens?</summary><p>Fine-tuned models follow their base model's schedule, so they're switched off on 14 January 2027. <code>gpt-6-luna</code> can't be fine-tuned, and new fine-tuning jobs stop on 6 January 2027. The scan will list your fine-tunes, but the licence won't patch them, because there's nothing to patch them to. That's what the fine-tune tier (from £3,500) is for. Get in touch early, because some routes need that 6 January date.</p></details>
+  <details><summary>We're on <code>gpt-4.1-nano</code> or <code>gpt-4o-2024-05-13</code>.</summary><p>Those go on 23 October 2026, which is days away. Run the scan today. OpenAI recommends <code>gpt-5.6-luna</code> and <code>gpt-5.6-sol</code> as their replacements. If you'd rather we did it, email us and we'll move you up the queue.</p></details>
+  <details><summary>OpenAI's API shows no shutdown date for our model. Are we safe?</summary><p>Not necessarily. The <code>shutdown_date</code> field on OpenAI's List models endpoint is still empty for the GPT-4o and 4.1 batch, even though those snapshots retire on 14&nbsp;January 2027. Earlier retirements (such as <code>gpt-4.1-nano</code> and <code>gpt-4o-2024-05-13</code>) do show a date. Last Orders works from OpenAI's deprecations page, not just that field.</p></details>
+  <details><summary>What won't the scan find?</summary><p>Model IDs built at runtime (say <code>"gpt-" + version</code>) or stored only in a database. It does list environment variables that choose the model, so you can check their live values. If you want certainty, check your OpenAI usage for calls to GPT-4o or 4.1 after you deploy.</p></details>
+  <details><summary>What does "per repo" mean?</summary><p>One licence covers one GitHub repository, monorepos included, and future retirements in that same repo. If you've got lots of repos, email us and we'll sort something sensible.</p></details>
+  <details><summary>Does it cover Anthropic as well as OpenAI?</summary><p>Yes. The free scan reads an Anthropic migration pack too. Claude Sonnet 4.5 (<code>claude-sonnet-4-5-20250929</code>) is deprecated and retires on 30&nbsp;November 2026; Anthropic recommends <code>claude-sonnet-5-5</code>. Source: Anthropic's <a href="https://docs.anthropic.com/en/docs/about-claude/model-deprecations">model deprecations</a> page, checked 15 October 2026.</p></details>
+  <details><summary>Who are you?</summary><p>Burnt &amp; Toast Studios Ltd, a small, self-funded games studio in the UK. We use AI heavily in our own work, so we've done this to our own code. Same rule as our games: kind to your time, no tricks.</p></details>
+</div></section>
+
+<section class="contact"><div class="wrap">
+  <h2>Run the free scan</h2>
+  <p>It's quick, and tells you whether you've anything to do before 23 October or 14 January. Questions, or want us to handle it? Email <a href="mailto:hello@burntandtoast.com" style="color:var(--golden)">hello@burntandtoast.com</a>.</p>
+  <a class="btn" href="#scan">Run the free scan</a>
+  <div class="remind" id="remind">
+    <p>Not ready to scan yet? Get one email before each shutdown date, with the models affected and what to switch to.</p>
+    <form action="/subscribe" method="post" id="remind-form">
+      <label class="hp" aria-hidden="true">Leave this empty <input type="text" name="website" tabindex="-1" autocomplete="off"></label>
+      <input type="email" name="email" required maxlength="254" autocomplete="email" placeholder="you@company.com" aria-label="Email address">
+      <button class="btn" type="submit">Remind me</button>
+    </form>
+    <p class="msg" id="remind-msg" role="status" aria-live="polite"></p>
+    <p class="remind-small">We count visits anonymously. No cookies, no ads, no tracking across sites. <a href="https://burntandtoast.com/privacy/#analytics">Privacy</a></p>
+  </div>
+</div></section>
+</main>
+<script>
+(function () {
+  var f = document.getElementById("remind-form"), m = document.getElementById("remind-msg");
+  if (!f || !window.fetch || !window.FormData) return;   // old browsers: normal form POST
+  f.addEventListener("submit", function (e) {
+    e.preventDefault();
+    var b = f.querySelector("button"); b.disabled = true; m.className = "msg"; m.textContent = "Adding you\u2026";
+    var d = {}; new FormData(f).forEach(function (v, k) { d[k] = v; });
+    fetch("/subscribe", { method: "POST", headers: { "content-type": "application/json", accept: "application/json" }, body: JSON.stringify(d) })
+      .then(function (r) { return r.json(); })
+      .then(function (j) { m.className = "msg " + (j.ok ? "ok" : "err"); m.textContent = j.ok ? j.message : j.error; if (j.ok) f.reset(); })
+      .catch(function () { m.className = "msg err"; m.textContent = "Sorry, that didn't go through. Please try again, or email hello@burntandtoast.com."; })
+      .then(function () { b.disabled = false; });
+  });
+})();
+</script>
+
+<footer class="site-foot">
+  <div class="foot-wrap">
+    <div class="foot-top">
+      <div class="foot-brand">
+        <img src="/studio-assets/logo.svg" alt="" width="84" height="84" decoding="async">
+        <p>Burnt &amp; Toast<span class="signoff">Burnt at the edges. Still good.</span></p>
+        <nav class="foot-social" aria-label="Social">
+        <ul><li><a href="https://www.youtube.com/@burntandtoaststudios" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.5a3 3 0 0 0-2.1 2.1C0 8.1 0 12 0 12s0 3.9.5 5.8a3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1c.5-1.9.5-5.8.5-5.8s0-3.9-.5-5.8zM9.5 15.6V8.4L15.8 12l-6.3 3.6z"/></svg><span class="sr-only">YouTube</span></a></li><li><a href="https://x.com/burntandtoastuk" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M18.2 2h3.3l-7.3 8.3L23 22h-6.8l-5.3-7L5.4 22H2.1l7.8-8.9L1 2h7l4.8 6.4L18.2 2zm-1.2 18h1.8L7.1 3.9H5.1L17 20z"/></svg><span class="sr-only">Burnt and Toast on X</span></a></li><li><a href="https://www.linkedin.com/company/137304224/" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M20.4 20.5h-3.6v-5.6c0-1.3 0-3-1.8-3s-2.1 1.4-2.1 2.9v5.7H9.4V9h3.4v1.6h.1c.5-.9 1.6-1.9 3.4-1.9 3.6 0 4.3 2.4 4.3 5.5v6.3zM5.3 7.4a2.1 2.1 0 1 1 0-4.2 2.1 2.1 0 0 1 0 4.2zM7.1 20.5H3.6V9h3.5v11.5zM22.2 0H1.8C.8 0 0 .8 0 1.7v20.5C0 23.2.8 24 1.8 24h20.4c1 0 1.8-.8 1.8-1.7V1.7C24 .8 23.2 0 22.2 0z"/></svg><span class="sr-only">LinkedIn</span></a></li></ul>
+      </nav>
+      </div>
+      <div class="foot-cols">
+        <nav aria-labelledby="f-games"><h2 id="f-games">Games</h2><ul><li><a href="https://burntandtoast.com/inland-light/">Inland Light <span class="foot-badge">Out 31 Oct</span></a></li><li><a href="https://burntandtoast.com/halt-branch-line/">Halt! Branch Line</a></li><li><a href="https://dartistry.app/" rel="noopener">Dartistry</a></li><li><a href="https://hawfold.com/" rel="noopener">Hawfold</a></li><li><a href="https://burntandtoast.com/#games">All games</a></li></ul></nav>
+        <nav aria-labelledby="f-studio"><h2 id="f-studio">Studio</h2><ul><li><a href="https://burntandtoast.com/blog">Journal</a></li><li><a href="https://burntandtoast.com/press/">Press kits</a></li><li><a href="mailto:hello@burntandtoast.com">Contact</a></li></ul></nav>
+        <nav aria-labelledby="f-more-from-us"><h2 id="f-more-from-us">More from us</h2><ul><li><a class="foot-with-note" href="https://lastorders.burntandtoast.com/"><span class="foot-label">Last Orders</span><span class="foot-desc">OpenAI model retirement checks</span></a></li><li><a class="foot-with-note" href="https://deals.burntandtoast.com/" rel="noopener"><span class="foot-label">Burnt Deals</span><span class="foot-desc">PC game deals</span></a></li><li><a class="foot-with-note" href="https://kits.burntandtoast.com/" rel="noopener"><span class="foot-label">Kits</span><span class="foot-desc">AI kits for estate agents</span></a></li></ul></nav>
+        <nav aria-labelledby="f-help"><h2 id="f-help">Help</h2><ul><li><a href="https://burntandtoast.com/support/">Support</a></li><li><a href="https://burntandtoast.com/legal/">Privacy</a></li><li><a href="https://lastorders.burntandtoast.com/terms">Last Orders terms and refunds</a></li></ul></nav>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <div><p>© 2026 Burnt &amp; Toast Studios Ltd · Company no. 17334149 · 71-75 Shelton Street, London WC2H 9JQ</p><p class="foot-note"><a href="mailto:hello@burntandtoast.com">hello@burntandtoast.com</a> · <a href="/terms">Terms and refunds</a> · Model dates from <a href="https://platform.openai.com/docs/deprecations">OpenAI's deprecations page</a> and <a href="https://docs.anthropic.com/en/docs/about-claude/model-deprecations">Anthropic's</a>. We're not affiliated with either.</p></div>
+      <a href="#top">Back to top</a>
+    </div>
+  </div>
+</footer>
+</body>
+</html>

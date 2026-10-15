@@ -15,9 +15,11 @@ import { generateKey, KEY_RE, loadSigningKey, signToken } from "./keys.js";
 import { Store } from "./store.js";
 import { Stripe, StripeError, verifyStripeSignature } from "./stripe.js";
 import { licenceEmail, makeMailer } from "./email.js";
-import { cancelPage, errorPage, pendingPage, successPage } from "./pages.js";
+import { cancelPage, errorPage, pendingPage, successPage, termsPage } from "./pages.js";
+import { TERMS_VERSION, WAIVER_FIELD, submitMessage, tosAcceptanceMessage, waiverFromSession } from "./terms.js";
 
 const DAY = 86400;
+const CUSTOMER_PATHS = new Set(["/buy", "/terms", "/success", "/cancel"]);
 
 function config(env) {
   return {
@@ -33,6 +35,7 @@ function config(env) {
     automaticTax: env.STRIPE_AUTOMATIC_TAX === "true",
     invoice: env.STRIPE_INVOICE_CREATION === "true",
     supportEmail: env.SUPPORT_EMAIL || "",
+    tosConsent: env.STRIPE_TOS_CONSENT === "true",
   };
 }
 
@@ -42,17 +45,21 @@ export function createApp(deps = {}) {
 
   function ctxFor(request, env) {
     const cfg = config(env);
-    const baseUrl = (env.PUBLIC_BASE_URL || new URL(request.url).origin).replace(/\/$/, "");
+    const baseUrl = (env.PUBLIC_BASE_URL || new URL(request.url).origin).replace(/\/$/, "");     // CLI/API host (token iss)
+    const siteUrl = (env.PUBLIC_SITE_URL || baseUrl).replace(/\/$/, "");                        // customer-facing host
     const store = new Store(env.DB, clock);
     const stripe = () => new Stripe({ secretKey: env.STRIPE_SECRET_KEY, apiBase: env.STRIPE_API_BASE, apiVersion: env.STRIPE_API_VERSION, fetchImpl });
     const mailer = deps.mailer || makeMailer(env, fetchImpl);
-    return { env, cfg, baseUrl, store, stripe, mailer };
+    return { env, cfg, baseUrl, siteUrl, store, stripe, mailer };
   }
 
   // ---- Checkout -------------------------------------------------------------------------------
   async function createCheckout(c, { repo, email }) {
-    const { cfg, baseUrl } = c;
-    const metadata = { product: cfg.productCode };
+    const { cfg, siteUrl } = c;
+    // Consent is collected on the Checkout page itself (required field, see terms.js); Stripe won't complete the
+    // session without it. waiver_at is when the session (and the consent request) was created; the acceptance is
+    // read back from the completed session and logged in licence_events.
+    const metadata = { product: cfg.productCode, waiver_consent: "required_at_checkout", waiver_at: new Date(clock()).toISOString(), terms_version: TERMS_VERSION };
     const repoHint = repo ? normaliseRepo(repo) : null;
     if (repoHint) metadata.repo_hint = repoHint;       // informational; binding happens on first activation
     const lineItem = cfg.priceId
@@ -68,12 +75,19 @@ export function createApp(deps = {}) {
     const params = {
       mode: "payment",
       line_items: [lineItem],
-      success_url: `${baseUrl}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${baseUrl}/cancel`,
+      success_url: `${siteUrl}/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${siteUrl}/cancel`,
       customer_creation: "always",
       metadata,
       payment_intent_data: { metadata },
     };
+    params.custom_text = { submit: { message: submitMessage(siteUrl) } };
+    if (cfg.tosConsent) {
+      params.consent_collection = { terms_of_service: "required" };
+      params.custom_text.terms_of_service_acceptance = { message: tosAcceptanceMessage(siteUrl) };
+    } else {
+      params.custom_fields = [WAIVER_FIELD];
+    }
     if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && email.length <= 254) params.customer_email = email;
     if (cfg.allowPromo) params.allow_promotion_codes = true;
     if (cfg.automaticTax) params.automatic_tax = { enabled: true };
@@ -96,12 +110,15 @@ export function createApp(deps = {}) {
     if (!row) {
       for (let attempt = 0; attempt < 3 && !row; attempt++) {
         try {
-          ({ row } = await c.store.createForSession({
+          let created;
+          ({ row, created } = await c.store.createForSession({
             key: generateKey(), email, sessionId: session.id,
             paymentIntent: typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id ?? null,
             customer: typeof session.customer === "string" ? session.customer : session.customer?.id ?? null,
             amount: session.amount_total ?? null, currency: session.currency ?? null, livemode: !!session.livemode,
           }));
+          const waiver = waiverFromSession(session);
+          if (created && waiver) await c.store.event(row.key, "waiver_consent", `${waiver} terms=${session.metadata?.terms_version || ""}`);
         } catch (e) {
           if (!/UNIQUE|constraint/i.test(String(e?.message))) throw e;   // key collision (60-bit keys; practically never): retry
         }
@@ -109,7 +126,7 @@ export function createApp(deps = {}) {
     }
     if (!row) throw new Error("could not create licence");
     if (sendEmail && row.email_status !== "sent" && row.status === "active") {
-      const msg = licenceEmail({ key: row.key, productName: c.cfg.productName, cliName: c.cfg.cliName, buyerEmail: row.email, baseUrl: c.baseUrl, supportEmail: c.cfg.supportEmail });
+      const msg = licenceEmail({ key: row.key, productName: c.cfg.productName, cliName: c.cfg.cliName, buyerEmail: row.email, baseUrl: c.siteUrl, supportEmail: c.cfg.supportEmail });
       const r = await c.mailer.send(msg, `licence-email-${row.key}`);
       if (r.ok) {
         await c.store.setEmailStatus(row.key, r.skipped ? "skipped" : "sent");
@@ -129,7 +146,10 @@ export function createApp(deps = {}) {
   async function webhook(c, request) {
     const raw = await request.text();
     const sig = await verifyStripeSignature(raw, request.headers.get("stripe-signature"), c.env.STRIPE_WEBHOOK_SECRET, { now: clock() });
-    if (!sig.ok) return json({ error: "invalid_signature", detail: sig.reason }, 400);
+    if (!sig.ok) {
+      console.error(`[webhook] rejected: ${sig.reason}`);   // usually a STRIPE_WEBHOOK_SECRET from a different endpoint or mode
+      return json({ error: "invalid_signature", detail: sig.reason }, 400);
+    }
     let event;
     try { event = JSON.parse(raw); } catch { return json({ error: "invalid_json" }, 400); }
     if (!event?.id || !event?.type) return json({ error: "invalid_event" }, 400);
@@ -179,10 +199,18 @@ export function createApp(deps = {}) {
       catch (e) { return errorPage(e instanceof StripeError && e.status === 404 ? "Checkout session not found." : "Couldn't reach the payment provider. Please refresh in a moment.", e?.status === 404 ? 404 : 502); }
       if (!isOurs(c, session)) return errorPage("Checkout session not found.", 404);
       if (!isPaid(session)) return pendingPage(c.cfg);
-      row = await fulfil(c, session, { sendEmail: false });   // the webhook sends the email
+      row = await fulfil(c, session, { sendEmail: false });
+    }
+    // Normally the webhook sends the email. If it hasn't yet (webhook late, misconfigured or failing), send it
+    // from here too, so a buyer always gets the key by email. Resend's idempotency key (licence-email-<key>)
+    // stops a duplicate if the webhook sends at the same moment. A failure here doesn't break the page; the
+    // webhook's retries still apply.
+    if (row.status === "active" && row.email_status !== "sent" && row.email_status !== "skipped") {
+      try { await fulfil(c, { id: row.stripe_session_id, customer_details: { email: row.email } }, { sendEmail: true }); }
+      catch (e) { console.error(`[success] licence email for session ${id} failed: ${e?.message}`); }
     }
     if (row.status !== "active") return errorPage("This licence has been revoked (refunded).", 410);
-    return successPage({ key: row.key, email: row.email, productName: c.cfg.productName, cliName: c.cfg.cliName, baseUrl: c.baseUrl });
+    return successPage({ key: row.key, email: row.email, productName: c.cfg.productName, cliName: c.cfg.cliName, baseUrl: c.siteUrl });
   }
 
   // ---- Verify (the CLI's only licence call: sends key + repo identity, nothing else) -------------
@@ -259,12 +287,17 @@ export function createApp(deps = {}) {
         const s = await createCheckout(c, body || {});
         return json({ id: s.id, url: s.url });
       }
+      // Customer-facing pages live on PUBLIC_SITE_URL; old links to the API host get a permanent redirect.
+      if (CUSTOMER_PATHS.has(path) && c.siteUrl !== c.baseUrl && url.hostname === new URL(c.baseUrl).hostname) {
+        return new Response(null, { status: 301, headers: { location: `${c.siteUrl}${path}${url.search}`, "cache-control": "public, max-age=3600" } });
+      }
       if (path === "/buy" && request.method === "GET") {
         const s = await createCheckout(c, { repo: url.searchParams.get("repo"), email: url.searchParams.get("email") });
         return Response.redirect(s.url, 303);
       }
       if (path === "/success" && request.method === "GET") return await success(c, url);
-      if (path === "/cancel" && request.method === "GET") return cancelPage({ productName: c.cfg.productName, baseUrl: c.baseUrl });
+      if (path === "/terms" && request.method === "GET") return termsPage({ productName: c.cfg.productName, cliName: c.cfg.cliName, amount: c.cfg.amount, currency: c.cfg.currency, baseUrl: c.siteUrl });
+      if (path === "/cancel" && request.method === "GET") return cancelPage({ productName: c.cfg.productName, baseUrl: c.siteUrl });
       if (path.startsWith("/api/admin/")) return await admin(c, request, path);
       if (path.startsWith("/api/")) return json({ error: "not_found" }, 404);
       if (env.ASSETS) return env.ASSETS.fetch(request);

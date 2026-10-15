@@ -228,7 +228,7 @@ test("full refund revokes; partial refund doesn't", async () => {
   assert.equal((await r.json()).status, "revoked");
 });
 
-test("success page: shows the key, fulfils before the webhook without emailing, handles pending/unknown", async () => {
+test("success page: shows the key, fulfils before the webhook and emails once, handles pending/unknown", async () => {
   const net = fakeNetwork();
   const env = await makeEnv();
   const h = harness(env, net);
@@ -238,13 +238,15 @@ test("success page: shows the key, fulfils before the webhook without emailing, 
   const page = await (await h.call(`/success?session_id=${id}`)).text();
   const key = KEY_IN(page);
   assert.ok(key);
-  assert.equal(net.calls.filter((c) => c.url.startsWith("https://resend.test/")).length, 0);
-  // the webhook lands later: same key, now emailed
+  // the success page emails the key itself, so a missing or failing webhook can't leave the buyer without it
+  assert.equal(net.calls.filter((c) => c.url.startsWith("https://resend.test/")).length, 1);
+  // the webhook lands later: same key, no second email
   await h.webhook({ ...paidSessionEvent(id, { email: "early@example.com", pi: "pi_e" }) });
   const row = await env.DB.prepare("SELECT * FROM licences").first();
   assert.equal(row.key, key);
   assert.equal(row.email_status, "sent");
   assert.equal(KEY_IN(await (await h.call(`/success?session_id=${id}`)).text()), key);
+  assert.equal(net.calls.filter((c) => c.url.startsWith("https://resend.test/")).length, 1);
   assert.equal((await h.call("/success?session_id=cs_test_missing")).status, 404);
   assert.equal((await h.call("/success?session_id=<script>")).status, 400);
 });
@@ -273,4 +275,83 @@ test("static assets fall through; unknown API is JSON 404; healthz reports test 
   assert.equal(await (await h.call("/v1/index.json")).text(), "asset");
   assert.equal((await h.call("/api/nope")).status, 404);
   assert.equal((await (await h.call("/healthz")).json()).stripe_mode, "test");
+});
+
+test("success page: an email failure doesn't break the page and the webhook retries it", async () => {
+  const net = fakeNetwork({ resendFails: 1 });
+  const env = await makeEnv();
+  const h = harness(env, net);
+  const { id } = await (await h.postJson("/api/checkout", {})).json();
+  Object.assign(net.sessions.get(id), { status: "complete", payment_status: "paid", customer_details: { email: "e@example.com" }, payment_intent: "pi_f" });
+  const res = await h.call(`/success?session_id=${id}`);
+  assert.equal(res.status, 200);
+  assert.ok(KEY_IN(await res.text()));
+  assert.equal((await env.DB.prepare("SELECT email_status FROM licences").first()).email_status, "failed");
+  await h.webhook(paidSessionEvent(id, { email: "e@example.com", pi: "pi_f" }));
+  assert.equal((await env.DB.prepare("SELECT email_status FROM licences").first()).email_status, "sent");
+});
+
+test("checkout: required waiver consent, policy message and waiver metadata; /terms page; email refund line", async () => {
+  const net = fakeNetwork();
+  const env = await makeEnv();
+  const h = harness(env, net);
+  assert.equal((await h.call("/buy")).status, 303);
+  const p = new URLSearchParams(net.calls[0].body);
+  assert.equal(p.get("custom_fields[0][key]"), "waiver");
+  assert.equal(p.get("custom_fields[0][type]"), "dropdown");
+  assert.equal(p.get("custom_fields[0][optional]"), "false");
+  assert.equal(p.get("custom_fields[0][dropdown][options][0][value]"), "agree");
+  assert.equal(p.get("custom_fields[0][dropdown][default_value]"), null);         // consent must not be pre-selected
+  assert.equal(p.get("consent_collection[terms_of_service]"), null);
+  const msg = p.get("custom_text[submit][message]");
+  for (const s of ["reg. 37", "never been activated", "5 working days", "17334149", "71-75 Shelton Street", "Not VAT registered", "/terms"]) assert.ok(msg.includes(s), s);
+  assert.ok(msg.length <= 1200);
+  assert.equal(p.get("metadata[waiver_consent]"), "required_at_checkout");
+  assert.match(p.get("metadata[waiver_at]"), /^\d{4}-\d\d-\d\dT/);
+  assert.equal(p.get("payment_intent_data[metadata][waiver_consent]"), "required_at_checkout");
+
+  const net2 = fakeNetwork();
+  await harness(await makeEnv({ STRIPE_TOS_CONSENT: "true" }), net2).call("/buy");
+  const p2 = new URLSearchParams(net2.calls[0].body);
+  assert.equal(p2.get("consent_collection[terms_of_service]"), "required");
+  assert.ok(p2.get("custom_text[terms_of_service_acceptance][message]").includes("14-day right to cancel"));
+  assert.equal(p2.get("custom_fields[0][key]"), null);
+
+  // the acceptance is read back from the completed session and logged
+  const ev = paidSessionEvent("cs_test_waiver", { email: "w@example.com", pi: "pi_w" });
+  ev.data.object.custom_fields = [{ key: "waiver", type: "dropdown", dropdown: { value: "agree" } }];
+  ev.data.object.metadata.terms_version = "2026-10-15";
+  assert.equal((await h.webhook(ev)).status, 200);
+  const evRow = await env.DB.prepare("SELECT detail FROM licence_events WHERE kind = 'waiver_consent'").first();
+  assert.equal(evRow.detail, "checkout_custom_field terms=2026-10-15");
+  const mail = net.calls.find((c) => c.url.startsWith("https://resend.test/"));
+  const body = JSON.parse(mail.body);
+  assert.ok(body.text.includes("never been activated") && body.text.includes("/terms"));
+  assert.ok(body.html.includes("5 working days"));
+
+  const t = await h.call("/terms");
+  assert.equal(t.status, 200);
+  const html = await t.text();
+  for (const s of ["17334149", "England and Wales", "regulation 37", "hello@burntandtoast.com", "never been activated", "5 working days", "£149"]) assert.ok(html.includes(s), s);
+});
+
+test("customer pages live on PUBLIC_SITE_URL: Checkout URLs, email, terms; API host 301s old links", async () => {
+  const net = fakeNetwork();
+  const env = await makeEnv({ PUBLIC_SITE_URL: "https://shop.example.test" });
+  const h = harness(env, net);
+  assert.equal((await h.call("/buy")).status, 301);      // harness requests the API host
+  const app = (await import("../src/index.js")).createApp({ fetch: net.fetch });
+  const r = await app.fetch(new Request("https://licence.example.test/success?session_id=cs_test_x"), env);
+  assert.equal(r.status, 301);
+  assert.equal(r.headers.get("location"), "https://shop.example.test/success?session_id=cs_test_x");
+  const b = await app.fetch(new Request("https://shop.example.test/buy?repo=a/b"), env);
+  assert.equal(b.status, 303);
+  const p = new URLSearchParams(net.calls.at(-1).body);
+  assert.equal(p.get("success_url"), "https://shop.example.test/success?session_id={CHECKOUT_SESSION_ID}");
+  assert.equal(p.get("cancel_url"), "https://shop.example.test/cancel");
+  assert.ok(p.get("custom_text[submit][message]").includes("shop.example.test/terms"));
+  const t = await (await app.fetch(new Request("https://shop.example.test/terms"), env)).text();
+  assert.ok(t.includes("https://shop.example.test/buy"));
+  assert.equal((await app.fetch(new Request("https://licence.example.test/healthz"), env)).status, 200);
+  assert.equal((await app.fetch(new Request("https://licence.example.test/api/stripe/webhook", { method: "POST", body: "{}" }), env)).status, 400);
 });

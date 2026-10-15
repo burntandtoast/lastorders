@@ -164,6 +164,50 @@
           "items": {
             "type": "string"
           }
+        },
+        "bases": {
+          "type": "array",
+          "description": "Per-base fine-tune shutdowns that differ from (or aren't covered by) the base model entry. First match wins.",
+          "items": {
+            "type": "object",
+            "required": [
+              "base",
+              "shutdown"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "base": {
+                "type": "string"
+              },
+              "match": {
+                "enum": [
+                  "exact",
+                  "prefix"
+                ]
+              },
+              "shutdown": {
+                "$ref": "#/$defs/date"
+              },
+              "replacement": {
+                "type": "string"
+              },
+              "section": {
+                "type": "string"
+              },
+              "confidence": {
+                "$ref": "#/$defs/confidence"
+              },
+              "source": {
+                "type": "string"
+              },
+              "notes": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
         }
       }
     },

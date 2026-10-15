@@ -25,6 +25,7 @@ def _off(a):
 def cmd_licence(a) -> int:
     if a.action == "buy":
         print(licence.buy_url(licence.repo_identity(a.repo)))
+        print(f"Terms and refunds: {brand.TERMS_URL}", file=sys.stderr)
         return 0
     lic = licence.resolve(a.licence, a.repo)
     if a.action == "forget":

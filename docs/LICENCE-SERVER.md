@@ -34,8 +34,10 @@ CLI ──POST /api/licence/verify {key, repo}──▶ bind repo on first use �
 | `GET /buy?repo=&email=` | Creates a Checkout Session and redirects (303) to Stripe. `repo` is only a hint stored in metadata. |
 | `POST /api/checkout` | The same, returning `{id, url}` as JSON (for a button on the landing page). |
 | `POST /api/stripe/webhook` | Checks the `Stripe-Signature` (v1 HMAC-SHA256 over `t.rawBody`, 5-minute tolerance, constant-time compare, two secrets allowed while rolling). Idempotent per event id and per Checkout Session. |
-| `GET /success?session_id=` | Shows the key. If the webhook hasn't arrived yet, it fetches the session from Stripe and issues the key itself (same row, no duplicates). The webhook is what sends the email. |
+| `GET /success?session_id=` | Shows the key. If the webhook hasn't arrived yet, it fetches the session from Stripe and issues the key itself (same row, no duplicates). If the key hasn't been emailed yet, it sends the email too (Resend idempotency key stops a duplicate with the webhook), so a missing or failing webhook can't leave a buyer without the email. |
 | `GET /cancel` | "No payment was taken" page. |
+| (hosts) | Customer pages (`/buy`, `/terms`, `/success`, `/cancel`) are served at `PUBLIC_SITE_URL` (lastorders.burntandtoast.com) through the landing Worker's service binding; on the API host (`PUBLIC_BASE_URL`, packs.burntandtoast.com) they 301 there. The API, packs, `/healthz` and the webhook stay on the API host. |
+| `GET /terms` | Licence terms and refund policy (wording in `src/terms.js`). Checkout requires the buyer to agree to immediate supply and the loss of the 14-day cancellation right once the key is used (CCR 2013 reg. 37) via a required `custom_fields` dropdown, shows the refund policy and company details in `custom_text.submit`, and sets `waiver_consent`/`waiver_at`/`terms_version` metadata. The acceptance is logged as a `waiver_consent` licence event. Set `STRIPE_TOS_CONSENT="true"` once a Terms URL is set in Stripe Dashboard → Settings → Public details to use Stripe's own terms checkbox instead. |
 | `POST /api/licence/verify` | `{key, repo}`. Binds the repo on first use (atomic `UPDATE … WHERE repo IS NULL`) and returns a signed token. Errors: `not_found` 404, `revoked` 403, `bound_to_other_repo` 403, `invalid` 400. |
 | `GET /api/licence/public-key` | The current Ed25519 public key (informational; the CLI uses keys built into it). |
 | `/api/admin/licences/:key` (`GET`), `…/revoke`, `…/rebind`, `…/resend-email` (`POST`) | Support tools, behind `Authorization: Bearer $ADMIN_TOKEN`. |
@@ -172,7 +174,7 @@ npx wrangler deploy
 
 1. `curl https://packs.burntandtoast.com/healthz` returns `{"ok":true,"stripe_mode":"test"}`.
    `curl …/v1/index.json` returns the packs.
-2. Open `https://packs.burntandtoast.com/buy?repo=github.com/you/test-repo` and pay with `4242 4242 4242 4242`
+2. Open `https://lastorders.burntandtoast.com/buy?repo=github.com/you/test-repo` and pay with `4242 4242 4242 4242`
    (any future date, any CVC). The success page should show a key and the email should arrive.
 3. `LASTORDERS_LICENCE=<key> lastorders licence status` in that repo should say "verified online".
    In another repo it should say "bound to …".

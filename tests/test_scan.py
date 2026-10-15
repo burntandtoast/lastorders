@@ -100,3 +100,27 @@ def test_already_retired_is_high(tmp_path):
     fs = {f.model: f for f in _scan(tmp_path).findings}
     assert all(f.risk == "high" for f in fs.values())
     assert any("has passed" in n for n in fs["chatgpt-4o-latest"].notes)
+
+
+def test_oct_2026_fine_tunes_pro_and_image_models(tmp_path):
+    (tmp_path / "app.py").write_text(
+        'A = "ft:gpt-3.5-turbo-1106:acme::abc123"\n'
+        'B = "ft:davinci-002:acme::def456"\n'
+        'C = "ft:gpt-4-0613:acme::ghi789"\n'
+        'D = "ft:gpt-4o-mini-2024-07-18:acme::jkl012"\n'
+        'E = "o3-pro-2025-06-10"\nF = "gpt-5-pro-2025-10-06"\nG = "gpt-image-1.5"\nH = "chatgpt-image-latest"\n'
+        'I = "gpt-4-1106-preview"\nJ = "gpt-image-1-mini"\n')
+    m = _by_model(_scan(tmp_path))
+    for ft, rep in [("ft:gpt-3.5-turbo-1106:acme::abc123", "gpt-5.6-terra"), ("ft:davinci-002:acme::def456", "gpt-5.6-terra"),
+                    ("ft:gpt-4-0613:acme::ghi789", "gpt-5.6-sol")]:
+        f = m[ft][0]
+        assert f.category == "fine_tune" and f.suggested is None and f.shutdown == "2026-10-23" and f.risk == "high"
+        assert any(rep in n for n in f.notes) and any(n.startswith("No direct successor") for n in f.notes)
+    assert m["ft:gpt-4o-mini-2024-07-18:acme::jkl012"][0].shutdown == "2027-01-14"   # headline fine-tunes unchanged
+    for x in ("o3-pro-2025-06-10", "gpt-5-pro-2025-10-06"):
+        assert m[x][0].shutdown == "2026-12-11" and any("reasoning.mode: pro" in n for n in m[x][0].notes)
+    for x in ("gpt-image-1.5", "chatgpt-image-latest", "gpt-image-1-mini"):
+        assert m[x][0].shutdown == "2026-12-01"
+    assert m["gpt-4-1106-preview"][0].shutdown == "2026-10-23"
+    mapping = load_packs().get("openai").default_mapping(None)
+    assert not {"o3-pro-2025-06-10", "gpt-5-pro-2025-10-06", "gpt-image-1.5", "o1-pro", "gpt-image-1"} & set(mapping)
