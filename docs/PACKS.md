@@ -1,7 +1,7 @@
 # Migration pack format (pack_format 1)
 
 A pack is a JSON file with one provider per pack. The schema is `migration_kit/pack_data/pack.schema.json`,
-also hosted as `v1/pack.schema.json`. The scanner, swap mapping, report and (phase 2) auto-fixer are generic
+also hosted as `v1/pack.schema.json`. The scanner, swap mapping, report and auto-fixer are generic
 engines. All provider knowledge lives in packs.
 
 | Key | Purpose |

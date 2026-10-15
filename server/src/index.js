@@ -141,6 +141,10 @@ export function createApp(deps = {}) {
         case "checkout.session.async_payment_succeeded":
           if (!isOurs(c, obj)) return json({ received: true, ignored: "not this product" });
           if (!isPaid(obj)) return json({ received: true, pending: obj.payment_status });   // async methods: wait for async_payment_succeeded
+          if (!(obj.customer_details?.email || obj.customer_email)) {
+            console.error(`[webhook] paid session ${obj.id} has no customer email; not fulfilled (check it in the Dashboard)`);
+            return json({ received: true, ignored: "no customer email" });
+          }
           await fulfil(c, obj, { sendEmail: true });
           break;
         case "checkout.session.async_payment_failed":

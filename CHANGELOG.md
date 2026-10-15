@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.4.0 (unreleased)
+- **Licence server** (`server/`). This is a Cloudflare Worker with D1:
+  - Stripe Checkout at £149 per repo (configurable);
+  - a signed webhook that issues `BTM-XXXX-XXXX-XXXX` keys, stores them with the buyer's email, and emails them through Resend (the email provider is pluggable);
+  - the repo is bound on first activation;
+  - full refunds revoke the licence;
+  - a success page and admin rebind/revoke tools;
+  - it also serves the pack site.
+
+  Not deployed. See docs/LICENCE-SERVER.md.
+- **Real licence check in the CLI**, replacing the format-only placeholder:
+  - an online verify sends only the key and repo;
+  - a 7-day Ed25519-signed token is cached locally;
+  - a 14-day grace period applies if the server is unreachable;
+  - `--offline` uses the cached token only;
+  - the free `scan` is unaffected.
+- New `licence status|buy|forget` command and the `MODELMIGRATE_REPO` fallback. New dependency: `cryptography`.
+
 ## 0.3.0 (unreleased)
 - `fix`: automatic code fixes driven entirely by pack rules. It renames `max_tokens` per endpoint, adds
   `reasoning_effort`/`reasoning.effort` "none" where the new model needs it, and flags legacy functions,

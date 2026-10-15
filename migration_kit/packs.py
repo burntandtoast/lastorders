@@ -6,7 +6,7 @@ Load order per provider (highest version wins, never downgrades below the bundle
   3. bundled copy shipped inside the wheel        migration_kit/pack_data/<provider>.json
 
 Remote fetching is skipped with --offline or <PREFIX>_OFFLINE=1. The URL can be
-overridden with <PREFIX>_PACKS_URL. This GET (and, in phase 2, the licence check) are the
+overridden with <PREFIX>_PACKS_URL. This GET (and the licence check in licence.py, key + repo only) are the
 ONLY network calls the tool makes to us: no telemetry, no code or prompt upload. Packs are data only; regexes are length-capped
 by the schema and compiled here.
 """

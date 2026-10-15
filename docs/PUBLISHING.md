@@ -16,7 +16,7 @@ lastorders. This can change at any time, so register promptly.
 - A public repo, e.g. `burntandtoast/<name>` (needed for `uses: burntandtoast/<name>@v0`). `action.yml` must be at the root.
 - Choose a licence and fill in `license` in `pyproject.toml` plus a `LICENSE` file. If the paid features
   should stay closed, consider source-available, or split them into a private package later.
-- Tag `v0.3.0` and move the major tag `v0` to it. Optionally list it on the GitHub Marketplace (needs `branding`, which is already in action.yml).
+- Tag `v0.4.0` and move the major tag `v0` to it. Optionally list it on the GitHub Marketplace (needs `branding`, which is already in action.yml).
 
 ## 3. PyPI
 - Create a PyPI account (2FA required) and register the project with **Trusted Publishing** from GitHub Actions
@@ -28,13 +28,16 @@ lastorders. This can change at any time, so register promptly.
 ```bash
 modelmigrate packs build-site --out site
 ```
-- **Vercel:** new project, root `site/`, no build command, framework "Other". `vercel.json` sets the headers.
-- **Cloudflare Pages:** output dir `site/`. `_headers` sets the headers.
-- DNS: CNAME `packs` → the Vercel or Pages target, in the burntandtoast.com zone.
+- **Default:** the licence-server Worker in `server/` serves `site/` as static assets, so one `wrangler deploy`
+  covers packs and licensing. See [LICENCE-SERVER.md](LICENCE-SERVER.md).
+- Alternatives for packs only: **Vercel** (root `site/`, no build, `vercel.json` sets headers) or
+  **Cloudflare Pages** (output `site/`, `_headers`).
 - Check: `curl https://packs.burntandtoast.com/v1/index.json`, then `modelmigrate packs list` should say `(remote)`.
 - Updating a pack: bump `version`, run `packs validate`, rebuild the site, redeploy. Clients pick it up within 24 hours.
 
-## 5. Licence service (with Stripe, later)
-- `migration_kit/licence.py` is a **placeholder** that only checks the format. Replace `check()` with a call to
-  `brand.LICENCE_URL`. Send only the key and the repo identity (`host/owner/repo`), as the network policy promises.
-- Stripe Checkout: £99–£249 per repo. A webhook issues the key and binds it to the repo at first activation.
+## 5. Licence service and Stripe
+Built and tested locally in `server/` (Cloudflare Worker + D1). Follow [LICENCE-SERVER.md](LICENCE-SERVER.md) for
+the Stripe keys, webhook settings, Resend, D1, secrets and the deploy steps. Before the first CLI release:
+- [ ] `npm run keys`. Put the private key into `LICENCE_SIGNING_KEY` and the public key into `PUBLIC_KEYS` in `migration_kit/licence.py`.
+- [ ] The Worker is deployed and `/healthz` responds at `brand.SERVICE_URL`.
+- [ ] A test-mode purchase, verify, refund and revoke all work end to end.

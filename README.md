@@ -150,7 +150,8 @@ The tool checks for a newer pack once a day and falls back to the copy bundled w
 - The scan runs **entirely on your machine**. Your code and prompts are never uploaded.
 - **No telemetry, analytics or tracking.**
 - The tool only ever contacts us to **download the latest migration pack** (a plain GET of a static JSON file,
-  with no identifiers) and, for paid features, to **check a licence key** (not active yet).
+  with no identifiers) and, for paid features, to **check a licence key**. That check sends only the key and the
+  repo name (`github.com/owner/repo`), and the signed answer is cached for a week, with a 14-day offline grace period after that.
 - `--offline` (or `MODELMIGRATE_OFFLINE=1`) turns off all network access and uses the bundled pack.
 - The paid `eval` command calls the AI provider directly **with your own API key**. Nothing goes through us.
 
@@ -162,8 +163,12 @@ The tool checks for a newer pack once a day and falls back to the copy bundled w
 | `fix --apply` / `swap --apply`, `fix --verify --live`, `init-evals` + `eval` regression testing, client-ready `report` | | ✓ | ✓ |
 | We do the migration, evals and handoff | | | ✓ |
 
-One licence covers **one GitHub repository, monorepos included**. Pass the key with
-`MODELMIGRATE_LICENCE` or `--licence`. Licensing is in preview; see [burntandtoast.com](https://burntandtoast.com).
+One licence covers **one GitHub repository, monorepos included**. It's bound to the repo the first time
+you use it. Buy one with `modelmigrate licence buy` (it prints a Stripe Checkout link for this repo), then pass the key
+with `MODELMIGRATE_LICENCE` (a repository secret in Actions) or `--licence`. `modelmigrate licence status` shows
+whether it's verified. Paid commands work `--offline` from the cached check. Repos without an `origin` remote
+can set `MODELMIGRATE_REPO=github.com/owner/repo`. The licence server lives in `server/`; see
+[docs/LICENCE-SERVER.md](docs/LICENCE-SERVER.md).
 
 `init-evals` reads the call sites the scan found, including prompts, JSON schemas and tool definitions where
 they can be read from the code, and writes a starter `evals/regression.yaml`. You then edit it into 10 to 20
