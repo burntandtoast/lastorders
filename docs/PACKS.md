@@ -9,7 +9,7 @@ engines. All provider knowledge lives in packs.
 | `provider`, `name`, `version` (`YYYY.MM.DD[.N]`), `updated`, `status` (`stable`/`stub`/`example`) | identity; the highest version wins |
 | `sources[]` | `{id, title, url, checked}`. Every fact should point at one |
 | `id_patterns[]` | regexes for model-ID tokens (the engine adds token boundaries). `quoted_only` for ambiguous IDs such as `o3` |
-| `fine_tune` | `{pattern, base_group, risk, notes}`: how to spot a fine-tune and extract its base model |
+| `fine_tune` | `{pattern, base_group, risk, notes, bases[]}`: how to spot a fine-tune and extract its base model. `bases[]` (`{base, match: exact/prefix, shutdown, replacement, section, confidence, source, notes}`) covers fine-tunes whose shutdown differs from, or isn't covered by, the base model entry; its `notes` replace the generic ones |
 | `migrations[]` | named retirement events `{id, title, announced, shutdown, replacement, headline}`. `headline` ones drive the report deadline and the default swap mapping |
 | `models[]` | `{id, kind: snapshot/alias/family, alias_of, match: exact/prefix, shutdown, replacement, migration, confidence, note, map_automatically}` |
 | `signals[]` | call-site and usage detectors `{id, pattern, languages[], sdk, call}`, e.g. openai/anthropic/LangChain clients, plain HTTP, `max_tokens`, tools. `pattern` works at file level (scan). The optional `call` drives the fixer at call level: `callees` (dotted-suffix match, longest wins) marks an endpoint, `params` fires when an argument is passed (`ignore_values` excepted, e.g. `temperature: 1`), and `param_values` fires on literal values (e.g. `reasoning.effort: none`) |

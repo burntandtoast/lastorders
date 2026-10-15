@@ -14,11 +14,11 @@
     {
       "provider": "openai",
       "name": "OpenAI API",
-      "version": "2026.10.15.5",
+      "version": "2026.10.15.6",
       "status": "stable",
       "pack_format": 1,
       "url": "packs/openai.json",
-      "sha256": "2356745fc8a42af30cb4cb06f83c58c223f7ae2f2a0260d0f881b27d32bf2394"
+      "sha256": "a0b856f34420de1f9bc2bcb46492ad7a2881fda71430af17628ca94bbe8d7cc6"
     }
   ]
 }

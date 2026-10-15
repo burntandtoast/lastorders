@@ -149,6 +149,13 @@ class Pack:
                              p.map_automatically, p.section)
         return None
 
+    def fine_tune_override(self, base: str) -> dict | None:
+        """A fine_tune.bases entry for this base model (exact, or prefix on a '-' boundary), if any."""
+        for b in (self.data.get("fine_tune") or {}).get("bases", []):
+            if base == b["base"] or (b.get("match") == "prefix" and base.startswith(b["base"] + "-")):
+                return b
+        return None
+
     def fine_tune_base(self, model_id: str) -> str | None:
         if not self.ft_re:
             return None
