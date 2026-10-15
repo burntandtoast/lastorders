@@ -19,7 +19,7 @@ from .. import initevals
 from ..evaluator import (ADAPTERS, ENDPOINT_API, REQUEST_CONTENT_PARAMS, TOKEN_CAP_PARAM, TOKEN_LIMIT_PARAMS, TOOL_PARAMS,
                          MockProvider, OpenAIProvider, load_suite, run_suite)
 from ..packs import PackSet
-from ..scanner import SKIP_DIRS
+from ..scanner import SKIP_DIRS, is_output_dir, mark_output
 from . import jsfix, pyfix
 from .engine import FixResult, plan_fixes
 
@@ -30,7 +30,9 @@ TOKEN_PARAMS = TOKEN_LIMIT_PARAMS
 
 
 def _copy(root: Path, dst: Path) -> None:
-    shutil.copytree(root, dst, ignore=shutil.ignore_patterns(*SKIP_DIRS), symlinks=True)
+    def ignore(d, names):
+        return {n for n in names if n in SKIP_DIRS or is_output_dir(Path(d) / n)}
+    shutil.copytree(root, dst, ignore=ignore, symlinks=True)
 
 
 def _apply_patch(repo: Path, res: FixResult) -> bool:
@@ -171,7 +173,7 @@ def verify(root: str | Path, res: FixResult, packs: PackSet, out_dir: str | Path
            include_inferred: bool = False) -> dict:
     root = Path(root).resolve()
     out = Path(out_dir)
-    out.mkdir(parents=True, exist_ok=True)
+    mark_output(out)
     report: dict = {"live": live, "steps": {}}
     with tempfile.TemporaryDirectory(prefix="fix-verify-") as tmp:
         repo = Path(tmp) / "repo"

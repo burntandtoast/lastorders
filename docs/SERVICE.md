@@ -39,6 +39,9 @@ These come from calls to the real API with our key. The scripts are in `probes/`
 | Undated aliases | Still resolve: `gpt-4o` -> `gpt-4o-2024-08-06`, `gpt-4o-mini` -> `gpt-4o-mini-2024-07-18`, `gpt-4.1` -> `gpt-4.1-2025-04-14`, `gpt-4.1-mini` -> `gpt-4.1-mini-2025-04-14` (all on the shutdown list). |
 | `GET /v1/models` `shutdown_date` | **`null` for all nine GPT-4o/4.1 ids and for `gpt-6-luna`**. The 14 Jan 2027 date isn't in the API yet. Older batches are populated (e.g. `gpt-4.1-nano` and `gpt-4o-2024-05-13` show `2026-10-23`). One mismatch: `gpt-4o-mini-tts-2025-03-20` shows `2026-07-23` in the API but 6 Jan 2027 on the docs page. |
 
+- **gpt-4o-2024-08-06, gpt-4o-mini-2024-07-18 and gpt-4.1-2025-04-14 reject `reasoning_effort`** on Chat Completions ("Unrecognized request argument supplied"), and gpt-4.1-mini-2025-04-14 rejects `reasoning.effort` on Responses. So the `reasoning_effort: "none"` fix has to ship together with the model switch (`probes/params3-result.json`).
+- `fix --verify --live` on the sample repo: all 4 patched calls were accepted by gpt-6-luna. Without the fix, all 3 changed calls were rejected (2× tools without `reasoning_effort` "none", 1× `max_tokens`). On the fixture repo, 0 unexpected rejections: the 3 rejected calls all had open manual items. Responses accepts `reasoning: {summary: "auto", effort: "none"}` together with `top_p`. Total token use across all runs was under 3k (less than $0.03).
+
 ### Still not confirmed
 
 - **Undated aliases after 14 Jan 2027:** OpenAI hasn't said whether `gpt-4o` etc. are retired or re-pointed.

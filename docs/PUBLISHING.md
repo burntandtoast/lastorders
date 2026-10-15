@@ -16,7 +16,7 @@ lastorders. This can change at any time, so register promptly.
 - A public repo, e.g. `burntandtoast/<name>` (needed for `uses: burntandtoast/<name>@v0`). `action.yml` must be at the root.
 - Choose a licence and fill in `license` in `pyproject.toml` plus a `LICENSE` file. If the paid features
   should stay closed, consider source-available, or split them into a private package later.
-- Tag `v0.2.0` and move the major tag `v0` to it. Optionally list it on the GitHub Marketplace (needs `branding`, which is already in action.yml).
+- Tag `v0.3.0` and move the major tag `v0` to it. Optionally list it on the GitHub Marketplace (needs `branding`, which is already in action.yml).
 
 ## 3. PyPI
 - Create a PyPI account (2FA required) and register the project with **Trusted Publishing** from GitHub Actions

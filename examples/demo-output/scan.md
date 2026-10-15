@@ -3,7 +3,7 @@
 - Repository: `/workspace/migration-kit/examples/sample-app`
 - Files scanned: 9
 - Findings: 18 in 9 files
-- Migration packs: anthropic v2026.10.15.1 (bundled), openai v2026.10.15.2 (bundled)
+- Migration packs: anthropic v2026.10.15.2 (bundled), openai v2026.10.15.4 (bundled)
 - SDKs detected: anthropic:anthropic, openai:openai
 
 | Risk | Count |
@@ -49,7 +49,7 @@
 
 | File | Line | Provider | Current model | Suggested | Shutdown | Risk | Kind | Notes |
 |---|---|---|---|---|---|---|---|---|
-| `config/settings.json` | 3 | openai | `gpt-5.6-sol` | manual decision | - | **info** | config | Not listed as retiring in the openai pack (v2026.10.15.2). |
+| `config/settings.json` | 3 | openai | `gpt-5.6-sol` | manual decision | - | **info** | config | Not listed as retiring in the openai pack (v2026.10.15.4). |
 
 ## Models read from environment variables
 

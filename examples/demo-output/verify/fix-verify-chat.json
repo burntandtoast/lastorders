@@ -1,0 +1,150 @@
+{
+  "usage": {
+    "old": {
+      "model": "gpt-4o-mini",
+      "input_tokens": 0,
+      "output_tokens": 0
+    },
+    "new": {
+      "model": "gpt-6-luna",
+      "input_tokens": 0,
+      "output_tokens": 0
+    }
+  },
+  "suite": "fix-verify-chat",
+  "api": "chat",
+  "mode": "mock",
+  "old_model": "gpt-4o-mini",
+  "new_model": "gpt-6-luna",
+  "run_at": "2026-10-15T10:19:41+0100",
+  "summary": {
+    "pass": 3
+  },
+  "cases": [
+    {
+      "id": "agent-29",
+      "type": "tool_call",
+      "status": "pass",
+      "old": {
+        "tool_calls": [
+          {
+            "name": "book_table",
+            "arguments": {
+              "date": "example",
+              "time": "example",
+              "party_size": 1
+            }
+          }
+        ],
+        "simulated": true
+      },
+      "new": {
+        "tool_calls": [
+          {
+            "name": "book_table",
+            "arguments": {
+              "date": "example",
+              "time": "example",
+              "party_size": 1
+            }
+          }
+        ],
+        "simulated": true
+      },
+      "checks": {
+        "tool_names": {
+          "old": [
+            "book_table"
+          ],
+          "new": [
+            "book_table"
+          ],
+          "match": true
+        },
+        "errors": {
+          "old": [],
+          "new": []
+        },
+        "argument_diff": []
+      },
+      "notes": [
+        "Simulated (dry-run) output - not a real model response."
+      ]
+    },
+    {
+      "id": "summarise-19",
+      "type": "structured",
+      "status": "pass",
+      "old": {
+        "text": "{\"summary\": \"example\", \"priority\": \"low\", \"tags\": [\"example\"]}",
+        "simulated": true
+      },
+      "new": {
+        "text": "{\"summary\": \"example\", \"priority\": \"low\", \"tags\": [\"example\"]}",
+        "simulated": true
+      },
+      "checks": {
+        "schema_valid": {
+          "old": true,
+          "new": true
+        },
+        "schema_errors": {
+          "old": [],
+          "new": []
+        },
+        "field_diff": [],
+        "similarity": 1.0,
+        "similarity_threshold": 0.85
+      },
+      "notes": [
+        "Simulated (dry-run) output - not a real model response."
+      ]
+    },
+    {
+      "id": "chat-6",
+      "type": "tool_call",
+      "status": "pass",
+      "old": {
+        "tool_calls": [
+          {
+            "name": "placeholder_tool",
+            "arguments": {
+              "value": "example"
+            }
+          }
+        ],
+        "simulated": true
+      },
+      "new": {
+        "tool_calls": [
+          {
+            "name": "placeholder_tool",
+            "arguments": {
+              "value": "example"
+            }
+          }
+        ],
+        "simulated": true
+      },
+      "checks": {
+        "tool_names": {
+          "old": [
+            "placeholder_tool"
+          ],
+          "new": [
+            "placeholder_tool"
+          ],
+          "match": true
+        },
+        "errors": {
+          "old": [],
+          "new": []
+        },
+        "argument_diff": []
+      },
+      "notes": [
+        "Simulated (dry-run) output - not a real model response."
+      ]
+    }
+  ]
+}

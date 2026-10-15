@@ -1,0 +1,46 @@
+{
+  "usage": {
+    "old": {
+      "model": "gpt-4.1-mini-2025-04-14",
+      "input_tokens": 0,
+      "output_tokens": 0
+    },
+    "new": {
+      "model": "gpt-6-luna",
+      "input_tokens": 0,
+      "output_tokens": 0
+    }
+  },
+  "suite": "fix-verify-responses",
+  "api": "responses",
+  "mode": "mock",
+  "old_model": "gpt-4.1-mini-2025-04-14",
+  "new_model": "gpt-6-luna",
+  "run_at": "2026-10-15T10:19:41+0100",
+  "summary": {
+    "pass": 1
+  },
+  "cases": [
+    {
+      "id": "classify-7",
+      "type": "text",
+      "status": "pass",
+      "old": {
+        "text": "[mock gpt-4.1-mini-2025-04-14] response to: Reply with the single word OK.",
+        "simulated": true
+      },
+      "new": {
+        "text": "[mock gpt-6-luna] response to: Reply with the single word OK.",
+        "simulated": true
+      },
+      "checks": {
+        "similarity": 0.844,
+        "missing_phrases": [],
+        "similarity_threshold": 0.0
+      },
+      "notes": [
+        "Simulated (dry-run) output - not a real model response."
+      ]
+    }
+  ]
+}

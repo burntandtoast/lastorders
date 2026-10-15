@@ -28,11 +28,14 @@ inputs:
     description: "Override the base URL for hosted migration packs."
     default: ""
   version:
-    description: "Package version from PyPI (e.g. '0.2.0'). Empty = install from this action's own source."
+    description: "Package version from PyPI (e.g. '0.3.0'). Empty = install from this action's own source."
     default: ""
   python-version:
     description: "Python version to run the scan with."
     default: "3.12"
+  fix-preview:
+    description: "Also write the automatic-fix patch (fix.diff + fix-plan.md) and check it with a simulated replay. Free, no API key; nothing is committed."
+    default: "false"
   artifact-name:
     description: "Name of the uploaded artifact."
     default: "modelmigrate-scan"
@@ -96,6 +99,34 @@ runs:
         PY
         echo "dir=$out" >> "$GITHUB_OUTPUT"
 
+    - name: Automatic fix preview
+      if: inputs.fix-preview == 'true'
+      shell: bash
+      env:
+        BTM_PATH: ${{ inputs.path }}
+        BTM_PACKS: ${{ inputs.packs }}
+        BTM_OFFLINE: ${{ inputs.offline }}
+        BTM_PACKS_URL: ${{ inputs.packs-url }}
+      run: |
+        out="$RUNNER_TEMP/modelmigrate"
+        args=(fix "$BTM_PATH" --out "$out" --verify)
+        [ -n "$BTM_PACKS" ] && args+=(--pack "$BTM_PACKS")
+        [ "$BTM_OFFLINE" = "true" ] && args+=(--offline)
+        [ -n "$BTM_PACKS_URL" ] && args+=(--packs-url "$BTM_PACKS_URL")
+        modelmigrate "${args[@]}" || true
+        python - "$out" >> "$GITHUB_STEP_SUMMARY" <<'PY'
+        import json, sys, pathlib
+        out = pathlib.Path(sys.argv[1])
+        p = json.loads((out / "fix-plan.json").read_text())
+        n = p["summary"]["items"]
+        v = json.loads((out / "verify" / "verify.json").read_text()) if (out / "verify" / "verify.json").exists() else None
+        print("\n### Automatic fix preview\n")
+        print(f"- {p['summary']['files_changed']} files in the patch, {n.get('fixed', 0) + n.get('fixed-coupled', 0)} code fixes, "
+              f"{n.get('manual', 0)} items need a decision (see `fix-plan.md` in the artifact).")
+        if v:
+            print(f"- Simulated verification: {'PASS' if v['ok'] else 'FAIL'} (patch applies, files parse, fixer is idempotent).")
+        PY
+
     - name: Upload scan report
       if: always()
       uses: actions/upload-artifact@v4
@@ -104,6 +135,10 @@ runs:
         path: |
           ${{ runner.temp }}/modelmigrate/scan.json
           ${{ runner.temp }}/modelmigrate/scan.md
+          ${{ runner.temp }}/modelmigrate/fix.diff
+          ${{ runner.temp }}/modelmigrate/fix-plan.md
+          ${{ runner.temp }}/modelmigrate/fix-plan.json
+          ${{ runner.temp }}/modelmigrate/verify/verify.md
         if-no-files-found: warn
 
     - name: Fail on high-risk findings

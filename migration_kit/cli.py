@@ -151,7 +151,8 @@ def cmd_report(a) -> int:
     if not a._demo:
         root = json.loads(Path(a.scan).read_text()).get("root", ".")
         print(licence.describe(licence.require("report", a.licence, root if Path(root).exists() else ".")), file=sys.stderr)
-    md, ht = report.generate(a.client, a.scan, a.out, a.swap_summary, a.diff, a.eval, label=a.label, packs=_packs(a))
+    md, ht = report.generate(a.client, a.scan, a.out, a.swap_summary, a.diff, a.eval, label=a.label, packs=_packs(a),
+                             fix_plan_path=a.fix_plan, fix_verify_path=a.fix_verify)
     print(f"  {ht}\n  {md}")
     return 0
 
@@ -202,7 +203,8 @@ def cmd_demo(a) -> int:
              ["fix", str(repo), "--out", str(out), "--verify", "--offline"],
              ["eval", str(ex / "evals" / "sample-suite.yaml"), "--dry-run", "--out", str(out)],
              ["report", "--client", "Acme Widgets Ltd (sample)", "--scan", str(out / "scan.json"),
-              "--swap-summary", str(out / "swap-summary.json"), "--diff", str(out / "model-swap.diff"),
+              "--swap-summary", str(out / "swap-summary.json"), "--diff", str(out / "fix.diff"),
+              "--fix-plan", str(out / "fix-plan.json"), "--fix-verify", str(out / "verify" / "verify.json"),
               "--eval", str(out / "eval.json"), "--out", str(out), "--offline",
               "--label", "Demo: simulated eval outputs on a fictional sample repo"]]
     for args in steps:
@@ -295,6 +297,8 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--diff")
     r.add_argument("--eval")
     r.add_argument("--label", help="banner at the top of the report")
+    r.add_argument("--fix-plan", help="fix-plan.json from `fix` (adds the automatic-fixes section)")
+    r.add_argument("--fix-verify", help="verify/verify.json from `fix --verify`")
     r.add_argument("--out", default=f"{brand.CLI_NAME}-out")
     _lic_opt(r)
     _pack_opts(r)

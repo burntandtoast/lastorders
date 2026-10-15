@@ -1,0 +1,80 @@
+{
+  "live": false,
+  "steps": {
+    "patch_applies": true,
+    "syntax": {
+      "ok": true,
+      "files": {
+        "app/agent.py": null,
+        "app/claude_fallback.py": null,
+        "app/summarise.py": null,
+        "web/src/chat.ts": null,
+        "web/src/classify.js": null
+      }
+    },
+    "idempotent": {
+      "ok": true,
+      "remaining_edits": [],
+      "files": []
+    },
+    "control": [],
+    "eval": {
+      "mode": "mock",
+      "skipped": [
+        "app/claude_fallback.py:8: no eval adapter for anthropic yet"
+      ],
+      "runs": [
+        {
+          "suite": "fix-verify-chat",
+          "api": "chat",
+          "summary": {
+            "pass": 3
+          },
+          "acceptance": {
+            "cases": 3,
+            "old_errors": [],
+            "new_errors": []
+          },
+          "usage": {
+            "old": {
+              "model": "gpt-4o-mini",
+              "input_tokens": 0,
+              "output_tokens": 0
+            },
+            "new": {
+              "model": "gpt-6-luna",
+              "input_tokens": 0,
+              "output_tokens": 0
+            }
+          }
+        },
+        {
+          "suite": "fix-verify-responses",
+          "api": "responses",
+          "summary": {
+            "pass": 1
+          },
+          "acceptance": {
+            "cases": 1,
+            "old_errors": [],
+            "new_errors": []
+          },
+          "usage": {
+            "old": {
+              "model": "gpt-4.1-mini-2025-04-14",
+              "input_tokens": 0,
+              "output_tokens": 0
+            },
+            "new": {
+              "model": "gpt-6-luna",
+              "input_tokens": 0,
+              "output_tokens": 0
+            }
+          }
+        }
+      ]
+    }
+  },
+  "unexpected_rejections": 0,
+  "ok": true
+}

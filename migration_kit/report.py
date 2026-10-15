@@ -50,8 +50,9 @@ def _explain(c: dict) -> str:
 class Ctx:
     """Everything the templates need, derived from the scan + packs."""
 
-    def __init__(self, client, scan, swap, diff, ev, today, label, packs: PackSet):
+    def __init__(self, client, scan, swap, diff, ev, today, label, packs: PackSet, fix=None, fix_verify=None):
         self.client, self.scan, self.swap, self.diff, self.ev, self.today, self.label = client, scan, swap, diff, ev, today, label
+        self.fix, self.fix_verify = fix, fix_verify
         self.s = scan["summary"]
         self.findings = sorted(scan["findings"], key=lambda f: (RISK_ORDER.get(f["risk"], 9), f["file"], f["line"]))
         used = {f["provider"] for f in scan["findings"]}
@@ -87,6 +88,38 @@ class Ctx:
         return steps
 
 
+FIX_LABEL = {"fixed": "Fixed in the patch", "fixed-coupled": "Fixed; ship with the model switch",
+             "manual": "Needs a decision", "info": "Info"}
+
+
+def _fix_glance(c: Ctx) -> str | None:
+    if not c.fix:
+        return None
+    n = c.fix["summary"]["items"]
+    txt = (f"{n.get('fixed', 0)} code fixes in the patch, {n.get('fixed-coupled', 0)} that must ship with the model switch, "
+           f"{n.get('manual', 0)} items that need a decision")
+    v = c.fix_verify
+    if v:
+        txt += f"; verification **{'PASS' if v['ok'] else 'FAIL'}** ({'live API' if v['live'] else 'mock'})"
+    return txt
+
+
+def _verify_lines(v: dict) -> list[str]:
+    s = v["steps"]
+    out = [f"Patch applies cleanly: {'yes' if s['patch_applies'] else 'NO'}. Changed files parse: "
+           f"{'yes' if s['syntax']['ok'] else 'NO'}. Re-running the fixer changes nothing: {'yes' if s['idempotent']['ok'] else 'NO'}."]
+    for run in s["eval"]["runs"]:
+        a = run["acceptance"]
+        exp = sum(1 for e in a["new_errors"] if e.get("expected"))
+        out.append(f"{run['api']}: {a['cases']} fixed call(s) replayed old vs new ({'live' if v['live'] else 'mock'}); "
+                   f"new model rejected {len(a['new_errors'])}" + (f" ({exp} expected: open decision items)" if exp else "") + ".")
+    ctrl = s.get("control") or []
+    if ctrl:
+        out.append(f"Control: {sum(c['rejected'] for c in ctrl)} of {len(ctrl)} calls are rejected by the new model "
+                   "without the fix, so these fixes are required, not cosmetic.")
+    return out
+
+
 def build_markdown(c: Ctx) -> str:
     s = c.s
     o = [f"# Model migration report: {c.client}", "", f"Prepared by Burnt & Toast Studios on {c.today:%d %B %Y}.", ""]
@@ -105,9 +138,15 @@ def build_markdown(c: Ctx) -> str:
     if s["env_var_model_refs"]:
         o.append("- **Models set by environment variable:** " + ", ".join(f"`{v}`" for v in s["env_var_model_refs"])
                  + " (check the live values on your servers)")
-    if c.swap:
+    if c.fix:
+        fs = c.fix["summary"]
+        o.append(f"- **Proposed patch:** {fs['files_changed']} files, {fs['model_id_replacements']} model ID replacements "
+                 "plus the code fixes below")
+    elif c.swap:
         o.append(f"- **Proposed patch:** {c.swap['replacements']} replacements in {c.swap['files_changed']} files, "
                  f"{len(c.swap['skipped_fine_tunes'])} fine-tuned references left untouched")
+    if _fix_glance(c):
+        o.append(f"- **Automatic fixes:** {_fix_glance(c)}")
     if c.ev:
         o.append(f"- **Regression eval ({c.ev['mode']}):** " + ", ".join(f"{v} {k}" for k, v in sorted(c.ev["summary"].items())))
     for p in c.packs:
@@ -133,6 +172,18 @@ def build_markdown(c: Ctx) -> str:
             o += [f"{i}. {a}" for i, a in enumerate(c.ft_advice(prov), 1)]
         o.append("")
         o += [f"- `{f['model']}` in `{f['file']}` line {f['line']}" for f in c.ft()]
+    if c.fix:
+        o += ["", "## Automatic fixes", "",
+              "Generated from the migration-pack rules for each API call (not from text search).", ""]
+        o += ["| Status | File | Rule | Change | Why |", "|---|---|---|---|---|"]
+        for i in c.fix["items"]:
+            if i["status"] == "info":
+                continue
+            why = (i["message"] + " " + " ".join(n for n in i.get("notes", []) if n)).strip().replace("|", "/")
+            o.append(f"| **{FIX_LABEL.get(i['status'], i['status'])}** | `{i['file']}:{i['line']}` | {i['rule']} | "
+                     f"{(i['change'] or '').replace('|', '/')} | {why} |")
+        if c.fix_verify:
+            o += ["", "**Verification:**", ""] + [f"- {x}" for x in _verify_lines(c.fix_verify)]
     if c.diff is not None:
         o += ["", "## Proposed code change", "", "Nothing has been changed in your repository. This is the patch for review:",
               "", "```diff", c.diff.strip(), "```"]
@@ -194,6 +245,11 @@ def build_html(c: Ctx) -> str:
     h += [f"<div class='card'><div class='n'>{s['total_findings']}</div><div class='l'>model references in {s['files_with_findings']} files</div></div>",
           f"<div class='card'><div class='n'>{s['by_risk'].get('high', 0)}</div><div class='l'>high-risk findings</div></div>",
           f"<div class='card'><div class='n'>{len(s['fine_tuned_models'])}</div><div class='l'>fine-tuned models needing a decision</div></div>"]
+    if c.fix:
+        n = c.fix["summary"]["items"]
+        h.append(f"<div class='card'><div class='n'>{n.get('fixed', 0) + n.get('fixed-coupled', 0)}</div><div class='l'>code fixes in the patch"
+                 + (f" (verified: {'PASS' if c.fix_verify['ok'] else 'FAIL'})" if c.fix_verify else "") + "</div></div>")
+        h.append(f"<div class='card'><div class='n'>{n.get('manual', 0)}</div><div class='l'>items needing a decision</div></div>")
     if c.ev:
         ok = c.ev["summary"].get("pass", 0) + c.ev["summary"].get("improved", 0)
         h.append(f"<div class='card'><div class='n'>{ok}/{len(c.ev['cases'])}</div><div class='l'>eval cases passing"
@@ -231,12 +287,27 @@ def build_html(c: Ctx) -> str:
                  + "".join(f"<li>{_e(a)}</li>" for a in adv) + "</ol><ul>"
                  + "".join(f"<li><code>{_e(f['model'])}</code> in <code>{_e(f['file'])}</code> line {f['line']}</li>" for f in c.ft())
                  + "</ul>")
+    if c.fix:
+        h.append("<h2>Automatic fixes</h2><p>Generated from the migration-pack rules for each API call (not from text search).</p>"
+                 "<table><tr><th>Status</th><th>File</th><th>Rule</th><th>Change</th><th>Why</th></tr>")
+        cls = {"fixed": "pass", "fixed-coupled": "drift", "manual": "fail"}
+        for i in c.fix["items"]:
+            if i["status"] == "info":
+                continue
+            why = (i["message"] + " " + " ".join(n for n in i.get("notes", []) if n)).strip()
+            h.append(f"<tr><td><span class='risk {cls.get(i['status'], 'info')}'>{_e(FIX_LABEL.get(i['status'], i['status']))}</span></td>"
+                     f"<td><code>{_e(i['file'])}:{i['line']}</code></td><td>{_e(i['rule'])}</td><td>{_e(i['change'])}</td><td>{_e(why)}</td></tr>")
+        h.append("</table>")
+        if c.fix_verify:
+            h.append("<div class='note'><strong>Verification.</strong><ul>" + "".join(f"<li>{_e(x)}</li>" for x in _verify_lines(c.fix_verify))
+                     + "</ul></div>")
     if c.diff is not None:
         lines = []
         for ln in c.diff.splitlines():
             cls = "hdr" if ln.startswith(("---", "+++", "@@")) else "add" if ln.startswith("+") else "del" if ln.startswith("-") else ""
             lines.append(f"<span class='{cls}'>{_e(ln)}</span>" if cls else _e(ln))
-        extra = f" {c.swap['replacements']} replacements in {c.swap['files_changed']} files." if c.swap else ""
+        extra = (f" {c.fix['summary']['files_changed']} files, {c.fix['summary']['model_id_replacements']} model ID replacements plus code fixes."
+                 if c.fix else f" {c.swap['replacements']} replacements in {c.swap['files_changed']} files." if c.swap else "")
         h.append(f"<h2>Proposed code change</h2><p>Nothing has been changed in your repository. This patch is for review.{extra}</p>"
                  f"<pre class='diff'>{chr(10).join(lines)}</pre>")
     if c.ev:
@@ -265,15 +336,19 @@ def build_html(c: Ctx) -> str:
 
 def generate(client: str, scan_path: str | Path, out_dir: str | Path, swap_path=None, diff_path=None,
              eval_path=None, today: dt.date | None = None, label: str | None = None,
-             packs: PackSet | None = None) -> tuple[Path, Path]:
+             packs: PackSet | None = None, fix_plan_path=None, fix_verify_path=None) -> tuple[Path, Path]:
     today = today or dt.date.today()
     scan = json.loads(Path(scan_path).read_text())
     swap = json.loads(Path(swap_path).read_text()) if swap_path else None
     diff = Path(diff_path).read_text() if diff_path else None
     ev = json.loads(Path(eval_path).read_text()) if eval_path else None
-    c = Ctx(client, scan, swap, diff, ev, today, label, packs or load_packs())
+    fix = json.loads(Path(fix_plan_path).read_text()) if fix_plan_path else None
+    fv = json.loads(Path(fix_verify_path).read_text()) if fix_verify_path else None
+    c = Ctx(client, scan, swap, diff, ev, today, label, packs or load_packs(), fix, fv)
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
+    from .scanner import mark_output
+    mark_output(out)
     md, ht = out / "client-report.md", out / "client-report.html"
     md.write_text(build_markdown(c))
     ht.write_text(build_html(c))

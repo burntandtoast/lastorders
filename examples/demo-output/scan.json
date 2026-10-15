@@ -7,7 +7,7 @@
     {
       "provider": "anthropic",
       "name": "Anthropic Claude API (stub)",
-      "version": "2026.10.15.1",
+      "version": "2026.10.15.2",
       "status": "stub",
       "source": "bundled",
       "detail": ""
@@ -15,7 +15,7 @@
     {
       "provider": "openai",
       "name": "OpenAI API",
-      "version": "2026.10.15.2",
+      "version": "2026.10.15.4",
       "status": "stable",
       "source": "bundled",
       "detail": ""
@@ -366,7 +366,7 @@
       "migration": null,
       "rules": [],
       "notes": [
-        "Not listed as retiring in the openai pack (v2026.10.15.2)."
+        "Not listed as retiring in the openai pack (v2026.10.15.4)."
       ]
     },
     {

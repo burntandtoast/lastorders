@@ -8,6 +8,7 @@ from pathlib import Path
 
 import yaml
 
+from .scanner import mark_output as _mark
 from .packs import PackSet, load_packs
 from .scanner import iter_files, iter_model_tokens
 
@@ -112,6 +113,7 @@ def _unified(old_lines: list[str], new_lines: list[str], rel: str) -> str:
 def write(result: SwapResult, out_dir: str | Path) -> tuple[Path, Path]:
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
+    _mark(out)
     p, s = out / "model-swap.diff", out / "swap-summary.json"
     p.write_text(result.diff)
     s.write_text(json.dumps(result.summary(), indent=2))

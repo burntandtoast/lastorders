@@ -14,6 +14,7 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
 
+from ..scanner import mark_output as _mark
 from .. import brand
 from ..packs import Pack, PackSet, load_packs
 from ..scanner import _rule_applies, iter_files, scan
@@ -447,6 +448,7 @@ def to_markdown(res: FixResult) -> str:
 def write(res: FixResult, out_dir: str | Path) -> dict[str, Path]:
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
+    _mark(out)
     paths = {"diff": out / "fix.diff", "json": out / "fix-plan.json", "md": out / "fix-plan.md"}
     paths["diff"].write_text(res.diff)
     paths["json"].write_text(json.dumps(res.to_dict(), indent=2, default=str))

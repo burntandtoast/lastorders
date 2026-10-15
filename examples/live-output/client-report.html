@@ -18,20 +18,22 @@ pre.diff .add{color:#7ee787}pre.diff .del{color:#ff7b72}pre.diff .hdr{color:#79c
 footer{margin-top:3rem;color:#777;font-size:.8rem;border-top:1px solid #eee;padding-top:.75rem}
 </style></head><body>
 <header><div class='brand'>Burnt &amp; Toast Studios</div><h1>Model migration report</h1><div>Acme Widgets Ltd (fictional sample repo) &middot; 15 October 2026</div></header>
-<div class='note banner'><strong>LIVE RUN on Burnt &amp; Toast&#x27;s own sample repo (Acme Widgets is fictional). Eval results are real gpt-4o-2024-08-06 vs gpt-6-luna responses via Chat Completions, 15 Oct 2026. Scan regenerated with migration packs (adds an Anthropic call site to the sample).</strong></div>
+<div class='note banner'><strong>LIVE RUN on Burnt &amp; Toast&#x27;s own sample repo (Acme Widgets is fictional). Eval results are real gpt-4o-2024-08-06 vs gpt-6-luna responses via Chat Completions, 15 Oct 2026. Automatic fixes verified live against the API on 15 Oct 2026.</strong></div>
 <h2>At a glance</h2><div class='cards'>
 <div class='card'><div class='n'>46</div><div class='l'>days until 30 Nov 2026: Anthropic retires Claude Sonnet 4.5 on the Claude API</div></div>
 <div class='card'><div class='n'>91</div><div class='l'>days until 14 Jan 2027: OpenAI removes GPT-4o, GPT-4o mini, GPT-4.1 and GPT-4.1 mini from the API</div></div>
 <div class='card'><div class='n'>18</div><div class='l'>model references in 9 files</div></div>
 <div class='card'><div class='n'>8</div><div class='l'>high-risk findings</div></div>
 <div class='card'><div class='n'>1</div><div class='l'>fine-tuned models needing a decision</div></div>
+<div class='card'><div class='n'>4</div><div class='l'>code fixes in the patch (verified: PASS)</div></div>
+<div class='card'><div class='n'>4</div><div class='l'>items needing a decision</div></div>
 <div class='card'><div class='n'>2/6</div><div class='l'>eval cases passing</div></div>
 </div>
 <div class='note'>Some models are chosen by environment variable (<code>CLASSIFIER_MODEL</code>, <code>OPENAI_MODEL</code>). Their live values are set outside the code and must be checked on your servers.</div>
-<h2>Anthropic Claude API (stub): what's confirmed</h2><p>Migration pack <code>anthropic</code> v2026.10.15.1 (stub). Sources: <a href='https://docs.anthropic.com/en/docs/about-claude/model-deprecations'>Anthropic model deprecations</a>.</p><ul><li>claude-sonnet-4-5-20250929 is deprecated and retires on the Claude API on 30 Nov 2026; recommended replacement claude-sonnet-5-5.</li><li>Anthropic gives at least 60 days&#x27; notice before retiring publicly released models.</li><li>Amazon Bedrock and Google Cloud set their own retirement schedules; these dates apply to Anthropic-operated platforms only.</li><li>temperature, top_p and top_k are deprecated on Claude 4.7 and later models (400 at non-default values).</li></ul>
+<h2>Anthropic Claude API (stub): what's confirmed</h2><p>Migration pack <code>anthropic</code> v2026.10.15.2 (stub). Sources: <a href='https://docs.anthropic.com/en/docs/about-claude/model-deprecations'>Anthropic model deprecations</a>.</p><ul><li>claude-sonnet-4-5-20250929 is deprecated and retires on the Claude API on 30 Nov 2026; recommended replacement claude-sonnet-5-5.</li><li>Anthropic gives at least 60 days&#x27; notice before retiring publicly released models.</li><li>Amazon Bedrock and Google Cloud set their own retirement schedules; these dates apply to Anthropic-operated platforms only.</li><li>temperature, top_p and top_k are deprecated on Claude 4.7 and later models (400 at non-default values).</li></ul>
 <h3>Not confirmed</h3><ul><li>This is a stub pack: no live checks, no alias data, and replacements&#x27; parameter behaviour beyond the docs is untested.</li></ul>
-<h2>OpenAI API: what's confirmed</h2><p>Migration pack <code>openai</code> v2026.10.15.2 (stable). Sources: <a href='https://developers.openai.com/api/docs/deprecations'>OpenAI deprecations</a>, <a href='https://developers.openai.com/api/docs/models/gpt-6-luna'>GPT-6 Luna model page</a>, <a href='https://developers.openai.com/api/docs/models/gpt-4o'>GPT-4o model page</a>.</p><ul><li>OpenAI announced on 14 Oct 2026 that gpt-4o-2024-08-06, gpt-4o-2024-11-20, gpt-4o-mini-2024-07-18, gpt-4.1-2025-04-14 and gpt-4.1-mini-2025-04-14 will be removed from the API on 14 Jan 2027.</li><li>OpenAI&#x27;s recommended replacement for all five is gpt-6-luna.</li><li>Fine-tuned versions of these models follow the same shutdown schedule as their base models.</li><li>gpt-6-luna does not support fine-tuning. From 6 Jan 2027, active existing customers can no longer create new fine-tuning jobs.</li><li>gpt-6-luna supports Chat Completions, Responses, Batch, structured outputs and function calling; on Chat Completions, function calling works only with reasoning_effort set to &#x27;none&#x27;.</li><li>gpt-6-luna does not support the Assistants API or legacy /v1/completions.</li><li>OpenAI documents a shutdown_date field on GET /v1/models (not yet filled in for this batch; see the live checks).</li></ul>
-<h3>Confirmed by our own live API checks (2026-10-15)</h3><ul><li>gpt-6-luna rejects `max_tokens` (400 unsupported_parameter, at every reasoning effort). Use `max_completion_tokens` (Chat Completions) or `max_output_tokens` (Responses). `max_completion_tokens` also works on gpt-4o-2024-08-06.</li><li>gpt-6-luna accepts temperature, top_p and logprobs only with reasoning_effort &#x27;none&#x27;. At the default and &#x27;low&#x27; effort, temperature is accepted only at 1, and top_p and logprobs are rejected. On the Responses API, temperature and top_p work with reasoning.effort &#x27;none&#x27; and are rejected at the default effort.</li><li>Chat Completions + function tools on gpt-6-luna returns 400 unless reasoning_effort is &#x27;none&#x27; (&#x27;low&#x27; and the default both fail). Function tools on the Responses API work at the default effort.</li><li>Undated aliases still resolve: gpt-4o -&gt; gpt-4o-2024-08-06, gpt-4o-mini -&gt; gpt-4o-mini-2024-07-18, gpt-4.1 -&gt; gpt-4.1-2025-04-14, gpt-4.1-mini -&gt; gpt-4.1-mini-2025-04-14.</li><li>GET /v1/models shows shutdown_date null for all nine GPT-4o / 4.1 ids and for gpt-6-luna; the 14 Jan 2027 date isn&#x27;t in the API yet. Earlier batches are populated (e.g. gpt-4.1-nano and gpt-4o-2024-05-13 show 2026-10-23).</li></ul>
+<h2>OpenAI API: what's confirmed</h2><p>Migration pack <code>openai</code> v2026.10.15.4 (stable). Sources: <a href='https://developers.openai.com/api/docs/deprecations'>OpenAI deprecations</a>, <a href='https://developers.openai.com/api/docs/models/gpt-6-luna'>GPT-6 Luna model page</a>, <a href='https://developers.openai.com/api/docs/models/gpt-4o'>GPT-4o model page</a>.</p><ul><li>OpenAI announced on 14 Oct 2026 that gpt-4o-2024-08-06, gpt-4o-2024-11-20, gpt-4o-mini-2024-07-18, gpt-4.1-2025-04-14 and gpt-4.1-mini-2025-04-14 will be removed from the API on 14 Jan 2027.</li><li>OpenAI&#x27;s recommended replacement for all five is gpt-6-luna.</li><li>Fine-tuned versions of these models follow the same shutdown schedule as their base models.</li><li>gpt-6-luna does not support fine-tuning. From 6 Jan 2027, active existing customers can no longer create new fine-tuning jobs.</li><li>gpt-6-luna supports Chat Completions, Responses, Batch, structured outputs and function calling; on Chat Completions, function calling works only with reasoning_effort set to &#x27;none&#x27;.</li><li>gpt-6-luna does not support the Assistants API or legacy /v1/completions.</li><li>OpenAI documents a shutdown_date field on GET /v1/models (not yet filled in for this batch; see the live checks).</li></ul>
+<h3>Confirmed by our own live API checks (2026-10-15)</h3><ul><li>gpt-6-luna rejects `max_tokens` (400 unsupported_parameter, at every reasoning effort). Use `max_completion_tokens` (Chat Completions) or `max_output_tokens` (Responses). `max_completion_tokens` also works on gpt-4o-2024-08-06.</li><li>gpt-6-luna accepts temperature, top_p and logprobs only with reasoning_effort &#x27;none&#x27;. At the default and &#x27;low&#x27; effort, temperature is accepted only at 1, and top_p and logprobs are rejected. On the Responses API, temperature and top_p work with reasoning.effort &#x27;none&#x27; and are rejected at the default effort.</li><li>Chat Completions + function tools on gpt-6-luna returns 400 unless reasoning_effort is &#x27;none&#x27; (&#x27;low&#x27; and the default both fail). Function tools on the Responses API work at the default effort.</li><li>Undated aliases still resolve: gpt-4o -&gt; gpt-4o-2024-08-06, gpt-4o-mini -&gt; gpt-4o-mini-2024-07-18, gpt-4.1 -&gt; gpt-4.1-2025-04-14, gpt-4.1-mini -&gt; gpt-4.1-mini-2025-04-14.</li><li>GET /v1/models shows shutdown_date null for all nine GPT-4o / 4.1 ids and for gpt-6-luna; the 14 Jan 2027 date isn&#x27;t in the API yet. Earlier batches are populated (e.g. gpt-4.1-nano and gpt-4o-2024-05-13 show 2026-10-23).</li><li>GPT-4o / GPT-4.1 models reject reasoning_effort (Chat: &#x27;Unrecognized request argument&#x27;, Responses: reasoning.effort unsupported), so adding reasoning_effort must ship in the same deploy as the model swap (live-tested 15 Oct 2026).</li></ul>
 <h3>Not confirmed</h3><ul><li>Whether the undated aliases (gpt-4o, gpt-4o-mini, gpt-4.1, gpt-4.1-mini) are retired or re-pointed on 14 Jan 2027. Today they resolve to dated snapshots that are on the shutdown list, so we treat them as affected.</li><li>Output quality, latency and cost on your own workload. Only a regression eval can show that.</li></ul>
 <h2>Findings</h2><table><tr><th>Risk</th><th>File</th><th>Line</th><th>Current model</th><th>Suggested</th><th>Category</th><th>Notes</th></tr>
 <tr><td><span class='risk high'>high</span></td><td><code>app/agent.py</code></td><td>8</td><td><code>gpt-4o-mini</code></td><td><code>gpt-6-luna</code> <small>(inferred)</small></td><td>Headline migration</td><td>Undated alias. Live check 15 Oct 2026: it still resolves, to a dated snapshot on the 14 Jan 2027 list. OpenAI hasn&#x27;t said whether the alias is retired or re-pointed, so it&#x27;s treated as affected.<br>Chat Completions + tools: gpt-6-luna returns HTTP 400 for function tools on Chat Completions unless reasoning_effort is &#x27;none&#x27;. Set it, or move to the Responses API. [live-tested]</td></tr>
@@ -54,7 +56,18 @@ footer{margin-top:3rem;color:#777;font-size:.8rem;border-top:1px solid #eee;padd
 <tr><td><span class='risk info'>info</span></td><td><code>config/settings.json</code></td><td>3</td><td><code>gpt-5.6-sol</code></td><td><em>decision needed</em></td><td>Not listed as retiring</td><td>Not listed as retiring in the openai pack (v2026.10.15.2).</td></tr>
 </table>
 <h2>Fine-tuned models</h2><p>These can't be swapped automatically. For each one, choose to:</p><ol><li>Replace it with gpt-6-luna plus a stronger prompt and examples, proven with the regression eval, or</li><li>re-train on another fine-tunable model before new fine-tuning jobs close on 6 January 2027.</li></ol><ul><li><code>ft:gpt-4o-mini-2024-07-18:acme-widgets:intent-v3:9xYzAbC1</code> in <code>app/agent.py</code> line 36</li><li><code>ft:gpt-4o-mini-2024-07-18:acme-widgets:intent-v3:9xYzAbC1</code> in <code>config/models.yaml</code> line 6</li></ul>
-<h2>Proposed code change</h2><p>Nothing has been changed in your repository. This patch is for review. 11 replacements in 8 files.</p><pre class='diff'><span class='hdr'>--- a/.env.example</span>
+<h2>Automatic fixes</h2><p>Generated from the migration-pack rules for each API call (not from text search).</p><table><tr><th>Status</th><th>File</th><th>Rule</th><th>Change</th><th>Why</th></tr>
+<tr><td><span class='risk drift'>Fixed; ship with the model switch</span></td><td><code>app/agent.py:29</code></td><td>luna-chat-tools-effort</td><td>set `reasoning_effort` = &quot;none&quot;</td><td>Chat Completions + tools: gpt-6-luna returns HTTP 400 for function tools on Chat Completions unless reasoning_effort is &#x27;none&#x27;. Set it, or move to the Responses API. Alternative: move the call to the Responses API (tools work there at the default effort). The model comes from $OPENAI_MODEL (default now gpt-6-luna). Deploy this change together with switching the model to gpt-6-luna: Live-tested 15 Oct 2026: gpt-4o-2024-08-06, gpt-4o-mini-2024-07-18 and gpt-4.1-2025-04-14 return HTTP 400 &#x27;Unrecognized request argument supplied: reasoning_effort&#x27; on Chat Completions; gpt-4.1-mini-2025-04-14 returns 400 for reasoning.effort on Responses (probes/params3-result.json).</td></tr>
+<tr><td><span class='risk fail'>Needs a decision</span></td><td><code>app/agent.py:35</code></td><td>fine-tune</td><td></td><td>Fine-tuned model `ft:gpt-4o-mini-2024-07-18:acme-widgets:intent-v3:9xYzAbC1` (base `gpt-4o-mini-2024-07-18`, shuts down 2027-01-14). Not changed automatically. No automatic replacement: gpt-6-luna does not support fine-tuning. Options are prompting/few-shot on gpt-6-luna validated with `eval`, or re-training on a fine-tunable model. New fine-tuning jobs stop on 6 Jan 2027.</td></tr>
+<tr><td><span class='risk fail'>Needs a decision</span></td><td><code>app/claude_fallback.py:8</code></td><td>claude-sampling-deprecated</td><td>suggested: remove `temperature` (rule confidence &#x27;inferred&#x27;; pass --include-inferred to apply)</td><td>Sets temperature/top_p/top_k: on Claude 4.7 and later models these return HTTP 400 at non-default values, and the anthropic Python SDK v1.0+ raises TypeError. Remove them and guide behaviour with prompting.</td></tr>
+<tr><td><span class='risk pass'>Fixed in the patch</span></td><td><code>app/summarise.py:19</code></td><td>luna-max-tokens</td><td>rename `max_tokens` -&gt; `max_completion_tokens`</td><td>Uses `max_tokens`: gpt-6-luna rejects it with HTTP 400. Rename to `max_completion_tokens` (Chat Completions) or `max_output_tokens` (Responses).</td></tr>
+<tr><td><span class='risk pass'>Fixed in the patch</span></td><td><code>app/summarise.py:19</code></td><td>luna-sampling</td><td>set `reasoning_effort` = &quot;none&quot;</td><td>Sets temperature/top_p/logprobs: gpt-6-luna accepts these only with reasoning_effort &#x27;none&#x27;; at other efforts temperature must be 1 and top_p/logprobs return HTTP 400. Alternative: remove temperature/top_p/logprobs/top_logprobs and keep the default reasoning effort.</td></tr>
+<tr><td><span class='risk fail'>Needs a decision</span></td><td><code>config/models.yaml:6</code></td><td>fine-tune</td><td></td><td>Fine-tuned model `ft:gpt-4o-mini-2024-07-18:acme-widgets:intent-v3:9xYzAbC1` referenced here (config). Not changed automatically. No automatic replacement: gpt-6-luna does not support fine-tuning. Options are prompting/few-shot on gpt-6-luna validated with `eval`, or re-training on a fine-tunable model. New fine-tuning jobs stop on 6 Jan 2027.</td></tr>
+<tr><td><span class='risk fail'>Needs a decision</span></td><td><code>config/settings.json:2</code></td><td>luna-max-tokens</td><td>found by the file-level scan, but no SDK call in this file could be parsed: check where this value is used</td><td>Uses `max_tokens`: gpt-6-luna rejects it with HTTP 400. Rename to `max_completion_tokens` (Chat Completions) or `max_output_tokens` (Responses).</td></tr>
+<tr><td><span class='risk pass'>Fixed in the patch</span></td><td><code>web/src/chat.ts:6</code></td><td>luna-chat-tools-effort</td><td>set `reasoning_effort` = &quot;none&quot;</td><td>Chat Completions + tools: gpt-6-luna returns HTTP 400 for function tools on Chat Completions unless reasoning_effort is &#x27;none&#x27;. Set it, or move to the Responses API. Alternative: move the call to the Responses API (tools work there at the default effort).</td></tr>
+</table>
+<div class='note'><strong>Verification.</strong><ul><li>Patch applies cleanly: yes. Changed files parse: yes. Re-running the fixer changes nothing: yes.</li><li>chat: 3 fixed call(s) replayed old vs new (live); new model rejected 0.</li><li>responses: 1 fixed call(s) replayed old vs new (live); new model rejected 0.</li><li>Control: 3 of 3 calls are rejected by the new model without the fix, so these fixes are required, not cosmetic.</li></ul></div>
+<h2>Proposed code change</h2><p>Nothing has been changed in your repository. This patch is for review. 8 files, 11 model ID replacements plus code fixes.</p><pre class='diff'><span class='hdr'>--- a/.env.example</span>
 <span class='hdr'>+++ b/.env.example</span>
 <span class='hdr'>@@ -1,3 +1,3 @@</span>
  OPENAI_API_KEY=sk-replace-me
@@ -73,6 +86,15 @@ footer{margin-top:3rem;color:#777;font-size:.8rem;border-top:1px solid #eee;padd
  
  TOOLS = [{
      &quot;type&quot;: &quot;function&quot;,
+<span class='hdr'>@@ -26,7 +26,7 @@</span>
+ 
+ 
+ def handle(message: str):
+<span class='del'>-    resp = client.chat.completions.create(model=MODEL, messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: message}], tools=TOOLS)</span>
+<span class='add'>+    resp = client.chat.completions.create(model=MODEL, messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: message}], tools=TOOLS, reasoning_effort=&quot;none&quot;)</span>
+     return resp.choices[0].message.tool_calls
+ 
+ 
 <span class='hdr'>--- a/app/claude_fallback.py</span>
 <span class='hdr'>+++ b/app/claude_fallback.py</span>
 <span class='hdr'>@@ -6,7 +6,7 @@</span>
@@ -86,15 +108,20 @@ footer{margin-top:3rem;color:#777;font-size:.8rem;border-top:1px solid #eee;padd
          messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: ticket}],
 <span class='hdr'>--- a/app/summarise.py</span>
 <span class='hdr'>+++ b/app/summarise.py</span>
-<span class='hdr'>@@ -17,7 +17,7 @@</span>
+<span class='hdr'>@@ -17,10 +17,11 @@</span>
  
  def summarise(ticket: str) -&gt; str:
      resp = client.chat.completions.create(
 <span class='del'>-        model=&quot;gpt-4o-2024-08-06&quot;,</span>
 <span class='add'>+        model=&quot;gpt-6-luna&quot;,</span>
          temperature=0.2,
-         max_tokens=400,
+<span class='del'>-        max_tokens=400,</span>
+<span class='add'>+        max_completion_tokens=400,</span>
          messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: ticket}],
+         response_format={&quot;type&quot;: &quot;json_schema&quot;, &quot;json_schema&quot;: {&quot;name&quot;: &quot;ticket&quot;, &quot;schema&quot;: TICKET_SCHEMA, &quot;strict&quot;: True}},
+<span class='add'>+        reasoning_effort=&quot;none&quot;,</span>
+     )
+     return resp.choices[0].message.content
 <span class='hdr'>--- a/config/models.yaml</span>
 <span class='hdr'>+++ b/config/models.yaml</span>
 <span class='hdr'>@@ -1,7 +1,7 @@</span>
@@ -127,6 +154,14 @@ footer{margin-top:3rem;color:#777;font-size:.8rem;border-top:1px solid #eee;padd
      messages: history,
      tools: [
        {
+<span class='hdr'>@@ -15,6 +15,7 @@</span>
+         },
+       },
+     ],
+<span class='add'>+    reasoning_effort: &quot;none&quot;,</span>
+   });
+   return completion.choices[0].message;
+ }
 <span class='hdr'>--- a/web/src/classify.js</span>
 <span class='hdr'>+++ b/web/src/classify.js</span>
 <span class='hdr'>@@ -1,7 +1,7 @@</span>
@@ -149,4 +184,4 @@ footer{margin-top:3rem;color:#777;font-size:.8rem;border-top:1px solid #eee;padd
 <tr><td><code>apology-tone</code></td><td>text</td><td><span class='risk drift'>drift</span></td><td>text similarity 0.343</td></tr>
 </table>
 <h2>Next steps</h2><ol><li>Swap retired Claude model ids for the recommended replacements, remove temperature/top_p/top_k where targeting Claude 4.7+, and run a regression eval.</li><li>Scan: confirm the findings, including environment variables set outside the repo.</li><li>Swap: review and apply the patch on a branch. Then rename `max_tokens` to `max_completion_tokens`, and add `reasoning_effort: &quot;none&quot;` where Chat Completions uses tools or temperature/top_p (or move those calls to the Responses API).</li><li>Eval: run the regression suite against live models and fix any DRIFT or FAIL.</li><li>Handoff: merge, deploy, update environment variables, and check your API usage for any remaining calls to GPT-4o / 4.1 models. GET /v1/models doesn&#x27;t show the 14 Jan 2027 date yet, so don&#x27;t rely on shutdown_date alone.</li></ol>
-<footer>Generated by ModelMigrate (Burnt &amp; Toast Studios). Migration packs: anthropic v2026.10.15.1, openai v2026.10.15.2. Re-verify against the providers' documentation before acting.</footer></body></html>
+<footer>Generated by ModelMigrate (Burnt &amp; Toast Studios). Migration packs: anthropic v2026.10.15.2, openai v2026.10.15.4. Re-verify against the providers' documentation before acting.</footer></body></html>

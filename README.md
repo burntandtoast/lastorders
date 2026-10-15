@@ -51,6 +51,44 @@ Useful flags:
 | `--format json` | print the summary as JSON |
 | `--summary-file F` / `--annotations` | CI outputs (used by the GitHub Action) |
 
+## Fix (patch preview)
+
+```bash
+modelmigrate fix .                 # writes modelmigrate-out/fix.diff + fix-plan.md; changes nothing on disk
+modelmigrate fix . --verify        # also checks the patch on a scratch copy (see below)
+git apply modelmigrate-out/fix.diff
+```
+
+`fix` swaps the retiring model IDs and then makes the code changes the new model needs at each API call:
+
+- **Renames `max_tokens`**, to `max_completion_tokens` on Chat Completions or `max_output_tokens` on Responses.
+- **Adds `reasoning_effort: "none"`** where gpt-6-luna needs it: Chat Completions calls with tools, and
+  calls that set `temperature`, `top_p` or `logprobs`. On Responses it adds `reasoning.effort`.
+- **Flags anything it can't decide safely** in `fix-plan.md`: legacy `functions` calls, Assistants and legacy
+  Completions calls (these stay on their current model in the patch), fine-tunes and fine-tuning jobs,
+  LangChain wrappers, calls that pass `**kwargs` or a spread object, conflicting values, and calls whose model
+  isn't visible in the code (use `--assume-model`).
+
+Every change comes from the migration pack's rules. Python is edited with
+[libcst](https://github.com/Instagram/LibCST), so your formatting and comments are kept. JS and TS are edited
+with a built-in parser. Rules the pack marks `inferred` are only suggested unless you pass `--include-inferred`.
+
+**Old models reject `reasoning_effort`.** We tested gpt-4o and gpt-4.1 against the live API, and both return
+HTTP 400. Any fix that adds it has to ship together with the model switch. When the model comes from an
+environment variable, the plan marks the fix "ship with the model switch". `--no-model-swap` applies only
+the changes that are safe on the old model.
+
+`--verify` applies the patch to a temporary copy of your repo, then:
+
+1. checks the changed files still parse;
+2. re-runs the fixer and checks it changes nothing more;
+3. replays each fixed call twice: once as it was (old model, old arguments) and once as patched (new model,
+   new arguments).
+
+Without `--live`, the replay uses simulated responses. With `--live` and your own `OPENAI_API_KEY` (licence),
+the calls go straight to OpenAI. A control run also sends the unpatched arguments to the new model, to show
+each fix was needed. `--evals evals/regression.yaml` reruns your own suite with the fixed arguments.
+
 ## GitHub Action
 
 Add `.github/workflows/model-scan.yml`:
@@ -86,6 +124,7 @@ as an artifact. Inputs:
 | `packs-url` | built-in | override the pack URL |
 | `version` | action source | install this version from PyPI instead |
 | `python-version` | `3.12` | |
+| `fix-preview` | `false` | also attach the automatic-fix patch + plan (simulated verify, no key) |
 | `artifact-name` | `modelmigrate-scan` | |
 
 Outputs: `total`, `high` and `report-dir`.
@@ -119,8 +158,8 @@ The tool checks for a newer pack once a day and falls back to the copy bundled w
 
 | | Free | Licence (per repo) | Done for you |
 |---|---|---|---|
-| `scan`, GitHub Action, patch preview (`swap` writes a `.diff`) | ✓ | ✓ | ✓ |
-| `swap --apply`, `init-evals` + `eval` regression testing, client-ready `report` | | ✓ | ✓ |
+| `scan`, GitHub Action, patch preview (`fix` / `swap` write a `.diff`), `fix --verify` (simulated replay) | ✓ | ✓ | ✓ |
+| `fix --apply` / `swap --apply`, `fix --verify --live`, `init-evals` + `eval` regression testing, client-ready `report` | | ✓ | ✓ |
 | We do the migration, evals and handoff | | | ✓ |
 
 One licence covers **one GitHub repository, monorepos included**. Pass the key with

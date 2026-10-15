@@ -272,3 +272,15 @@ def test_verify_merges_customer_suite(tmp_path):
     s = next(c for c in merged["cases"] if c["source"] == "app/summarise.py:19")
     assert s["model_params"]["new"]["reasoning_effort"] == "none" and s["model_params"]["new"]["max_completion_tokens"] == 400
     assert "max_tokens" in s["model_params"]["old"] and s["max_output_tokens"] is None
+
+
+def test_outputs_inside_repo_are_skipped(tmp_path, monkeypatch):
+    repo = tmp_path / "repo"
+    shutil.copytree(SAMPLE, repo, ignore=shutil.ignore_patterns("node_modules"))
+    monkeypatch.chdir(repo)
+    assert main(["fix", ".", "--verify"]) == 0               # default out dir lands inside the repo
+    assert main(["scan", "."]) == 0
+    assert main(["fix", ".", "--verify"]) == 0               # and is ignored on the next runs
+    plan = json.loads((repo / "modelmigrate-out" / "fix-plan.json").read_text())
+    assert not any(i["file"].startswith("modelmigrate-out") for i in plan["items"])
+    assert "modelmigrate-out" not in (repo / "modelmigrate-out" / "fix.diff").read_text()

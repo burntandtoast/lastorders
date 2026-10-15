@@ -518,6 +518,8 @@ def _key_checks(c: dict) -> str:
 def write(res: dict, out_dir: str | Path) -> tuple[Path, Path]:
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
+    from .scanner import mark_output
+    mark_output(out)
     j, m = out / "eval.json", out / "eval.md"
     j.write_text(json.dumps(res, indent=2, default=str))
     m.write_text(to_markdown(res))

@@ -25,5 +25,6 @@ jobs:
         with:
           path: examples/sample-app
           offline: "true"
+          fix-preview: "true"
       - name: Expect findings in the sample repo
         run: test "${{ steps.btm.outputs.high }}" -gt 0
