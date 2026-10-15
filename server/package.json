@@ -1,0 +1,19 @@
+{
+  "name": "modelmigrate-licence-server",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Licence server + Stripe Checkout + pack hosting for the ModelMigrate CLI (Cloudflare Worker).",
+  "scripts": {
+    "test": "node --test --no-warnings test/*.test.js",
+    "dev": "wrangler dev",
+    "db:migrate:local": "wrangler d1 migrations apply modelmigrate-licences --local",
+    "db:migrate:remote": "wrangler d1 migrations apply modelmigrate-licences --remote",
+    "check": "wrangler deploy --dry-run --outdir dist",
+    "keys": "node scripts/gen-signing-key.mjs"
+  },
+  "devDependencies": {
+    "sql.js": "^1.11.0",
+    "wrangler": "^4.40.0"
+  }
+}

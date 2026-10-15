@@ -1,0 +1,45 @@
+# ModelMigrate licence server + pack site. Nothing here is secret; secrets go in `wrangler secret put` (see docs/LICENCE-SERVER.md).
+name = "modelmigrate-licence"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+workers_dev = true
+
+# Serve the static pack site (packs/v1/*.json, index) from the same Worker; API routes run first.
+[assets]
+directory = "../site"
+binding = "ASSETS"
+run_worker_first = ["/api/*", "/buy", "/success", "/cancel", "/healthz"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "modelmigrate-licences"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"      # from `wrangler d1 create modelmigrate-licences`
+migrations_dir = "migrations"
+
+# Custom domain (uncomment once the zone is on Cloudflare):
+# routes = [{ pattern = "packs.burntandtoast.com", custom_domain = true }]
+
+[vars]
+PRODUCT_NAME = "ModelMigrate"
+CLI_NAME = "modelmigrate"
+PRODUCT_CODE = "modelmigrate-repo"
+CURRENCY = "gbp"
+PRICE_AMOUNT = "14900"            # minor units (14900 = £149.00). Ignored if STRIPE_PRICE_ID is set.
+STRIPE_PRICE_ID = ""              # optional: a Price from the Stripe Dashboard instead of inline price_data
+ALLOW_PROMOTION_CODES = "false"
+STRIPE_AUTOMATIC_TAX = "false"    # set "true" once Stripe Tax is set up (UK VAT)
+STRIPE_INVOICE_CREATION = "false" # "true" emails a Stripe invoice (useful for B2B buyers)
+TOKEN_TTL_DAYS = "7"
+LICENCE_FEATURES = "*"
+EMAIL_PROVIDER = "log"            # resend | log | none
+EMAIL_FROM = "ModelMigrate <licences@burntandtoast.com>"
+EMAIL_REPLY_TO = ""
+SUPPORT_EMAIL = ""
+PUBLIC_BASE_URL = ""              # e.g. https://packs.burntandtoast.com (defaults to the request origin)
+
+# Secrets (never in this file):
+#   STRIPE_SECRET_KEY      sk_test_... (later sk_live_... or a restricted rk_ key)
+#   STRIPE_WEBHOOK_SECRET  whsec_... (comma-separate two while rolling)
+#   RESEND_API_KEY         re_...
+#   LICENCE_SIGNING_KEY    JSON from `npm run keys`
+#   ADMIN_TOKEN            long random string (>= 24 chars)

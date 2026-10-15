@@ -55,4 +55,6 @@ def build_site(out: Path) -> Path:
                                     .replace("__PRODUCT__", brand.PRODUCT_NAME).replace("__CLI__", brand.CLI_NAME))
     (out / "vercel.json").write_text(json.dumps(VERCEL, indent=2))
     (out / "_headers").write_text(CF_HEADERS)
+    # Cloudflare Workers static assets (server/wrangler.toml) must not publish the Vercel config.
+    (out / ".assetsignore").write_text("vercel.json\n")
     return out

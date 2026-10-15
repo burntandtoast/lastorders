@@ -1,0 +1,6 @@
+# Copy to .dev.vars for `npm run dev` (wrangler dev). Test-mode values only. .dev.vars is gitignored.
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...        # printed by `stripe listen --forward-to localhost:8787/api/stripe/webhook`
+RESEND_API_KEY=re_...
+LICENCE_SIGNING_KEY={"kid":"dev","d":"...","x":"..."}
+ADMIN_TOKEN=change-me-to-a-long-random-string
