@@ -3,7 +3,7 @@
   "pack_format": 1,
   "provider": "openai",
   "name": "OpenAI API",
-  "version": "2026.10.15.4",
+  "version": "2026.10.15.5",
   "updated": "2026-10-15",
   "status": "stable",
   "notes": [
@@ -51,6 +51,9 @@
     {
       "pattern": "o[1-9](?:-(?:mini|pro|preview|deep-research)(?:-[0-9]{4}-[0-9]{2}-[0-9]{2})?|-[0-9]{4}-[0-9]{2}-[0-9]{2})?",
       "quoted_only": true
+    },
+    {
+      "pattern": "gpt-image-[0-9][A-Za-z0-9._-]*[A-Za-z0-9]|gpt-image-[0-9]"
     }
   ],
   "fine_tune": {
@@ -296,6 +299,36 @@
       "section": "2026-04-22: Legacy GPT model snapshots (23 Oct 2026)",
       "confidence": "confirmed",
       "kind": "snapshot"
+    },
+    {
+      "id": "o1-pro",
+      "shutdown": "2026-10-23",
+      "replacement": "gpt-5.6-sol",
+      "section": "2026-04-22: Legacy GPT model snapshots (23 Oct 2026)",
+      "confidence": "confirmed",
+      "kind": "alias",
+      "alias_of": "o1-pro-2025-03-19",
+      "note": "OpenAI's recommended replacement is gpt-5.6-sol with `reasoning.mode: pro`; a plain name swap drops pro mode, so set it explicitly.",
+      "map_automatically": false
+    },
+    {
+      "id": "o1-pro-2025-03-19",
+      "shutdown": "2026-10-23",
+      "replacement": "gpt-5.6-sol",
+      "section": "2026-04-22: Legacy GPT model snapshots (23 Oct 2026)",
+      "confidence": "confirmed",
+      "kind": "snapshot",
+      "note": "OpenAI's recommended replacement is gpt-5.6-sol with `reasoning.mode: pro`; a plain name swap drops pro mode, so set it explicitly.",
+      "map_automatically": false
+    },
+    {
+      "id": "gpt-image-1",
+      "shutdown": "2026-10-23",
+      "replacement": "gpt-image-2.5-sunburst or gpt-image-2.5-flare",
+      "section": "2026-04-22: Legacy GPT model snapshots (23 Oct 2026)",
+      "confidence": "confirmed",
+      "note": "Image model. Do not map to a text model.",
+      "map_automatically": false
     },
     {
       "id": "gpt-5-2025-08-07",
