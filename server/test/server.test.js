@@ -290,3 +290,47 @@ test("success page: an email failure doesn't break the page and the webhook retr
   await h.webhook(paidSessionEvent(id, { email: "e@example.com", pi: "pi_f" }));
   assert.equal((await env.DB.prepare("SELECT email_status FROM licences").first()).email_status, "sent");
 });
+
+test("checkout: required waiver consent, policy message and waiver metadata; /terms page; email refund line", async () => {
+  const net = fakeNetwork();
+  const env = await makeEnv();
+  const h = harness(env, net);
+  assert.equal((await h.call("/buy")).status, 303);
+  const p = new URLSearchParams(net.calls[0].body);
+  assert.equal(p.get("custom_fields[0][key]"), "waiver");
+  assert.equal(p.get("custom_fields[0][type]"), "dropdown");
+  assert.equal(p.get("custom_fields[0][optional]"), "false");
+  assert.equal(p.get("custom_fields[0][dropdown][options][0][value]"), "agree");
+  assert.equal(p.get("custom_fields[0][dropdown][default_value]"), null);         // consent must not be pre-selected
+  assert.equal(p.get("consent_collection[terms_of_service]"), null);
+  const msg = p.get("custom_text[submit][message]");
+  for (const s of ["reg. 37", "never been activated", "5 working days", "17334149", "71-75 Shelton Street", "Not VAT registered", "/terms"]) assert.ok(msg.includes(s), s);
+  assert.ok(msg.length <= 1200);
+  assert.equal(p.get("metadata[waiver_consent]"), "required_at_checkout");
+  assert.match(p.get("metadata[waiver_at]"), /^\d{4}-\d\d-\d\dT/);
+  assert.equal(p.get("payment_intent_data[metadata][waiver_consent]"), "required_at_checkout");
+
+  const net2 = fakeNetwork();
+  await harness(await makeEnv({ STRIPE_TOS_CONSENT: "true" }), net2).call("/buy");
+  const p2 = new URLSearchParams(net2.calls[0].body);
+  assert.equal(p2.get("consent_collection[terms_of_service]"), "required");
+  assert.ok(p2.get("custom_text[terms_of_service_acceptance][message]").includes("14-day right to cancel"));
+  assert.equal(p2.get("custom_fields[0][key]"), null);
+
+  // the acceptance is read back from the completed session and logged
+  const ev = paidSessionEvent("cs_test_waiver", { email: "w@example.com", pi: "pi_w" });
+  ev.data.object.custom_fields = [{ key: "waiver", type: "dropdown", dropdown: { value: "agree" } }];
+  ev.data.object.metadata.terms_version = "2026-10-15";
+  assert.equal((await h.webhook(ev)).status, 200);
+  const evRow = await env.DB.prepare("SELECT detail FROM licence_events WHERE kind = 'waiver_consent'").first();
+  assert.equal(evRow.detail, "checkout_custom_field terms=2026-10-15");
+  const mail = net.calls.find((c) => c.url.startsWith("https://resend.test/"));
+  const body = JSON.parse(mail.body);
+  assert.ok(body.text.includes("never been activated") && body.text.includes("/terms"));
+  assert.ok(body.html.includes("5 working days"));
+
+  const t = await h.call("/terms");
+  assert.equal(t.status, 200);
+  const html = await t.text();
+  for (const s of ["17334149", "England and Wales", "regulation 37", "hello@burntandtoast.com", "never been activated", "5 working days", "£149"]) assert.ok(html.includes(s), s);
+});

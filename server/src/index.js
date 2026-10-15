@@ -15,7 +15,8 @@ import { generateKey, KEY_RE, loadSigningKey, signToken } from "./keys.js";
 import { Store } from "./store.js";
 import { Stripe, StripeError, verifyStripeSignature } from "./stripe.js";
 import { licenceEmail, makeMailer } from "./email.js";
-import { cancelPage, errorPage, pendingPage, successPage } from "./pages.js";
+import { cancelPage, errorPage, pendingPage, successPage, termsPage } from "./pages.js";
+import { TERMS_VERSION, WAIVER_FIELD, submitMessage, tosAcceptanceMessage, waiverFromSession } from "./terms.js";
 
 const DAY = 86400;
 
@@ -33,6 +34,7 @@ function config(env) {
     automaticTax: env.STRIPE_AUTOMATIC_TAX === "true",
     invoice: env.STRIPE_INVOICE_CREATION === "true",
     supportEmail: env.SUPPORT_EMAIL || "",
+    tosConsent: env.STRIPE_TOS_CONSENT === "true",
   };
 }
 
@@ -52,7 +54,10 @@ export function createApp(deps = {}) {
   // ---- Checkout -------------------------------------------------------------------------------
   async function createCheckout(c, { repo, email }) {
     const { cfg, baseUrl } = c;
-    const metadata = { product: cfg.productCode };
+    // Consent is collected on the Checkout page itself (required field, see terms.js); Stripe won't complete the
+    // session without it. waiver_at is when the session (and the consent request) was created; the acceptance is
+    // read back from the completed session and logged in licence_events.
+    const metadata = { product: cfg.productCode, waiver_consent: "required_at_checkout", waiver_at: new Date(clock()).toISOString(), terms_version: TERMS_VERSION };
     const repoHint = repo ? normaliseRepo(repo) : null;
     if (repoHint) metadata.repo_hint = repoHint;       // informational; binding happens on first activation
     const lineItem = cfg.priceId
@@ -74,6 +79,13 @@ export function createApp(deps = {}) {
       metadata,
       payment_intent_data: { metadata },
     };
+    params.custom_text = { submit: { message: submitMessage(baseUrl) } };
+    if (cfg.tosConsent) {
+      params.consent_collection = { terms_of_service: "required" };
+      params.custom_text.terms_of_service_acceptance = { message: tosAcceptanceMessage(baseUrl) };
+    } else {
+      params.custom_fields = [WAIVER_FIELD];
+    }
     if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && email.length <= 254) params.customer_email = email;
     if (cfg.allowPromo) params.allow_promotion_codes = true;
     if (cfg.automaticTax) params.automatic_tax = { enabled: true };
@@ -96,12 +108,15 @@ export function createApp(deps = {}) {
     if (!row) {
       for (let attempt = 0; attempt < 3 && !row; attempt++) {
         try {
-          ({ row } = await c.store.createForSession({
+          let created;
+          ({ row, created } = await c.store.createForSession({
             key: generateKey(), email, sessionId: session.id,
             paymentIntent: typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id ?? null,
             customer: typeof session.customer === "string" ? session.customer : session.customer?.id ?? null,
             amount: session.amount_total ?? null, currency: session.currency ?? null, livemode: !!session.livemode,
           }));
+          const waiver = waiverFromSession(session);
+          if (created && waiver) await c.store.event(row.key, "waiver_consent", `${waiver} terms=${session.metadata?.terms_version || ""}`);
         } catch (e) {
           if (!/UNIQUE|constraint/i.test(String(e?.message))) throw e;   // key collision (60-bit keys; practically never): retry
         }
@@ -275,6 +290,7 @@ export function createApp(deps = {}) {
         return Response.redirect(s.url, 303);
       }
       if (path === "/success" && request.method === "GET") return await success(c, url);
+      if (path === "/terms" && request.method === "GET") return termsPage({ productName: c.cfg.productName, cliName: c.cfg.cliName, amount: c.cfg.amount, currency: c.cfg.currency, baseUrl: c.baseUrl });
       if (path === "/cancel" && request.method === "GET") return cancelPage({ productName: c.cfg.productName, baseUrl: c.baseUrl });
       if (path.startsWith("/api/admin/")) return await admin(c, request, path);
       if (path.startsWith("/api/")) return json({ error: "not_found" }, 404);

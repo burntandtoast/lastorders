@@ -13,7 +13,7 @@ enabled = true
 [assets]
 directory = "../site"
 binding = "ASSETS"
-run_worker_first = ["/api/*", "/buy", "/success", "/cancel", "/healthz"]
+run_worker_first = ["/api/*", "/buy", "/success", "/cancel", "/terms", "/healthz"]
 
 [[d1_databases]]
 binding = "DB"
@@ -31,6 +31,7 @@ PRICE_AMOUNT = "14900"            # minor units (14900 = £149.00). Ignored if S
 STRIPE_PRICE_ID = ""              # optional: a Price from the Stripe Dashboard instead of inline price_data
 ALLOW_PROMOTION_CODES = "false"
 STRIPE_AUTOMATIC_TAX = "false"    # set "true" once Stripe Tax is set up (UK VAT)
+STRIPE_TOS_CONSENT = "false"     # "true" once a Terms URL is set in Stripe Dashboard → Settings → Public details
 STRIPE_INVOICE_CREATION = "false" # "true" emails a Stripe invoice (useful for B2B buyers)
 TOKEN_TTL_DAYS = "7"
 LICENCE_FEATURES = "*"
