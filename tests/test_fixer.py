@@ -252,3 +252,23 @@ def test_cli_fix_gating_and_apply(tmp_path, monkeypatch, capsys):
     subprocess.run(["git", "checkout", "--", "."], cwd=repo, check=True)
     assert main(["fix", str(repo), "--out", str(out), "--apply", "--verify"]) == 0
     assert "max_completion_tokens=400" in (repo / "app" / "summarise.py").read_text()
+
+
+def test_verify_merges_customer_suite(tmp_path):
+    """Cases from init-evals carry `source: file:line`; verify replays them with the fixed arguments."""
+    from migration_kit import initevals
+    packs = pk.load_packs(offline=True)
+    suite, skipped = initevals.build_suite(SAMPLE, packs=packs)
+    for c in suite["cases"]:
+        c["prompt"] = "A real example input."
+    sp = initevals.write_suite(suite, skipped, tmp_path / "regression.yaml")
+    res = plan_fixes(SAMPLE, packs)
+    rep = verify(SAMPLE, res, packs, tmp_path / "v", suite_path=str(sp))
+    assert rep["ok"]
+    user = json.loads((tmp_path / "v" / f"{suite['name']}.json").read_text())
+    assert user["cases"] and rep["steps"]["eval"]["runs"][0]["suite"] == suite["name"]
+    from migration_kit.fixer.verify import _merge_user_suite
+    merged = _merge_user_suite(str(sp), res)
+    s = next(c for c in merged["cases"] if c["source"] == "app/summarise.py:19")
+    assert s["model_params"]["new"]["reasoning_effort"] == "none" and s["model_params"]["new"]["max_completion_tokens"] == 400
+    assert "max_tokens" in s["model_params"]["old"] and s["max_output_tokens"] is None

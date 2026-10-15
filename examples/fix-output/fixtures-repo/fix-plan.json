@@ -1,0 +1,996 @@
+{
+  "tool": "modelmigrate",
+  "root": "fixer-repo",
+  "packs": [
+    {
+      "provider": "anthropic",
+      "name": "Anthropic Claude API (stub)",
+      "version": "2026.10.15.2",
+      "status": "stub",
+      "source": "bundled",
+      "detail": ""
+    },
+    {
+      "provider": "openai",
+      "name": "OpenAI API",
+      "version": "2026.10.15.4",
+      "status": "stable",
+      "source": "bundled",
+      "detail": ""
+    }
+  ],
+  "options": {
+    "model_swap": true,
+    "assume_model": null,
+    "include_inferred": false,
+    "mapping": "generated from anthropic pack v2026.10.15.2, openai pack v2026.10.15.4"
+  },
+  "summary": {
+    "files_changed": 5,
+    "model_id_replacements": 17,
+    "items": {
+      "info": 1,
+      "manual": 11,
+      "fixed": 10,
+      "fixed-coupled": 1
+    }
+  },
+  "items": [
+    {
+      "file": "py/chains.py",
+      "line": 3,
+      "provider": "openai",
+      "rule": "langchain-max-tokens",
+      "status": "info",
+      "message": "LangChain: check how your langchain-openai version maps `max_tokens` before relying on the rename; not verified by us.",
+      "change": "",
+      "model": "gpt-6-luna",
+      "target": "gpt-6-luna",
+      "endpoint": "langchain_openai",
+      "confidence": "inferred",
+      "notes": []
+    },
+    {
+      "file": "py/chains.py",
+      "line": 3,
+      "provider": "openai",
+      "rule": "luna-max-tokens",
+      "status": "manual",
+      "message": "Uses `max_tokens`: gpt-6-luna rejects it with HTTP 400. Rename to `max_completion_tokens` (Chat Completions) or `max_output_tokens` (Responses).",
+      "change": "no automatic rename defined for this call type (langchain_openai)",
+      "model": "gpt-6-luna",
+      "target": "gpt-6-luna",
+      "endpoint": "langchain_openai",
+      "confidence": "live-tested",
+      "notes": [
+        "LangChain and other wrappers are not renamed automatically: check how your wrapper version maps max_tokens."
+      ]
+    },
+    {
+      "file": "py/chains.py",
+      "line": 3,
+      "provider": "openai",
+      "rule": "luna-sampling",
+      "status": "manual",
+      "message": "Sets temperature/top_p/logprobs: gpt-6-luna accepts these only with reasoning_effort 'none'; at other efforts temperature must be 1 and top_p/logprobs return HTTP 400.",
+      "change": "no automatic fix defined for this call type (langchain_openai)",
+      "model": "gpt-6-luna",
+      "target": "gpt-6-luna",
+      "endpoint": "langchain_openai",
+      "confidence": "live-tested",
+      "notes": [
+        "Alternative: remove temperature/top_p/logprobs/top_logprobs and keep the default reasoning effort."
+      ]
+    },
+    {
+      "file": "py/legacy.py",
+      "line": 9,
+      "provider": "openai",
+      "rule": "luna-chat-tools-effort",
+      "status": "fixed",
+      "message": "Chat Completions + tools: gpt-6-luna returns HTTP 400 for function tools on Chat Completions unless reasoning_effort is 'none'. Set it, or move to the Responses API.",
+      "change": "set `reasoning_effort` = \"none\"",
+      "model": "gpt-6-luna",
+      "target": "gpt-6-luna",
+      "endpoint": "chat_completions",
+      "confidence": "live-tested",
+      "notes": [
+        "Alternative: move the call to the Responses API (tools work there at the default effort)."
+      ]
+    },
+    {
+      "file": "py/legacy.py",
+      "line": 9,
+      "provider": "openai",
+      "rule": "luna-legacy-functions",
+      "status": "manual",
+      "message": "Uses legacy `functions`/`function_call` parameters. Not tested on gpt-6-luna; migrate to `tools`.",
+      "change": "Rewrite `functions`/`function_call` as `tools`/`tool_choice` and update the response handling (message.tool_calls).",
+      "model": "gpt-6-luna",
+      "target": "gpt-6-luna",
+      "endpoint": "chat_completions",
+      "confidence": "inferred",
+      "notes": []
+    },
+    {
+      "file": "py/legacy.py",
+      "line": 14,
+      "provider": "openai",
+      "rule": "luna-assistants",
+      "status": "manual",
+      "message": "Assistants API: gpt-6-luna does not support it (and the Assistants API shut down 26 Aug 2026).",
+      "change": "kept on `gpt-4o` in the patch (not swapped to gpt-6-luna). The Assistants API has shut down; port threads/runs to the Responses API (conversation state, tools, file search).",
+      "model": "gpt-4o",
+      "target": "gpt-6-luna",
+      "endpoint": "assistants_api",
+      "confidence": "confirmed",
+      "notes": []
+    },
+    {
+      "file": "py/legacy.py",
+      "line": 18,
+      "provider": "openai",
+      "rule": "luna-legacy-completions",
+      "status": "manual",
+      "message": "Legacy /v1/completions: gpt-6-luna does not support it.",
+      "change": "kept on `gpt-4o-mini` in the patch (not swapped to gpt-6-luna). Move prompt-completion calls to the Responses API (input=...).",
+      "model": "gpt-4o-mini",
+      "target": "gpt-6-luna",
+      "endpoint": "legacy_completions",
+      "confidence": "confirmed",
+      "notes": []
+    },
+    {
+      "file": "py/legacy.py",
+      "line": 18,
+      "provider": "openai",
+      "rule": "luna-max-tokens",
+      "status": "manual",
+      "message": "Uses `max_tokens`: gpt-6-luna rejects it with HTTP 400. Rename to `max_completion_tokens` (Chat Completions) or `max_output_tokens` (Responses).",
+      "change": "fix this when you move the call",
+      "model": "gpt-4o-mini",
+      "target": "gpt-6-luna",
+      "endpoint": "legacy_completions",
+      "confidence": "live-tested",
+      "notes": []
+    },
+    {
+      "file": "py/legacy.py",
+      "line": 22,
+      "provider": "openai",
+      "rule": "luna-fine-tuning-jobs",
+      "status": "manual",
+      "message": "Creates fine-tuning jobs: gpt-6-luna can't be fine-tuned, and new fine-tuning jobs stop on 6 Jan 2027.",
+      "change": "kept on `gpt-4o-mini-2024-07-18` in the patch (not swapped to gpt-6-luna). gpt-6-luna can't be fine-tuned; decide whether to keep a fine-tunable model or replace the fine-tune with prompting validated by eval.",
+      "model": "gpt-4o-mini-2024-07-18",
+      "target": "gpt-6-luna",
+      "endpoint": "fine_tuning_jobs",
+      "confidence": "confirmed",
+      "notes": []
+    },
+    {
+      "file": "py/variants.py",
+      "line": 12,
+      "provider": "openai",
+      "rule": "luna-sampling",
+      "status": "fixed",
+      "message": "Sets temperature/top_p/logprobs: gpt-6-luna accepts these only with reasoning_effort 'none'; at other efforts temperature must be 1 and top_p/logprobs return HTTP 400.",
+      "change": "set `reasoning.effort` = \"none\"",
+      "model": "gpt-6-luna",
+      "target": "gpt-6-luna",
+      "endpoint": "responses_api",
+      "confidence": "live-tested",
+      "notes": [
+        "Alternative: remove temperature/top_p/logprobs/top_logprobs and keep the default reasoning effort."
+      ]
+    },
+    {
+      "file": "py/variants.py",
+      "line": 16,
+      "provider": "openai",
+      "rule": "luna-sampling",
+      "status": "fixed",
+      "message": "Sets temperature/top_p/logprobs: gpt-6-luna accepts these only with reasoning_effort 'none'; at other efforts temperature must be 1 and top_p/logprobs return HTTP 400.",
+      "change": "set `reasoning.effort` = \"none\"",
+      "model": "gpt-6-luna",
+      "target": "gpt-6-luna",
+      "endpoint": "responses_api",
+      "confidence": "live-tested",
+      "notes": [
+        "Alternative: remove temperature/top_p/logprobs/top_logprobs and keep the default reasoning effort."
+      ]
+    },
+    {
+      "file": "py/variants.py",
+      "line": 25,
+      "provider": "openai",
+      "rule": "luna-max-tokens",
+      "status": "fixed",
+      "message": "Uses `max_tokens`: gpt-6-luna rejects it with HTTP 400. Rename to `max_completion_tokens` (Chat Completions) or `max_output_tokens` (Responses).",
+      "change": "rename `max_tokens` -> `max_completion_tokens`",
+      "model": "gpt-6-luna",
+      "target": "gpt-6-luna",
+      "endpoint": "chat_completions",
+      "confidence": "live-tested",
+      "notes": []
+    },
+    {
+      "file": "py/variants.py",
+      "line": 25,
+      "provider": "openai",
+      "rule": "luna-sampling",
+      "status": "manual",
+      "message": "Sets temperature/top_p/logprobs: gpt-6-luna accepts these only with reasoning_effort 'none'; at other efforts temperature must be 1 and top_p/logprobs return HTTP 400.",
+      "change": "the call also passes **kwargs / a spread object; adding the argument could duplicate it",
+      "model": "gpt-6-luna",
+      "target": "gpt-6-luna",
+      "endpoint": "chat_completions",
+      "confidence": "live-tested",
+      "notes": [
+        "Alternative: remove temperature/top_p/logprobs/top_logprobs and keep the default reasoning effort."
+      ]
+    },
+    {
+      "file": "py/variants.py",
+      "line": 30,
+      "provider": "openai",
+      "rule": "model-unknown",
+      "status": "manual",
+      "message": "The model for this call isn't visible in the code, so no fix was applied. If it runs on gpt-6-luna, these rules apply: luna-chat-tools-effort.",
+      "change": "re-run with --assume-model gpt-6-luna to apply them",
+      "model": null,
+      "target": null,
+      "endpoint": "chat_completions",
+      "confidence": "",
+      "notes": [
+        "model expression: `model_name`"
+      ]
+    },
+    {
+      "file": "py/variants.py",
+      "line": 34,
+      "provider": "openai",
+      "rule": "luna-chat-tools-effort",
+      "status": "fixed",
+      "message": "Chat Completions + tools: gpt-6-luna returns HTTP 400 for function tools on Chat Completions unless reasoning_effort is 'none'. Set it, or move to the Responses API.",
+      "change": "set `reasoning_effort` = \"none\"",
+      "model": "gpt-6-luna",
+      "target": "gpt-6-luna",
+      "endpoint": "chat_completions",
+      "confidence": "live-tested",
+      "notes": [
+        "Alternative: move the call to the Responses API (tools work there at the default effort)."
+      ]
+    },
+    {
+      "file": "py/variants.py",
+      "line": 34,
+      "provider": "openai",
+      "rule": "luna-max-tokens",
+      "status": "fixed",
+      "message": "Uses `max_tokens`: gpt-6-luna rejects it with HTTP 400. Rename to `max_completion_tokens` (Chat Completions) or `max_output_tokens` (Responses).",
+      "change": "rename `max_tokens` -> `max_completion_tokens`",
+      "model": "gpt-6-luna",
+      "target": "gpt-6-luna",
+      "endpoint": "chat_completions",
+      "confidence": "live-tested",
+      "notes": []
+    },
+    {
+      "file": "py/variants.py",
+      "line": 47,
+      "provider": "openai",
+      "rule": "luna-chat-tools-effort",
+      "status": "manual",
+      "message": "Chat Completions + tools: gpt-6-luna returns HTTP 400 for function tools on Chat Completions unless reasoning_effort is 'none'. Set it, or move to the Responses API.",
+      "change": "`reasoning_effort` is already set to `\"low\"`; decide which value you need",
+      "model": "gpt-6-luna",
+      "target": "gpt-6-luna",
+      "endpoint": "chat_completions",
+      "confidence": "live-tested",
+      "notes": [
+        "Alternative: move the call to the Responses API (tools work there at the default effort)."
+      ]
+    },
+    {
+      "file": "py/variants.py",
+      "line": 51,
+      "provider": "openai",
+      "rule": "luna-chat-tools-effort",
+      "status": "fixed-coupled",
+      "message": "Chat Completions + tools: gpt-6-luna returns HTTP 400 for function tools on Chat Completions unless reasoning_effort is 'none'. Set it, or move to the Responses API.",
+      "change": "set `reasoning_effort` = \"none\"",
+      "model": "gpt-6-luna",
+      "target": "gpt-6-luna",
+      "endpoint": "chat_completions",
+      "confidence": "live-tested",
+      "notes": [
+        "Alternative: move the call to the Responses API (tools work there at the default effort).",
+        "The model comes from $CHAT_MODEL (default now gpt-6-luna). Deploy this change together with switching the model to gpt-6-luna: Live-tested 15 Oct 2026: gpt-4o-2024-08-06, gpt-4o-mini-2024-07-18 and gpt-4.1-2025-04-14 return HTTP 400 'Unrecognized request argument supplied: reasoning_effort' on Chat Completions; gpt-4.1-mini-2025-04-14 returns 400 for reasoning.effort on Responses (probes/params3-result.json)."
+      ]
+    },
+    {
+      "file": "web/chat.js",
+      "line": 11,
+      "provider": "openai",
+      "rule": "luna-max-tokens",
+      "status": "fixed",
+      "message": "Uses `max_tokens`: gpt-6-luna rejects it with HTTP 400. Rename to `max_completion_tokens` (Chat Completions) or `max_output_tokens` (Responses).",
+      "change": "rename `max_tokens` -> `max_completion_tokens`",
+      "model": "gpt-6-luna",
+      "target": "gpt-6-luna",
+      "endpoint": "chat_completions",
+      "confidence": "live-tested",
+      "notes": []
+    },
+    {
+      "file": "web/chat.js",
+      "line": 11,
+      "provider": "openai",
+      "rule": "luna-sampling",
+      "status": "fixed",
+      "message": "Sets temperature/top_p/logprobs: gpt-6-luna accepts these only with reasoning_effort 'none'; at other efforts temperature must be 1 and top_p/logprobs return HTTP 400.",
+      "change": "set `reasoning_effort` = \"none\"",
+      "model": "gpt-6-luna",
+      "target": "gpt-6-luna",
+      "endpoint": "chat_completions",
+      "confidence": "live-tested",
+      "notes": [
+        "Alternative: remove temperature/top_p/logprobs/top_logprobs and keep the default reasoning effort."
+      ]
+    },
+    {
+      "file": "web/chat.js",
+      "line": 16,
+      "provider": "openai",
+      "rule": "luna-max-tokens",
+      "status": "fixed",
+      "message": "Uses `max_tokens`: gpt-6-luna rejects it with HTTP 400. Rename to `max_completion_tokens` (Chat Completions) or `max_output_tokens` (Responses).",
+      "change": "rename `max_tokens` -> `max_completion_tokens`",
+      "model": "gpt-6-luna",
+      "target": "gpt-6-luna",
+      "endpoint": "chat_completions",
+      "confidence": "live-tested",
+      "notes": [
+        "The model comes from $CHAT_MODEL; this change is safe on the old model too."
+      ]
+    },
+    {
+      "file": "web/resp.ts",
+      "line": 6,
+      "provider": "openai",
+      "rule": "luna-sampling",
+      "status": "manual",
+      "message": "Sets temperature/top_p/logprobs: gpt-6-luna accepts these only with reasoning_effort 'none'; at other efforts temperature must be 1 and top_p/logprobs return HTTP 400.",
+      "change": "the call also passes **kwargs / a spread object; adding the argument could duplicate it",
+      "model": "gpt-6-luna",
+      "target": "gpt-6-luna",
+      "endpoint": "responses_api",
+      "confidence": "live-tested",
+      "notes": [
+        "Alternative: remove temperature/top_p/logprobs/top_logprobs and keep the default reasoning effort."
+      ]
+    },
+    {
+      "file": "web/resp.ts",
+      "line": 14,
+      "provider": "openai",
+      "rule": "luna-sampling",
+      "status": "fixed",
+      "message": "Sets temperature/top_p/logprobs: gpt-6-luna accepts these only with reasoning_effort 'none'; at other efforts temperature must be 1 and top_p/logprobs return HTTP 400.",
+      "change": "set `reasoning.effort` = \"none\"",
+      "model": "gpt-6-luna",
+      "target": "gpt-6-luna",
+      "endpoint": "responses_api",
+      "confidence": "live-tested",
+      "notes": [
+        "Alternative: remove temperature/top_p/logprobs/top_logprobs and keep the default reasoning effort."
+      ]
+    }
+  ],
+  "calls": [
+    {
+      "file": "py/chains.py",
+      "line_before": 3,
+      "line_after": 3,
+      "lang": "python",
+      "provider": "openai",
+      "endpoint": "langchain_openai",
+      "old_model": "gpt-4o",
+      "new_model": "gpt-6-luna",
+      "params_before": {
+        "max_tokens": 100,
+        "temperature": 0.2
+      },
+      "params_after": {
+        "max_tokens": 100,
+        "temperature": 0.2
+      },
+      "rules": [
+        "luna-max-tokens",
+        "luna-sampling",
+        "langchain-max-tokens"
+      ],
+      "args_before": [
+        "max_tokens",
+        "model",
+        "temperature"
+      ],
+      "args_after": [
+        "max_tokens",
+        "model",
+        "temperature"
+      ]
+    },
+    {
+      "file": "py/legacy.py",
+      "line_before": 9,
+      "line_after": 9,
+      "lang": "python",
+      "provider": "openai",
+      "endpoint": "chat_completions",
+      "old_model": "gpt-4o-2024-08-06",
+      "new_model": "gpt-6-luna",
+      "params_before": {
+        "functions": [
+          {
+            "name": "get_weather",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          }
+        ],
+        "function_call": "auto"
+      },
+      "params_after": {
+        "functions": [
+          {
+            "name": "get_weather",
+            "parameters": {
+              "type": "object",
+              "properties": {}
+            }
+          }
+        ],
+        "function_call": "auto",
+        "reasoning_effort": "none"
+      },
+      "rules": [
+        "luna-chat-tools-effort",
+        "luna-legacy-functions"
+      ],
+      "args_before": [
+        "function_call",
+        "functions",
+        "messages",
+        "model"
+      ],
+      "args_after": [
+        "function_call",
+        "functions",
+        "messages",
+        "model",
+        "reasoning_effort"
+      ]
+    },
+    {
+      "file": "py/variants.py",
+      "line_before": 12,
+      "line_after": 12,
+      "lang": "python",
+      "provider": "openai",
+      "endpoint": "responses_api",
+      "old_model": "gpt-4.1",
+      "new_model": "gpt-6-luna",
+      "params_before": {
+        "temperature": 0.7,
+        "max_output_tokens": 200
+      },
+      "params_after": {
+        "temperature": 0.7,
+        "max_output_tokens": 200,
+        "reasoning": {
+          "effort": "none"
+        }
+      },
+      "rules": [
+        "luna-sampling"
+      ],
+      "args_before": [
+        "input",
+        "max_output_tokens",
+        "model",
+        "temperature"
+      ],
+      "args_after": [
+        "input",
+        "max_output_tokens",
+        "model",
+        "reasoning",
+        "temperature"
+      ]
+    },
+    {
+      "file": "py/variants.py",
+      "line_before": 16,
+      "line_after": 16,
+      "lang": "python",
+      "provider": "openai",
+      "endpoint": "responses_api",
+      "old_model": "gpt-4.1-2025-04-14",
+      "new_model": "gpt-6-luna",
+      "params_before": {
+        "top_p": 0.9,
+        "reasoning": {
+          "summary": "auto"
+        }
+      },
+      "params_after": {
+        "top_p": 0.9,
+        "reasoning": {
+          "summary": "auto",
+          "effort": "none"
+        }
+      },
+      "rules": [
+        "luna-sampling"
+      ],
+      "args_before": [
+        "input",
+        "model",
+        "reasoning",
+        "top_p"
+      ],
+      "args_after": [
+        "input",
+        "model",
+        "reasoning",
+        "top_p"
+      ]
+    },
+    {
+      "file": "py/variants.py",
+      "line_before": 25,
+      "line_after": 25,
+      "lang": "python",
+      "provider": "openai",
+      "endpoint": "chat_completions",
+      "old_model": "gpt-4o",
+      "new_model": "gpt-6-luna",
+      "params_before": {
+        "temperature": 0.5,
+        "max_tokens": 100
+      },
+      "params_after": {
+        "temperature": 0.5,
+        "max_completion_tokens": 100
+      },
+      "rules": [
+        "luna-max-tokens",
+        "luna-sampling"
+      ],
+      "args_before": [
+        "max_tokens",
+        "messages",
+        "model",
+        "temperature"
+      ],
+      "args_after": [
+        "max_completion_tokens",
+        "messages",
+        "model",
+        "temperature"
+      ]
+    },
+    {
+      "file": "py/variants.py",
+      "line_before": 34,
+      "line_after": 34,
+      "lang": "python",
+      "provider": "openai",
+      "endpoint": "chat_completions",
+      "old_model": "gpt-6-luna",
+      "new_model": "gpt-6-luna",
+      "params_before": {
+        "max_tokens": 100,
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "lookup",
+              "parameters": {
+                "type": "object",
+                "properties": {}
+              }
+            }
+          }
+        ]
+      },
+      "params_after": {
+        "max_completion_tokens": 100,
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "lookup",
+              "parameters": {
+                "type": "object",
+                "properties": {}
+              }
+            }
+          }
+        ],
+        "reasoning_effort": "none"
+      },
+      "rules": [
+        "luna-max-tokens",
+        "luna-chat-tools-effort"
+      ],
+      "args_before": [
+        "max_tokens",
+        "messages",
+        "model",
+        "tools"
+      ],
+      "args_after": [
+        "max_completion_tokens",
+        "messages",
+        "model",
+        "reasoning_effort",
+        "tools"
+      ]
+    },
+    {
+      "file": "py/variants.py",
+      "line_before": 43,
+      "line_after": 44,
+      "lang": "python",
+      "provider": "openai",
+      "endpoint": "chat_completions",
+      "old_model": "gpt-4o",
+      "new_model": "gpt-6-luna",
+      "params_before": {
+        "temperature": 1
+      },
+      "params_after": {
+        "temperature": 1
+      },
+      "rules": [],
+      "args_before": [
+        "messages",
+        "model",
+        "temperature"
+      ],
+      "args_after": [
+        "messages",
+        "model",
+        "temperature"
+      ]
+    },
+    {
+      "file": "py/variants.py",
+      "line_before": 47,
+      "line_after": 48,
+      "lang": "python",
+      "provider": "openai",
+      "endpoint": "chat_completions",
+      "old_model": "gpt-4o",
+      "new_model": "gpt-6-luna",
+      "params_before": {
+        "messages": [],
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "lookup",
+              "parameters": {
+                "type": "object",
+                "properties": {}
+              }
+            }
+          }
+        ],
+        "reasoning_effort": "low"
+      },
+      "params_after": {
+        "messages": [],
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "lookup",
+              "parameters": {
+                "type": "object",
+                "properties": {}
+              }
+            }
+          }
+        ],
+        "reasoning_effort": "low"
+      },
+      "rules": [
+        "luna-chat-tools-effort"
+      ],
+      "args_before": [
+        "messages",
+        "model",
+        "reasoning_effort",
+        "tools"
+      ],
+      "args_after": [
+        "messages",
+        "model",
+        "reasoning_effort",
+        "tools"
+      ]
+    },
+    {
+      "file": "py/variants.py",
+      "line_before": 51,
+      "line_after": 52,
+      "lang": "python",
+      "provider": "openai",
+      "endpoint": "chat_completions",
+      "old_model": "gpt-4o-mini",
+      "new_model": "gpt-6-luna",
+      "params_before": {
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "lookup",
+              "parameters": {
+                "type": "object",
+                "properties": {}
+              }
+            }
+          }
+        ]
+      },
+      "params_after": {
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "lookup",
+              "parameters": {
+                "type": "object",
+                "properties": {}
+              }
+            }
+          }
+        ],
+        "reasoning_effort": "none"
+      },
+      "rules": [
+        "luna-chat-tools-effort"
+      ],
+      "args_before": [
+        "model",
+        "tools"
+      ],
+      "args_after": [
+        "model",
+        "reasoning_effort",
+        "tools"
+      ]
+    },
+    {
+      "file": "py/variants.py",
+      "line_before": 58,
+      "line_after": 60,
+      "lang": "python",
+      "provider": "openai",
+      "endpoint": "chat_completions",
+      "old_model": "gpt-4o",
+      "new_model": "gpt-6-luna",
+      "params_before": {
+        "messages": [],
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "lookup",
+              "parameters": {
+                "type": "object",
+                "properties": {}
+              }
+            }
+          }
+        ],
+        "reasoning_effort": "none"
+      },
+      "params_after": {
+        "messages": [],
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "lookup",
+              "parameters": {
+                "type": "object",
+                "properties": {}
+              }
+            }
+          }
+        ],
+        "reasoning_effort": "none"
+      },
+      "rules": [],
+      "args_before": [
+        "messages",
+        "model",
+        "reasoning_effort",
+        "tools"
+      ],
+      "args_after": [
+        "messages",
+        "model",
+        "reasoning_effort",
+        "tools"
+      ]
+    },
+    {
+      "file": "web/chat.js",
+      "line_before": 11,
+      "line_after": 11,
+      "lang": "javascript",
+      "provider": "openai",
+      "endpoint": "chat_completions",
+      "old_model": "gpt-4o",
+      "new_model": "gpt-6-luna",
+      "params_before": {
+        "max_tokens": 256,
+        "temperature": 0.3
+      },
+      "params_after": {
+        "max_completion_tokens": 256,
+        "temperature": 0.3,
+        "reasoning_effort": "none"
+      },
+      "rules": [
+        "luna-max-tokens",
+        "luna-sampling"
+      ],
+      "args_before": [
+        "max_tokens",
+        "messages",
+        "model",
+        "temperature"
+      ],
+      "args_after": [
+        "max_completion_tokens",
+        "messages",
+        "model",
+        "reasoning_effort",
+        "temperature"
+      ]
+    },
+    {
+      "file": "web/chat.js",
+      "line_before": 16,
+      "line_after": 16,
+      "lang": "javascript",
+      "provider": "openai",
+      "endpoint": "chat_completions",
+      "old_model": "gpt-4o-2024-11-20",
+      "new_model": "gpt-6-luna",
+      "params_before": {
+        "max_tokens": 64
+      },
+      "params_after": {
+        "max_completion_tokens": 64
+      },
+      "rules": [
+        "luna-max-tokens"
+      ],
+      "args_before": [
+        "max_tokens",
+        "messages",
+        "model"
+      ],
+      "args_after": [
+        "max_completion_tokens",
+        "messages",
+        "model"
+      ]
+    },
+    {
+      "file": "web/chat.js",
+      "line_before": 24,
+      "line_after": 24,
+      "lang": "javascript",
+      "provider": "openai",
+      "endpoint": "chat_completions",
+      "old_model": "gpt-4o",
+      "new_model": "gpt-6-luna",
+      "params_before": {
+        "reasoning_effort": "none"
+      },
+      "params_after": {
+        "reasoning_effort": "none"
+      },
+      "rules": [],
+      "args_before": [
+        "messages",
+        "model",
+        "reasoning_effort",
+        "tools"
+      ],
+      "args_after": [
+        "messages",
+        "model",
+        "reasoning_effort",
+        "tools"
+      ]
+    },
+    {
+      "file": "web/resp.ts",
+      "line_before": 6,
+      "line_after": 6,
+      "lang": "typescript",
+      "provider": "openai",
+      "endpoint": "responses_api",
+      "old_model": "gpt-4.1-mini",
+      "new_model": "gpt-6-luna",
+      "params_before": {
+        "temperature": 0.2
+      },
+      "params_after": {
+        "temperature": 0.2
+      },
+      "rules": [
+        "luna-sampling"
+      ],
+      "args_before": [
+        "input",
+        "model",
+        "temperature"
+      ],
+      "args_after": [
+        "input",
+        "model",
+        "temperature"
+      ]
+    },
+    {
+      "file": "web/resp.ts",
+      "line_before": 14,
+      "line_after": 14,
+      "lang": "typescript",
+      "provider": "openai",
+      "endpoint": "responses_api",
+      "old_model": "gpt-4.1-mini",
+      "new_model": "gpt-6-luna",
+      "params_before": {
+        "top_p": 0.5,
+        "reasoning": {
+          "summary": "auto"
+        }
+      },
+      "params_after": {
+        "top_p": 0.5,
+        "reasoning": {
+          "summary": "auto",
+          "effort": "none"
+        }
+      },
+      "rules": [
+        "luna-sampling"
+      ],
+      "args_before": [
+        "input",
+        "model",
+        "reasoning",
+        "top_p"
+      ],
+      "args_after": [
+        "input",
+        "model",
+        "reasoning",
+        "top_p"
+      ]
+    }
+  ]
+}

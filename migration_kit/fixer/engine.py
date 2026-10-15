@@ -56,6 +56,8 @@ class CallRecord:
     params_before: dict
     params_after: dict
     rules: list[str]
+    args_before: list[str] = field(default_factory=list)   # every argument name, literal or not
+    args_after: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -76,7 +78,7 @@ class FixResult:
         return c
 
     def to_dict(self) -> dict:
-        return {"tool": brand.CLI_NAME, "root": self.root, "packs": self.packs, "options": self.options,
+        return {"tool": brand.CLI_NAME, "root": Path(self.root).name, "packs": self.packs, "options": self.options,
                 "summary": {"files_changed": len(self.new_contents), "model_id_replacements": self.swap_changes,
                             "items": self.counts()},
                 "items": [asdict(i) for i in self.items], "calls": [asdict(c) for c in self.calls]}
@@ -370,7 +372,8 @@ def plan_fixes(root: str | Path, packs: PackSet | None = None, mapping: Mapping 
                 if not rules_hit and m0 == m1:
                     continue
                 records.append(CallRecord(rel, cs0.line, ca.line if ca else cs.line, lang, prov, ep, m0, m1,
-                                          cs0.literal_params(SKIP_PARAMS), (ca or cs).literal_params(SKIP_PARAMS), rules_hit))
+                                          cs0.literal_params(SKIP_PARAMS), (ca or cs).literal_params(SKIP_PARAMS), rules_hit,
+                                          sorted(cs0.args), sorted((ca or cs).args)))
         if cur != orig:
             new_contents[rel] = cur
     for rel in sorted(new_contents):
@@ -423,7 +426,7 @@ STATUS_LABEL = {"fixed": "Fixed", "fixed-coupled": "Fixed (deploy with the model
 def to_markdown(res: FixResult) -> str:
     c = res.counts()
     out = [f"# Automatic fix plan", "",
-           f"- Root: `{res.root}`",
+           f"- Repo: `{Path(res.root).name}`",
            f"- Packs: " + ", ".join(f"{p['provider']} v{p['version']}" for p in res.packs),
            f"- Files changed: **{len(res.new_contents)}** | model ID replacements: {res.swap_changes}",
            f"- Items: " + ", ".join(f"{STATUS_LABEL.get(k, k)}: **{v}**" for k, v in sorted(c.items())),

@@ -16,7 +16,7 @@ import tempfile
 from pathlib import Path
 
 from .. import initevals
-from ..evaluator import (ADAPTERS, ENDPOINT_API, REQUEST_CONTENT_PARAMS, TOKEN_CAP_PARAM, TOKEN_LIMIT_PARAMS,
+from ..evaluator import (ADAPTERS, ENDPOINT_API, REQUEST_CONTENT_PARAMS, TOKEN_CAP_PARAM, TOKEN_LIMIT_PARAMS, TOOL_PARAMS,
                          MockProvider, OpenAIProvider, load_suite, run_suite)
 from ..packs import PackSet
 from ..scanner import SKIP_DIRS
@@ -96,8 +96,14 @@ def build_cases(repo: Path, res: FixResult) -> tuple[dict[str, list[dict]], list
         info = _site_info(repo, c.file, c.line_after) or {}
         prompt = info.get("prompt") or initevals.TODO
         case: dict = {"id": f"{Path(c.file).stem}-{c.line_before}", "source": where}
-        notes = []
-        if info.get("tools"):
+        notes: list[str] = []
+        tools = info.get("tools")
+        if not tools and TOOL_PARAMS & set(c.args_before):
+            tools = [{"name": "placeholder_tool", "description": "Stand-in for this call's tools (not readable statically).",
+                      "parameters": {"type": "object", "properties": {"value": {"type": "string"}}, "required": ["value"]}}]
+            notes.append("the call passes tools that aren't readable statically: replayed with one placeholder tool")
+        if tools:
+            info["tools"] = tools
             case["type"], case["tools"] = "tool_call", info["tools"]
             case["expect"] = {"tool": info["tools"][0]["name"]}
             smoke = f"Call the `{info['tools'][0]['name']}` tool with realistic example arguments."
@@ -136,6 +142,8 @@ def _merge_user_suite(path: str, res: FixResult) -> dict:
             mp["old"] = {**(mp.get("old") or {}), **keep(c.params_before)}
             mp["new"] = {**(mp.get("new") or {}), **keep(c.params_after)}
             case.setdefault("models", {"old": c.old_model, "new": c.new_model})
+            if TOKEN_PARAMS & (set(mp["old"]) | set(mp["new"])):
+                case["max_output_tokens"] = None      # the call's own limit replaces the suite default
     return suite
 
 
@@ -180,20 +188,55 @@ def verify(root: str | Path, res: FixResult, packs: PackSet, out_dir: str | Path
         if suite_path:
             suite = _merge_user_suite(suite_path, res)
             r = run_suite(suite, _provider(suite.get("api", "chat"), live))
+            r["_suite_cases"] = suite["cases"]
             runs.append(r)
         for api, cases in sorted(by_api.items()):
             suite = {"name": f"fix-verify-{api}", "api": api, "models": {"old": cases[0]["models"]["old"],
                                                                          "new": cases[0]["models"]["new"]},
                      "cases": cases}
             r = run_suite(suite, _provider(api, live))
+            r["_suite_cases"] = cases
             runs.append(r)
+        control = []
+        if live:
+            # Control: the UNPATCHED arguments on the new model. Shows each fix was needed.
+            for api, cases in sorted(by_api.items()):
+                prov = _provider(api, live)
+                for case in cases:
+                    mp = case["model_params"]
+                    if mp["old"] == mp["new"]:
+                        continue
+                    c2 = {**case, "model_params": {"new": mp["old"]}}
+                    o = prov.run(c2, case["models"]["new"], "new", {"api": api})
+                    control.append({"case": case["id"], "model": case["models"]["new"], "params": mp["old"],
+                                    "rejected": bool(o.error), "error": (o.error or "")[:300]})
+        report["steps"]["control"] = control
         report["steps"]["eval"] = {"mode": "live" if live else "mock", "skipped": skipped,
                                    "runs": [{"suite": r["suite"], "api": r["api"], "summary": r["summary"],
-                                             "acceptance": _accept(r), "usage": r.get("usage")} for r in runs]}
+                                             "acceptance": _accept(r), "usage": r.get("usage"),
+                                             "_cases": [{"id": c["id"], "source": c.get("source")}
+                                                        for c in r.get("_suite_cases", [])]} for r in runs]}
         for r in runs:
+            r.pop("_suite_cases", None)
             (out / f"{r['suite']}.json").write_text(json.dumps(r, indent=2, default=str))
-    rejected = sum(len(x["acceptance"]["new_errors"]) for x in report["steps"]["eval"]["runs"])
-    report["ok"] = (report["steps"]["syntax"]["ok"] and report["steps"]["idempotent"]["ok"] and rejected == 0)
+    # A rejection on a call that still has an open manual item is expected (the plan says so);
+    # anything else is a real failure of the patch.
+    manual: dict[str, list[str]] = {}
+    for i in res.items:
+        if i.status == "manual":
+            manual.setdefault(f"{i.file}:{i.line}", []).append(i.rule)
+    unexpected = 0
+    for run in report["steps"]["eval"]["runs"]:
+        src = {c["id"]: c.get("source") for c in run.get("_cases", [])}
+        for e in run["acceptance"]["new_errors"]:
+            open_items = manual.get(str(src.get(e["case"])), [])
+            e["expected"] = bool(open_items)
+            e["open_manual_items"] = open_items
+            unexpected += 0 if open_items else 1
+        run.pop("_cases", None)
+    report["unexpected_rejections"] = unexpected
+    report["ok"] = (report["steps"]["patch_applies"] and report["steps"]["syntax"]["ok"]
+                    and report["steps"]["idempotent"]["ok"] and unexpected == 0)
     (out / "verify.json").write_text(json.dumps(report, indent=2, default=str))
     (out / "verify.md").write_text(to_markdown(report))
     return report
@@ -204,6 +247,7 @@ def to_markdown(r: dict) -> str:
     yes = lambda b: "PASS" if b else "FAIL"  # noqa: E731
     out = ["# Fix verification", "",
            f"- Overall: **{yes(r['ok'])}**" + ("" if r["live"] else " (mock eval: request shapes and pipeline only, no real model calls)"),
+           f"- Unexpected API rejections of patched calls: **{r.get('unexpected_rejections', 0)}**",
            f"- Patch applies to a clean copy: **{yes(s['patch_applies'])}**",
            f"- Syntax of changed files: **{yes(s['syntax']['ok'])}**"]
     for f, err in s["syntax"]["files"].items():
@@ -220,10 +264,25 @@ def to_markdown(r: dict) -> str:
         a = run["acceptance"]
         res = ", ".join(f"{k} {v}" for k, v in sorted(run["summary"].items()))
         out.append(f"| {run['suite']} | {run['api']} | {a['cases']} | {len(a['old_errors'])} | {len(a['new_errors'])} | {res} |")
-    for run in ev["runs"]:
-        for side in ("old", "new"):
-            for e in run["acceptance"][f"{side}_errors"]:
-                out.append(f"\n- {run['suite']} / `{e['case']}` ({side}): {e['error']}")
+    news = [(run, e) for run in ev["runs"] for e in run["acceptance"]["new_errors"]]
+    if news:
+        out += ["", "### Patched calls the API still rejects", ""]
+        for run, e in news:
+            tag = (f"expected: open manual item ({', '.join(e['open_manual_items'])})" if e.get("expected")
+                   else "**unexpected: the patch is wrong here**")
+            out.append(f"- `{e['case']}` ({run['api']}): {tag}. {' '.join(e['error'].split())[:220]}")
+    olds = [(run, e) for run in ev["runs"] for e in run["acceptance"]["old_errors"]]
+    if olds:
+        out += ["", "### Original calls that already failed (before the patch)", ""]
+        for run, e in olds:
+            out.append(f"- `{e['case']}` ({run['api']}): {' '.join(e['error'].split())[:220]}")
+    if s.get("control"):
+        out += ["", "### Control: unpatched arguments on the new model", "",
+                "| Case | Arguments | Result |", "|---|---|---|"]
+        for c in s["control"]:
+            err = " ".join(c["error"].split())
+            res = f"rejected: {err[:200]}" if c["rejected"] else "accepted (this fix was not strictly required)"
+            out.append(f"| `{c['case']}` | `{json.dumps(c['params'])}` | {res.replace('|', '/')} |")
     if ev["skipped"]:
         out += ["", "Not replayed:"] + [f"- {x}" for x in ev["skipped"]]
     out += ["", "Drift on smoke prompts is expected: they check that the API accepts the patched request. "

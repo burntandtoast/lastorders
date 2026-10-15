@@ -1,0 +1,206 @@
+{
+  "usage": {
+    "old": {
+      "model": "gpt-4.1",
+      "input_tokens": 56,
+      "output_tokens": 8
+    },
+    "new": {
+      "model": "gpt-6-luna",
+      "input_tokens": 39,
+      "output_tokens": 15
+    }
+  },
+  "suite": "fix-verify-responses",
+  "api": "responses",
+  "mode": "openai",
+  "old_model": "gpt-4.1",
+  "new_model": "gpt-6-luna",
+  "run_at": "2026-10-15T10:17:04+0100",
+  "summary": {
+    "pass": 3,
+    "error": 1
+  },
+  "cases": [
+    {
+      "id": "variants-12",
+      "type": "text",
+      "status": "pass",
+      "old": {
+        "text": "OK",
+        "latency_ms": 924,
+        "usage": {
+          "input_tokens": 14,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 2,
+          "output_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "total_tokens": 16
+        },
+        "simulated": false,
+        "resolved_model": "gpt-4.1-2025-04-14"
+      },
+      "new": {
+        "text": "OK",
+        "latency_ms": 989,
+        "usage": {
+          "input_tokens": 13,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 5,
+          "output_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "total_tokens": 18
+        },
+        "simulated": false,
+        "resolved_model": "gpt-6-luna"
+      },
+      "checks": {
+        "similarity": 1.0,
+        "missing_phrases": [],
+        "similarity_threshold": 0.0
+      },
+      "notes": []
+    },
+    {
+      "id": "variants-16",
+      "type": "text",
+      "status": "pass",
+      "old": {
+        "text": "OK",
+        "latency_ms": 810,
+        "usage": {
+          "input_tokens": 14,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 2,
+          "output_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "total_tokens": 16
+        },
+        "simulated": false,
+        "resolved_model": "gpt-4.1-2025-04-14"
+      },
+      "new": {
+        "text": "OK",
+        "latency_ms": 1100,
+        "usage": {
+          "input_tokens": 13,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 5,
+          "output_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "total_tokens": 18
+        },
+        "simulated": false,
+        "resolved_model": "gpt-6-luna"
+      },
+      "checks": {
+        "similarity": 1.0,
+        "missing_phrases": [],
+        "similarity_threshold": 0.0
+      },
+      "notes": []
+    },
+    {
+      "id": "resp-6",
+      "type": "text",
+      "status": "error",
+      "old": {
+        "text": "OK",
+        "latency_ms": 2067,
+        "usage": {
+          "input_tokens": 14,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 2,
+          "output_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "total_tokens": 16
+        },
+        "simulated": false,
+        "resolved_model": "gpt-4.1-mini-2025-04-14"
+      },
+      "new": {
+        "error": "HTTP 400: {\n  \"error\": {\n    \"message\": \"Unsupported parameter: 'temperature' is not supported with this model.\",\n    \"type\": \"invalid_request_error\",\n    \"param\": \"temperature\",\n    \"code\": null\n  }\n}",
+        "latency_ms": 324,
+        "simulated": false
+      },
+      "checks": {
+        "similarity": 0.0,
+        "missing_phrases": [],
+        "errors": {
+          "new": [
+            "HTTP 400: {\n  \"error\": {\n    \"message\": \"Unsupported parameter: 'temperature' is not supported with this model.\",\n    \"type\": \"invalid_request_error\",\n    \"param\": \"temperature\",\n    \"code\": null\n  }\n}"
+          ]
+        },
+        "similarity_threshold": 0.0
+      },
+      "notes": []
+    },
+    {
+      "id": "resp-14",
+      "type": "text",
+      "status": "pass",
+      "old": {
+        "text": "OK",
+        "latency_ms": 1008,
+        "usage": {
+          "input_tokens": 14,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 2,
+          "output_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "total_tokens": 16
+        },
+        "simulated": false,
+        "resolved_model": "gpt-4.1-mini-2025-04-14"
+      },
+      "new": {
+        "text": "OK",
+        "latency_ms": 1167,
+        "usage": {
+          "input_tokens": 13,
+          "input_tokens_details": {
+            "cache_write_tokens": 0,
+            "cached_tokens": 0
+          },
+          "output_tokens": 5,
+          "output_tokens_details": {
+            "reasoning_tokens": 0
+          },
+          "total_tokens": 18
+        },
+        "simulated": false,
+        "resolved_model": "gpt-6-luna"
+      },
+      "checks": {
+        "similarity": 1.0,
+        "missing_phrases": [],
+        "similarity_threshold": 0.0
+      },
+      "notes": []
+    }
+  ]
+}

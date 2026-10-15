@@ -1,0 +1,109 @@
+{
+  "live": true,
+  "steps": {
+    "patch_applies": true,
+    "syntax": {
+      "ok": true,
+      "files": {
+        "app/agent.py": null,
+        "app/claude_fallback.py": null,
+        "app/summarise.py": null,
+        "web/src/chat.ts": null,
+        "web/src/classify.js": null
+      }
+    },
+    "idempotent": {
+      "ok": true,
+      "remaining_edits": [],
+      "files": []
+    },
+    "control": [
+      {
+        "case": "agent-29",
+        "model": "gpt-6-luna",
+        "params": {
+          "max_completion_tokens": 300
+        },
+        "rejected": true,
+        "error": "HTTP 400: {\n  \"error\": {\n    \"message\": \"Function tools with reasoning_effort are not supported for gpt-6-luna in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.\",\n    \"type\": \"invalid_request_error\",\n    \"param\": \"reasoning_effort\",\n    \"code\": null"
+      },
+      {
+        "case": "summarise-19",
+        "model": "gpt-6-luna",
+        "params": {
+          "temperature": 0.2,
+          "max_tokens": 400
+        },
+        "rejected": true,
+        "error": "HTTP 400: {\n  \"error\": {\n    \"message\": \"Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead.\",\n    \"type\": \"invalid_request_error\",\n    \"param\": \"max_tokens\",\n    \"code\": \"unsupported_parameter\"\n  }\n}"
+      },
+      {
+        "case": "chat-6",
+        "model": "gpt-6-luna",
+        "params": {
+          "max_completion_tokens": 300
+        },
+        "rejected": true,
+        "error": "HTTP 400: {\n  \"error\": {\n    \"message\": \"Function tools with reasoning_effort are not supported for gpt-6-luna in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.\",\n    \"type\": \"invalid_request_error\",\n    \"param\": \"reasoning_effort\",\n    \"code\": null"
+      }
+    ],
+    "eval": {
+      "mode": "live",
+      "skipped": [
+        "app/claude_fallback.py:8: no eval adapter for anthropic yet"
+      ],
+      "runs": [
+        {
+          "suite": "fix-verify-chat",
+          "api": "chat",
+          "summary": {
+            "drift": 3
+          },
+          "acceptance": {
+            "cases": 3,
+            "old_errors": [],
+            "new_errors": []
+          },
+          "usage": {
+            "old": {
+              "model": "gpt-4o-mini",
+              "input_tokens": 194,
+              "output_tokens": 96
+            },
+            "new": {
+              "model": "gpt-6-luna",
+              "input_tokens": 352,
+              "output_tokens": 109
+            }
+          }
+        },
+        {
+          "suite": "fix-verify-responses",
+          "api": "responses",
+          "summary": {
+            "pass": 1
+          },
+          "acceptance": {
+            "cases": 1,
+            "old_errors": [],
+            "new_errors": []
+          },
+          "usage": {
+            "old": {
+              "model": "gpt-4.1-mini-2025-04-14",
+              "input_tokens": 14,
+              "output_tokens": 2
+            },
+            "new": {
+              "model": "gpt-6-luna",
+              "input_tokens": 13,
+              "output_tokens": 16
+            }
+          }
+        }
+      ]
+    }
+  },
+  "unexpected_rejections": 0,
+  "ok": true
+}

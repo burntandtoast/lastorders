@@ -1,0 +1,137 @@
+--- a/py/chains.py
++++ b/py/chains.py
+@@ -1,3 +1,3 @@
+ from langchain_openai import ChatOpenAI
+ 
+-llm = ChatOpenAI(model="gpt-4o", max_tokens=100, temperature=0.2)
++llm = ChatOpenAI(model="gpt-6-luna", max_tokens=100, temperature=0.2)
+--- a/py/legacy.py
++++ b/py/legacy.py
+@@ -6,8 +6,8 @@
+ 
+ def old_style(q):
+     # legacy function calling
+-    return client.chat.completions.create(model="gpt-4o-2024-08-06", messages=[{"role": "user", "content": q}],
+-                                          functions=FUNCS, function_call="auto")
++    return client.chat.completions.create(model="gpt-6-luna", messages=[{"role": "user", "content": q}],
++                                          functions=FUNCS, function_call="auto", reasoning_effort="none")
+ 
+ 
+ def assistant():
+--- a/py/variants.py
++++ b/py/variants.py
+@@ -9,21 +9,21 @@
+ 
+ def responses_sampling(text):
+     # temperature on the Responses API -> reasoning.effort none
+-    return client.responses.create(model="gpt-4.1", input=text, temperature=0.7, max_output_tokens=200)
++    return client.responses.create(model="gpt-6-luna", input=text, temperature=0.7, max_output_tokens=200, reasoning={"effort": "none"})
+ 
+ 
+ def responses_existing_reasoning(text):
+     return client.responses.create(
+-        model="gpt-4.1-2025-04-14",
++        model="gpt-6-luna",
+         input=text,
+         top_p=0.9,
+-        reasoning={"summary": "auto"},
++        reasoning={"summary": "auto", "effort": "none"},
+     )
+ 
+ 
+ def with_kwargs(text, **extra):
+-    return client.chat.completions.create(model="gpt-4o", messages=[{"role": "user", "content": text}],
+-                                          temperature=0.5, max_tokens=100, **extra)
++    return client.chat.completions.create(model="gpt-6-luna", messages=[{"role": "user", "content": text}],
++                                          temperature=0.5, max_completion_tokens=100, **extra)
+ 
+ 
+ def unknown_model(text, model_name):
+@@ -34,25 +34,27 @@
+     return client.chat.completions.create(
+         model="gpt-6-luna",
+         messages=[{"role": "user", "content": text}],
+-        max_tokens=100,
++        max_completion_tokens=100,
+         tools=TOOLS,
++        reasoning_effort="none",
+     )
+ 
+ 
+ def temperature_one(text):
+-    return client.chat.completions.create(model="gpt-4o", messages=[{"role": "user", "content": text}], temperature=1)
++    return client.chat.completions.create(model="gpt-6-luna", messages=[{"role": "user", "content": text}], temperature=1)
+ 
+ 
+ def conflict(text):
+-    return client.chat.completions.create(model="gpt-4o", messages=[], tools=TOOLS, reasoning_effort="low")
++    return client.chat.completions.create(model="gpt-6-luna", messages=[], tools=TOOLS, reasoning_effort="low")
+ 
+ 
+ def single_arg_multiline(text):
+     return client.chat.completions.create(
+-        model=os.environ.get("CHAT_MODEL", "gpt-4o-mini"),
+-        tools=TOOLS
++        model=os.environ.get("CHAT_MODEL", "gpt-6-luna"),
++        tools=TOOLS,
++        reasoning_effort="none"
+     )
+ 
+ 
+ def already_ok(text):
+-    return client.chat.completions.create(model="gpt-4o", messages=[], tools=TOOLS, reasoning_effort="none")
++    return client.chat.completions.create(model="gpt-6-luna", messages=[], tools=TOOLS, reasoning_effort="none")
+--- a/web/chat.js
++++ b/web/chat.js
+@@ -2,13 +2,13 @@
+ 
+ const openai = new OpenAI();
+ const PATTERN = /[{(]+/g; // regex literal with brackets
+-const DEFAULT_MODEL = process.env.CHAT_MODEL || "gpt-4o-2024-11-20";
++const DEFAULT_MODEL = process.env.CHAT_MODEL || "gpt-6-luna";
+ 
+ export async function ask(q) {
+   // a comment with braces { ( [ and a fake call: openai.chat.completions.create({ max_tokens: 1 })
+   const note = "string with }) inside";
+   const t = `template ${q} with { brace`;
+-  const r = await openai.chat.completions.create({ model: "gpt-4o", messages: [{ role: "user", content: q }], max_tokens: 256, temperature: 0.3 });
++  const r = await openai.chat.completions.create({ model: "gpt-6-luna", messages: [{ role: "user", content: q }], max_completion_tokens: 256, temperature: 0.3, reasoning_effort: "none" });
+   return [r, note, t, PATTERN];
+ }
+ 
+@@ -16,10 +16,10 @@
+   return openai.chat.completions.create({
+     model: DEFAULT_MODEL,
+     messages: [{ role: "user", content: q }],
+-    'max_tokens': 64,
++    'max_completion_tokens': 64,
+   });
+ }
+ 
+ export async function done(q) {
+-  return openai.chat.completions.create({ model: "gpt-4o", messages: [], tools: [], reasoning_effort: "none" });
++  return openai.chat.completions.create({ model: "gpt-6-luna", messages: [], tools: [], reasoning_effort: "none" });
+ }
+--- a/web/resp.ts
++++ b/web/resp.ts
+@@ -3,7 +3,7 @@
+ const client = new OpenAI();
+ 
+ export async function spread(input: string, opts: Record<string, unknown>) {
+-  return client.responses.create({ model: "gpt-4.1-mini", input, temperature: 0.2, ...opts });
++  return client.responses.create({ model: "gpt-6-luna", input, temperature: 0.2, ...opts });
+ }
+ 
+ export async function viaVariable(params: OpenAI.Responses.ResponseCreateParams) {
+@@ -12,9 +12,9 @@
+ 
+ export async function nested(input: string) {
+   return client.responses.create({
+-    model: "gpt-4.1-mini",
++    model: "gpt-6-luna",
+     input,
+     top_p: 0.5,
+-    reasoning: { summary: "auto" }
++    reasoning: { summary: "auto", effort: "none" }
+   });
+ }

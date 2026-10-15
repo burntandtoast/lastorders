@@ -1,0 +1,220 @@
+{
+  "live": true,
+  "steps": {
+    "patch_applies": true,
+    "syntax": {
+      "ok": true,
+      "files": {
+        "py/chains.py": null,
+        "py/legacy.py": null,
+        "py/variants.py": null,
+        "web/chat.js": null,
+        "web/resp.ts": null
+      }
+    },
+    "idempotent": {
+      "ok": true,
+      "remaining_edits": [],
+      "files": []
+    },
+    "control": [
+      {
+        "case": "legacy-9",
+        "model": "gpt-6-luna",
+        "params": {
+          "max_completion_tokens": 300
+        },
+        "rejected": true,
+        "error": "HTTP 400: {\n  \"error\": {\n    \"message\": \"Function tools with reasoning_effort are not supported for gpt-6-luna in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.\",\n    \"type\": \"invalid_request_error\",\n    \"param\": \"reasoning_effort\",\n    \"code\": null"
+      },
+      {
+        "case": "variants-25",
+        "model": "gpt-6-luna",
+        "params": {
+          "temperature": 0.5,
+          "max_tokens": 100
+        },
+        "rejected": true,
+        "error": "HTTP 400: {\n  \"error\": {\n    \"message\": \"Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead.\",\n    \"type\": \"invalid_request_error\",\n    \"param\": \"max_tokens\",\n    \"code\": \"unsupported_parameter\"\n  }\n}"
+      },
+      {
+        "case": "variants-34",
+        "model": "gpt-6-luna",
+        "params": {
+          "max_tokens": 100
+        },
+        "rejected": true,
+        "error": "HTTP 400: {\n  \"error\": {\n    \"message\": \"Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead.\",\n    \"type\": \"invalid_request_error\",\n    \"param\": \"max_tokens\",\n    \"code\": \"unsupported_parameter\"\n  }\n}"
+      },
+      {
+        "case": "variants-51",
+        "model": "gpt-6-luna",
+        "params": {
+          "max_completion_tokens": 300
+        },
+        "rejected": true,
+        "error": "HTTP 400: {\n  \"error\": {\n    \"message\": \"Function tools with reasoning_effort are not supported for gpt-6-luna in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.\",\n    \"type\": \"invalid_request_error\",\n    \"param\": \"reasoning_effort\",\n    \"code\": null"
+      },
+      {
+        "case": "chat-11",
+        "model": "gpt-6-luna",
+        "params": {
+          "max_tokens": 256,
+          "temperature": 0.3
+        },
+        "rejected": true,
+        "error": "HTTP 400: {\n  \"error\": {\n    \"message\": \"Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead.\",\n    \"type\": \"invalid_request_error\",\n    \"param\": \"max_tokens\",\n    \"code\": \"unsupported_parameter\"\n  }\n}"
+      },
+      {
+        "case": "chat-16",
+        "model": "gpt-6-luna",
+        "params": {
+          "max_tokens": 64
+        },
+        "rejected": true,
+        "error": "HTTP 400: {\n  \"error\": {\n    \"message\": \"Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead.\",\n    \"type\": \"invalid_request_error\",\n    \"param\": \"max_tokens\",\n    \"code\": \"unsupported_parameter\"\n  }\n}"
+      },
+      {
+        "case": "variants-12",
+        "model": "gpt-6-luna",
+        "params": {
+          "temperature": 0.7,
+          "max_output_tokens": 200
+        },
+        "rejected": true,
+        "error": "HTTP 400: {\n  \"error\": {\n    \"message\": \"Unsupported parameter: 'temperature' is not supported with this model.\",\n    \"type\": \"invalid_request_error\",\n    \"param\": \"temperature\",\n    \"code\": null\n  }\n}"
+      },
+      {
+        "case": "variants-16",
+        "model": "gpt-6-luna",
+        "params": {
+          "top_p": 0.9,
+          "reasoning": {
+            "summary": "auto"
+          },
+          "max_output_tokens": 300
+        },
+        "rejected": true,
+        "error": "HTTP 400: {\n  \"error\": {\n    \"message\": \"Unsupported parameter: 'top_p' is not supported with this model.\",\n    \"type\": \"invalid_request_error\",\n    \"param\": \"top_p\",\n    \"code\": null\n  }\n}"
+      },
+      {
+        "case": "resp-14",
+        "model": "gpt-6-luna",
+        "params": {
+          "top_p": 0.5,
+          "reasoning": {
+            "summary": "auto"
+          },
+          "max_output_tokens": 300
+        },
+        "rejected": true,
+        "error": "HTTP 400: {\n  \"error\": {\n    \"message\": \"Unsupported parameter: 'top_p' is not supported with this model.\",\n    \"type\": \"invalid_request_error\",\n    \"param\": \"top_p\",\n    \"code\": null\n  }\n}"
+      }
+    ],
+    "eval": {
+      "mode": "live",
+      "skipped": [
+        "py/chains.py:3: langchain_openai calls can't be replayed by the eval adapter"
+      ],
+      "runs": [
+        {
+          "suite": "fix-verify-chat",
+          "api": "chat",
+          "summary": {
+            "drift": 1,
+            "error": 2,
+            "improved": 3,
+            "pass": 4
+          },
+          "acceptance": {
+            "cases": 10,
+            "old_errors": [
+              {
+                "case": "variants-34",
+                "error": "HTTP 400: {\n  \"error\": {\n    \"message\": \"Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead.\",\n    \"type\": \"invalid_request_error\",\n    \"param\": \"max_tokens\",\n    \"code\": \"unsupported_parameter\"\n  }\n}"
+              },
+              {
+                "case": "variants-47",
+                "error": "HTTP 400: {\n  \"error\": {\n    \"message\": \"Unrecognized request argument supplied: reasoning_effort\",\n    \"type\": \"invalid_request_error\",\n    \"param\": null,\n    \"code\": null\n  }\n}"
+              },
+              {
+                "case": "variants-58",
+                "error": "HTTP 400: {\n  \"error\": {\n    \"message\": \"Unrecognized request argument supplied: reasoning_effort\",\n    \"type\": \"invalid_request_error\",\n    \"param\": null,\n    \"code\": null\n  }\n}"
+              },
+              {
+                "case": "chat-24",
+                "error": "HTTP 400: {\n  \"error\": {\n    \"message\": \"Unrecognized request argument supplied: reasoning_effort\",\n    \"type\": \"invalid_request_error\",\n    \"param\": null,\n    \"code\": null\n  }\n}"
+              }
+            ],
+            "new_errors": [
+              {
+                "case": "variants-25",
+                "error": "HTTP 400: {\n  \"error\": {\n    \"message\": \"Unsupported value: 'temperature' does not support 0.5 with this model. Only the default (1) value is supported.\",\n    \"type\": \"invalid_request_error\",\n    \"param\": \"temperature\",\n    \"code\": \"unsupported_value\"\n  }\n}",
+                "expected": true,
+                "open_manual_items": [
+                  "luna-sampling"
+                ]
+              },
+              {
+                "case": "variants-47",
+                "error": "HTTP 400: {\n  \"error\": {\n    \"message\": \"Function tools with reasoning_effort are not supported for gpt-6-luna in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.\",\n    \"type\": \"invalid_request_error\",\n    \"param\": \"reasoning_effort\",\n    \"code\": null",
+                "expected": true,
+                "open_manual_items": [
+                  "luna-chat-tools-effort"
+                ]
+              }
+            ]
+          },
+          "usage": {
+            "old": {
+              "model": "gpt-4o-2024-08-06",
+              "input_tokens": 159,
+              "output_tokens": 40
+            },
+            "new": {
+              "model": "gpt-6-luna",
+              "input_tokens": 688,
+              "output_tokens": 221
+            }
+          }
+        },
+        {
+          "suite": "fix-verify-responses",
+          "api": "responses",
+          "summary": {
+            "pass": 3,
+            "error": 1
+          },
+          "acceptance": {
+            "cases": 4,
+            "old_errors": [],
+            "new_errors": [
+              {
+                "case": "resp-6",
+                "error": "HTTP 400: {\n  \"error\": {\n    \"message\": \"Unsupported parameter: 'temperature' is not supported with this model.\",\n    \"type\": \"invalid_request_error\",\n    \"param\": \"temperature\",\n    \"code\": null\n  }\n}",
+                "expected": true,
+                "open_manual_items": [
+                  "luna-sampling"
+                ]
+              }
+            ]
+          },
+          "usage": {
+            "old": {
+              "model": "gpt-4.1",
+              "input_tokens": 56,
+              "output_tokens": 8
+            },
+            "new": {
+              "model": "gpt-6-luna",
+              "input_tokens": 39,
+              "output_tokens": 15
+            }
+          }
+        }
+      ]
+    }
+  },
+  "unexpected_rejections": 0,
+  "ok": true
+}

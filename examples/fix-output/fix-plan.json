@@ -1,0 +1,455 @@
+{
+  "tool": "modelmigrate",
+  "root": "sample-app",
+  "packs": [
+    {
+      "provider": "anthropic",
+      "name": "Anthropic Claude API (stub)",
+      "version": "2026.10.15.2",
+      "status": "stub",
+      "source": "bundled",
+      "detail": ""
+    },
+    {
+      "provider": "openai",
+      "name": "OpenAI API",
+      "version": "2026.10.15.4",
+      "status": "stable",
+      "source": "bundled",
+      "detail": ""
+    }
+  ],
+  "options": {
+    "model_swap": true,
+    "assume_model": null,
+    "include_inferred": false,
+    "mapping": "generated from anthropic pack v2026.10.15.2, openai pack v2026.10.15.4"
+  },
+  "summary": {
+    "files_changed": 8,
+    "model_id_replacements": 11,
+    "items": {
+      "fixed-coupled": 1,
+      "manual": 4,
+      "fixed": 3,
+      "info": 1
+    }
+  },
+  "items": [
+    {
+      "file": "app/agent.py",
+      "line": 29,
+      "provider": "openai",
+      "rule": "luna-chat-tools-effort",
+      "status": "fixed-coupled",
+      "message": "Chat Completions + tools: gpt-6-luna returns HTTP 400 for function tools on Chat Completions unless reasoning_effort is 'none'. Set it, or move to the Responses API.",
+      "change": "set `reasoning_effort` = \"none\"",
+      "model": "gpt-6-luna",
+      "target": "gpt-6-luna",
+      "endpoint": "chat_completions",
+      "confidence": "live-tested",
+      "notes": [
+        "Alternative: move the call to the Responses API (tools work there at the default effort).",
+        "The model comes from $OPENAI_MODEL (default now gpt-6-luna). Deploy this change together with switching the model to gpt-6-luna: Live-tested 15 Oct 2026: gpt-4o-2024-08-06, gpt-4o-mini-2024-07-18 and gpt-4.1-2025-04-14 return HTTP 400 'Unrecognized request argument supplied: reasoning_effort' on Chat Completions; gpt-4.1-mini-2025-04-14 returns 400 for reasoning.effort on Responses (probes/params3-result.json)."
+      ]
+    },
+    {
+      "file": "app/agent.py",
+      "line": 35,
+      "provider": "openai",
+      "rule": "fine-tune",
+      "status": "manual",
+      "message": "Fine-tuned model `ft:gpt-4o-mini-2024-07-18:acme-widgets:intent-v3:9xYzAbC1` (base `gpt-4o-mini-2024-07-18`, shuts down 2027-01-14). Not changed automatically.",
+      "change": "",
+      "model": "ft:gpt-4o-mini-2024-07-18:acme-widgets:intent-v3:9xYzAbC1",
+      "target": "gpt-6-luna",
+      "endpoint": "chat_completions",
+      "confidence": "",
+      "notes": [
+        "No automatic replacement: gpt-6-luna does not support fine-tuning. Options are prompting/few-shot on gpt-6-luna validated with `eval`, or re-training on a fine-tunable model. New fine-tuning jobs stop on 6 Jan 2027."
+      ]
+    },
+    {
+      "file": "app/claude_fallback.py",
+      "line": 8,
+      "provider": "anthropic",
+      "rule": "claude-sampling-deprecated",
+      "status": "manual",
+      "message": "Sets temperature/top_p/top_k: on Claude 4.7 and later models these return HTTP 400 at non-default values, and the anthropic Python SDK v1.0+ raises TypeError. Remove them and guide behaviour with prompting.",
+      "change": "suggested: remove `temperature` (rule confidence 'inferred'; pass --include-inferred to apply)",
+      "model": "claude-sonnet-5-5",
+      "target": "claude-sonnet-5-5",
+      "endpoint": "messages_api",
+      "confidence": "inferred",
+      "notes": []
+    },
+    {
+      "file": "app/summarise.py",
+      "line": 19,
+      "provider": "openai",
+      "rule": "luna-max-tokens",
+      "status": "fixed",
+      "message": "Uses `max_tokens`: gpt-6-luna rejects it with HTTP 400. Rename to `max_completion_tokens` (Chat Completions) or `max_output_tokens` (Responses).",
+      "change": "rename `max_tokens` -> `max_completion_tokens`",
+      "model": "gpt-6-luna",
+      "target": "gpt-6-luna",
+      "endpoint": "chat_completions",
+      "confidence": "live-tested",
+      "notes": []
+    },
+    {
+      "file": "app/summarise.py",
+      "line": 19,
+      "provider": "openai",
+      "rule": "luna-sampling",
+      "status": "fixed",
+      "message": "Sets temperature/top_p/logprobs: gpt-6-luna accepts these only with reasoning_effort 'none'; at other efforts temperature must be 1 and top_p/logprobs return HTTP 400.",
+      "change": "set `reasoning_effort` = \"none\"",
+      "model": "gpt-6-luna",
+      "target": "gpt-6-luna",
+      "endpoint": "chat_completions",
+      "confidence": "live-tested",
+      "notes": [
+        "Alternative: remove temperature/top_p/logprobs/top_logprobs and keep the default reasoning effort."
+      ]
+    },
+    {
+      "file": "app/summarise.py",
+      "line": 19,
+      "provider": "openai",
+      "rule": "luna-structured",
+      "status": "info",
+      "message": "Structured output: gpt-6-luna lists structured_outputs as supported (and it worked in our live eval); verify schemas with `eval`.",
+      "change": "",
+      "model": "gpt-6-luna",
+      "target": "gpt-6-luna",
+      "endpoint": "chat_completions",
+      "confidence": "confirmed",
+      "notes": []
+    },
+    {
+      "file": "config/models.yaml",
+      "line": 6,
+      "provider": "openai",
+      "rule": "fine-tune",
+      "status": "manual",
+      "message": "Fine-tuned model `ft:gpt-4o-mini-2024-07-18:acme-widgets:intent-v3:9xYzAbC1` referenced here (config). Not changed automatically.",
+      "change": "",
+      "model": "ft:gpt-4o-mini-2024-07-18:acme-widgets:intent-v3:9xYzAbC1",
+      "target": null,
+      "endpoint": null,
+      "confidence": "",
+      "notes": [
+        "No automatic replacement: gpt-6-luna does not support fine-tuning. Options are prompting/few-shot on gpt-6-luna validated with `eval`, or re-training on a fine-tunable model. New fine-tuning jobs stop on 6 Jan 2027."
+      ]
+    },
+    {
+      "file": "config/settings.json",
+      "line": 2,
+      "provider": "openai",
+      "rule": "luna-max-tokens",
+      "status": "manual",
+      "message": "Uses `max_tokens`: gpt-6-luna rejects it with HTTP 400. Rename to `max_completion_tokens` (Chat Completions) or `max_output_tokens` (Responses).",
+      "change": "found by the file-level scan, but no SDK call in this file could be parsed: check where this value is used",
+      "model": "gpt-4o-2024-11-20",
+      "target": "gpt-6-luna",
+      "endpoint": null,
+      "confidence": "live-tested",
+      "notes": []
+    },
+    {
+      "file": "web/src/chat.ts",
+      "line": 6,
+      "provider": "openai",
+      "rule": "luna-chat-tools-effort",
+      "status": "fixed",
+      "message": "Chat Completions + tools: gpt-6-luna returns HTTP 400 for function tools on Chat Completions unless reasoning_effort is 'none'. Set it, or move to the Responses API.",
+      "change": "set `reasoning_effort` = \"none\"",
+      "model": "gpt-6-luna",
+      "target": "gpt-6-luna",
+      "endpoint": "chat_completions",
+      "confidence": "live-tested",
+      "notes": [
+        "Alternative: move the call to the Responses API (tools work there at the default effort)."
+      ]
+    }
+  ],
+  "calls": [
+    {
+      "file": "app/agent.py",
+      "line_before": 29,
+      "line_after": 29,
+      "lang": "python",
+      "provider": "openai",
+      "endpoint": "chat_completions",
+      "old_model": "gpt-4o-mini",
+      "new_model": "gpt-6-luna",
+      "params_before": {
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "book_table",
+              "description": "Book a restaurant table",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "date": {
+                    "type": "string"
+                  },
+                  "time": {
+                    "type": "string"
+                  },
+                  "party_size": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "date",
+                  "time",
+                  "party_size"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "params_after": {
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "book_table",
+              "description": "Book a restaurant table",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "date": {
+                    "type": "string"
+                  },
+                  "time": {
+                    "type": "string"
+                  },
+                  "party_size": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "date",
+                  "time",
+                  "party_size"
+                ]
+              }
+            }
+          }
+        ],
+        "reasoning_effort": "none"
+      },
+      "rules": [
+        "luna-chat-tools-effort"
+      ],
+      "args_before": [
+        "messages",
+        "model",
+        "tools"
+      ],
+      "args_after": [
+        "messages",
+        "model",
+        "reasoning_effort",
+        "tools"
+      ]
+    },
+    {
+      "file": "app/claude_fallback.py",
+      "line_before": 8,
+      "line_after": 8,
+      "lang": "python",
+      "provider": "anthropic",
+      "endpoint": "messages_api",
+      "old_model": "claude-sonnet-4-5-20250929",
+      "new_model": "claude-sonnet-5-5",
+      "params_before": {
+        "max_tokens": 400,
+        "temperature": 0.3
+      },
+      "params_after": {
+        "max_tokens": 400,
+        "temperature": 0.3
+      },
+      "rules": [
+        "claude-sampling-deprecated"
+      ],
+      "args_before": [
+        "max_tokens",
+        "messages",
+        "model",
+        "temperature"
+      ],
+      "args_after": [
+        "max_tokens",
+        "messages",
+        "model",
+        "temperature"
+      ]
+    },
+    {
+      "file": "app/summarise.py",
+      "line_before": 19,
+      "line_after": 19,
+      "lang": "python",
+      "provider": "openai",
+      "endpoint": "chat_completions",
+      "old_model": "gpt-4o-2024-08-06",
+      "new_model": "gpt-6-luna",
+      "params_before": {
+        "temperature": 0.2,
+        "max_tokens": 400,
+        "response_format": {
+          "type": "json_schema",
+          "json_schema": {
+            "name": "ticket",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "summary": {
+                  "type": "string"
+                },
+                "priority": {
+                  "type": "string",
+                  "enum": [
+                    "low",
+                    "medium",
+                    "high"
+                  ]
+                },
+                "tags": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": [
+                "summary",
+                "priority",
+                "tags"
+              ],
+              "additionalProperties": false
+            },
+            "strict": true
+          }
+        }
+      },
+      "params_after": {
+        "temperature": 0.2,
+        "max_completion_tokens": 400,
+        "response_format": {
+          "type": "json_schema",
+          "json_schema": {
+            "name": "ticket",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "summary": {
+                  "type": "string"
+                },
+                "priority": {
+                  "type": "string",
+                  "enum": [
+                    "low",
+                    "medium",
+                    "high"
+                  ]
+                },
+                "tags": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": [
+                "summary",
+                "priority",
+                "tags"
+              ],
+              "additionalProperties": false
+            },
+            "strict": true
+          }
+        },
+        "reasoning_effort": "none"
+      },
+      "rules": [
+        "luna-max-tokens",
+        "luna-sampling",
+        "luna-structured"
+      ],
+      "args_before": [
+        "max_tokens",
+        "messages",
+        "model",
+        "response_format",
+        "temperature"
+      ],
+      "args_after": [
+        "max_completion_tokens",
+        "messages",
+        "model",
+        "reasoning_effort",
+        "response_format",
+        "temperature"
+      ]
+    },
+    {
+      "file": "web/src/chat.ts",
+      "line_before": 6,
+      "line_after": 6,
+      "lang": "typescript",
+      "provider": "openai",
+      "endpoint": "chat_completions",
+      "old_model": "gpt-4.1",
+      "new_model": "gpt-6-luna",
+      "params_before": {},
+      "params_after": {
+        "reasoning_effort": "none"
+      },
+      "rules": [
+        "luna-chat-tools-effort"
+      ],
+      "args_before": [
+        "messages",
+        "model",
+        "tools"
+      ],
+      "args_after": [
+        "messages",
+        "model",
+        "reasoning_effort",
+        "tools"
+      ]
+    },
+    {
+      "file": "web/src/classify.js",
+      "line_before": 7,
+      "line_after": 7,
+      "lang": "javascript",
+      "provider": "openai",
+      "endpoint": "responses_api",
+      "old_model": "gpt-4.1-mini-2025-04-14",
+      "new_model": "gpt-6-luna",
+      "params_before": {},
+      "params_after": {},
+      "rules": [],
+      "args_before": [
+        "input",
+        "model"
+      ],
+      "args_after": [
+        "input",
+        "model"
+      ]
+    }
+  ]
+}

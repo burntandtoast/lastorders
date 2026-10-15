@@ -1,0 +1,595 @@
+{
+  "usage": {
+    "old": {
+      "model": "gpt-4o-2024-08-06",
+      "input_tokens": 159,
+      "output_tokens": 40
+    },
+    "new": {
+      "model": "gpt-6-luna",
+      "input_tokens": 688,
+      "output_tokens": 221
+    }
+  },
+  "suite": "fix-verify-chat",
+  "api": "chat",
+  "mode": "openai",
+  "old_model": "gpt-4o-2024-08-06",
+  "new_model": "gpt-6-luna",
+  "run_at": "2026-10-15T10:16:56+0100",
+  "summary": {
+    "drift": 1,
+    "error": 2,
+    "improved": 3,
+    "pass": 4
+  },
+  "cases": [
+    {
+      "id": "legacy-9",
+      "type": "tool_call",
+      "status": "drift",
+      "old": {
+        "tool_calls": [
+          {
+            "name": "placeholder_tool",
+            "arguments": {
+              "value": "A simulation of a weather forecast requesting current temperatures in New York City."
+            }
+          }
+        ],
+        "latency_ms": 896,
+        "usage": {
+          "prompt_tokens": 62,
+          "completion_tokens": 27,
+          "total_tokens": 89,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "audio_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "audio_tokens": 0,
+            "accepted_prediction_tokens": 0,
+            "rejected_prediction_tokens": 0
+          }
+        },
+        "simulated": false,
+        "resolved_model": "gpt-4o-2024-08-06"
+      },
+      "new": {
+        "tool_calls": [
+          {
+            "name": "placeholder_tool",
+            "arguments": {
+              "value": "{\"customer\":\"Alex Morgan\",\"email\":\"alex.morgan@example.com\",\"order_id\":\"ORD-2026-1048\",\"items\":[{\"name\":\"Wireless headphones\",\"quantity\":1,\"unit_price\":89.99},{\"name\":\"USB-C cable\",\"quantity\":2,\"unit_price\":12.50}],\"currency\":\"USD\",\"shipping_address\":{\"street\":\"123 Maple Street\",\"city\":\"Portland\",\"state\":\"OR\",\"postal_code\":\"97205\",\"country\":\"US\"}}"
+            }
+          }
+        ],
+        "latency_ms": 1981,
+        "usage": {
+          "prompt_tokens": 143,
+          "completion_tokens": 113,
+          "total_tokens": 256,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "audio_tokens": 0,
+            "accepted_prediction_tokens": 0,
+            "rejected_prediction_tokens": 0
+          }
+        },
+        "simulated": false,
+        "resolved_model": "gpt-6-luna"
+      },
+      "checks": {
+        "tool_names": {
+          "old": [
+            "placeholder_tool"
+          ],
+          "new": [
+            "placeholder_tool"
+          ],
+          "match": true
+        },
+        "errors": {
+          "old": [],
+          "new": []
+        },
+        "argument_diff": [
+          {
+            "call": 0,
+            "tool": "placeholder_tool",
+            "diff": [
+              {
+                "path": "value",
+                "change": "changed",
+                "old": "A simulation of a weather forecast requesting current temperatures in New York City.",
+                "new": "{\"customer\":\"Alex Morgan\",\"email\":\"alex.morgan@example.com\",\"order_id\":\"ORD-2026-1048\",\"items\":[{\"name\":\"Wireless headphones\",\"quantity\":1,\"unit_price\":89.99},{\"name\":\"USB-C cable\",\"quantity\":2,\"unit_price\":12.50}],\"currency\":\"USD\",\"shipping_address\":{\"street\":\"123 Maple Street\",\"city\":\"Portland\",\"state\":\"OR\",\"postal_code\":\"97205\",\"country\":\"US\"}}"
+              }
+            ]
+          }
+        ]
+      },
+      "notes": []
+    },
+    {
+      "id": "variants-25",
+      "type": "text",
+      "status": "error",
+      "old": {
+        "text": "OK",
+        "latency_ms": 714,
+        "usage": {
+          "prompt_tokens": 14,
+          "completion_tokens": 1,
+          "total_tokens": 15,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "audio_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "audio_tokens": 0,
+            "accepted_prediction_tokens": 0,
+            "rejected_prediction_tokens": 0
+          }
+        },
+        "simulated": false,
+        "resolved_model": "gpt-4o-2024-08-06"
+      },
+      "new": {
+        "error": "HTTP 400: {\n  \"error\": {\n    \"message\": \"Unsupported value: 'temperature' does not support 0.5 with this model. Only the default (1) value is supported.\",\n    \"type\": \"invalid_request_error\",\n    \"param\": \"temperature\",\n    \"code\": \"unsupported_value\"\n  }\n}",
+        "latency_ms": 247,
+        "simulated": false
+      },
+      "checks": {
+        "similarity": 0.0,
+        "missing_phrases": [],
+        "errors": {
+          "new": [
+            "HTTP 400: {\n  \"error\": {\n    \"message\": \"Unsupported value: 'temperature' does not support 0.5 with this model. Only the default (1) value is supported.\",\n    \"type\": \"invalid_request_error\",\n    \"param\": \"temperature\",\n    \"code\": \"unsupported_value\"\n  }\n}"
+          ]
+        },
+        "similarity_threshold": 0.0
+      },
+      "notes": []
+    },
+    {
+      "id": "variants-34",
+      "type": "tool_call",
+      "status": "improved",
+      "old": {
+        "error": "HTTP 400: {\n  \"error\": {\n    \"message\": \"Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead.\",\n    \"type\": \"invalid_request_error\",\n    \"param\": \"max_tokens\",\n    \"code\": \"unsupported_parameter\"\n  }\n}",
+        "latency_ms": 319,
+        "simulated": false
+      },
+      "new": {
+        "tool_calls": [
+          {
+            "name": "lookup",
+            "arguments": {}
+          }
+        ],
+        "latency_ms": 771,
+        "usage": {
+          "prompt_tokens": 121,
+          "completion_tokens": 12,
+          "total_tokens": 133,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "audio_tokens": 0,
+            "accepted_prediction_tokens": 0,
+            "rejected_prediction_tokens": 0
+          }
+        },
+        "simulated": false,
+        "resolved_model": "gpt-6-luna"
+      },
+      "checks": {
+        "tool_names": {
+          "old": [],
+          "new": [
+            "lookup"
+          ],
+          "match": false
+        },
+        "errors": {
+          "old": [
+            "HTTP 400: {\n  \"error\": {\n    \"message\": \"Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead.\",\n    \"type\": \"invalid_request_error\",\n    \"param\": \"max_tokens\",\n    \"code\": \"unsupported_parameter\"\n  }\n}"
+          ],
+          "new": []
+        },
+        "argument_diff": []
+      },
+      "notes": []
+    },
+    {
+      "id": "variants-43",
+      "type": "text",
+      "status": "pass",
+      "old": {
+        "text": "OK",
+        "latency_ms": 805,
+        "usage": {
+          "prompt_tokens": 14,
+          "completion_tokens": 1,
+          "total_tokens": 15,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "audio_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "audio_tokens": 0,
+            "accepted_prediction_tokens": 0,
+            "rejected_prediction_tokens": 0
+          }
+        },
+        "simulated": false,
+        "resolved_model": "gpt-4o-2024-08-06"
+      },
+      "new": {
+        "text": "OK",
+        "latency_ms": 1090,
+        "usage": {
+          "prompt_tokens": 13,
+          "completion_tokens": 18,
+          "total_tokens": 31,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 8,
+            "audio_tokens": 0,
+            "accepted_prediction_tokens": 0,
+            "rejected_prediction_tokens": 0
+          }
+        },
+        "simulated": false,
+        "resolved_model": "gpt-6-luna"
+      },
+      "checks": {
+        "similarity": 1.0,
+        "missing_phrases": [],
+        "similarity_threshold": 0.0
+      },
+      "notes": []
+    },
+    {
+      "id": "variants-47",
+      "type": "tool_call",
+      "status": "error",
+      "old": {
+        "error": "HTTP 400: {\n  \"error\": {\n    \"message\": \"Unrecognized request argument supplied: reasoning_effort\",\n    \"type\": \"invalid_request_error\",\n    \"param\": null,\n    \"code\": null\n  }\n}",
+        "latency_ms": 174,
+        "simulated": false
+      },
+      "new": {
+        "error": "HTTP 400: {\n  \"error\": {\n    \"message\": \"Function tools with reasoning_effort are not supported for gpt-6-luna in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.\",\n    \"type\": \"invalid_request_error\",\n    \"param\": \"reasoning_effort\",\n    \"code\": null\n  }\n}",
+        "latency_ms": 175,
+        "simulated": false
+      },
+      "checks": {
+        "tool_names": {
+          "old": [],
+          "new": [],
+          "match": true
+        },
+        "errors": {
+          "old": [
+            "HTTP 400: {\n  \"error\": {\n    \"message\": \"Unrecognized request argument supplied: reasoning_effort\",\n    \"type\": \"invalid_request_error\",\n    \"param\": null,\n    \"code\": null\n  }\n}"
+          ],
+          "new": [
+            "HTTP 400: {\n  \"error\": {\n    \"message\": \"Function tools with reasoning_effort are not supported for gpt-6-luna in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.\",\n    \"type\": \"invalid_request_error\",\n    \"param\": \"reasoning_effort\",\n    \"code\": null\n  }\n}"
+          ]
+        },
+        "argument_diff": []
+      },
+      "notes": []
+    },
+    {
+      "id": "variants-51",
+      "type": "tool_call",
+      "status": "pass",
+      "old": {
+        "tool_calls": [
+          {
+            "name": "lookup",
+            "arguments": {}
+          }
+        ],
+        "latency_ms": 446,
+        "usage": {
+          "prompt_tokens": 41,
+          "completion_tokens": 9,
+          "total_tokens": 50,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "audio_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "audio_tokens": 0,
+            "accepted_prediction_tokens": 0,
+            "rejected_prediction_tokens": 0
+          }
+        },
+        "simulated": false,
+        "resolved_model": "gpt-4o-mini-2024-07-18"
+      },
+      "new": {
+        "tool_calls": [
+          {
+            "name": "lookup",
+            "arguments": {}
+          }
+        ],
+        "latency_ms": 934,
+        "usage": {
+          "prompt_tokens": 121,
+          "completion_tokens": 12,
+          "total_tokens": 133,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "audio_tokens": 0,
+            "accepted_prediction_tokens": 0,
+            "rejected_prediction_tokens": 0
+          }
+        },
+        "simulated": false,
+        "resolved_model": "gpt-6-luna"
+      },
+      "checks": {
+        "tool_names": {
+          "old": [
+            "lookup"
+          ],
+          "new": [
+            "lookup"
+          ],
+          "match": true
+        },
+        "errors": {
+          "old": [],
+          "new": []
+        },
+        "argument_diff": []
+      },
+      "notes": []
+    },
+    {
+      "id": "variants-58",
+      "type": "tool_call",
+      "status": "improved",
+      "old": {
+        "error": "HTTP 400: {\n  \"error\": {\n    \"message\": \"Unrecognized request argument supplied: reasoning_effort\",\n    \"type\": \"invalid_request_error\",\n    \"param\": null,\n    \"code\": null\n  }\n}",
+        "latency_ms": 156,
+        "simulated": false
+      },
+      "new": {
+        "tool_calls": [
+          {
+            "name": "lookup",
+            "arguments": {}
+          }
+        ],
+        "latency_ms": 952,
+        "usage": {
+          "prompt_tokens": 121,
+          "completion_tokens": 12,
+          "total_tokens": 133,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "audio_tokens": 0,
+            "accepted_prediction_tokens": 0,
+            "rejected_prediction_tokens": 0
+          }
+        },
+        "simulated": false,
+        "resolved_model": "gpt-6-luna"
+      },
+      "checks": {
+        "tool_names": {
+          "old": [],
+          "new": [
+            "lookup"
+          ],
+          "match": false
+        },
+        "errors": {
+          "old": [
+            "HTTP 400: {\n  \"error\": {\n    \"message\": \"Unrecognized request argument supplied: reasoning_effort\",\n    \"type\": \"invalid_request_error\",\n    \"param\": null,\n    \"code\": null\n  }\n}"
+          ],
+          "new": []
+        },
+        "argument_diff": []
+      },
+      "notes": []
+    },
+    {
+      "id": "chat-11",
+      "type": "text",
+      "status": "pass",
+      "old": {
+        "text": "OK",
+        "latency_ms": 638,
+        "usage": {
+          "prompt_tokens": 14,
+          "completion_tokens": 1,
+          "total_tokens": 15,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "audio_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "audio_tokens": 0,
+            "accepted_prediction_tokens": 0,
+            "rejected_prediction_tokens": 0
+          }
+        },
+        "simulated": false,
+        "resolved_model": "gpt-4o-2024-08-06"
+      },
+      "new": {
+        "text": "OK",
+        "latency_ms": 822,
+        "usage": {
+          "prompt_tokens": 13,
+          "completion_tokens": 4,
+          "total_tokens": 17,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "audio_tokens": 0,
+            "accepted_prediction_tokens": 0,
+            "rejected_prediction_tokens": 0
+          }
+        },
+        "simulated": false,
+        "resolved_model": "gpt-6-luna"
+      },
+      "checks": {
+        "similarity": 1.0,
+        "missing_phrases": [],
+        "similarity_threshold": 0.0
+      },
+      "notes": []
+    },
+    {
+      "id": "chat-16",
+      "type": "text",
+      "status": "pass",
+      "old": {
+        "text": "OK",
+        "latency_ms": 468,
+        "usage": {
+          "prompt_tokens": 14,
+          "completion_tokens": 1,
+          "total_tokens": 15,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "audio_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "audio_tokens": 0,
+            "accepted_prediction_tokens": 0,
+            "rejected_prediction_tokens": 0
+          }
+        },
+        "simulated": false,
+        "resolved_model": "gpt-4o-2024-11-20"
+      },
+      "new": {
+        "text": "OK",
+        "latency_ms": 1062,
+        "usage": {
+          "prompt_tokens": 13,
+          "completion_tokens": 17,
+          "total_tokens": 30,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 7,
+            "audio_tokens": 0,
+            "accepted_prediction_tokens": 0,
+            "rejected_prediction_tokens": 0
+          }
+        },
+        "simulated": false,
+        "resolved_model": "gpt-6-luna"
+      },
+      "checks": {
+        "similarity": 1.0,
+        "missing_phrases": [],
+        "similarity_threshold": 0.0
+      },
+      "notes": []
+    },
+    {
+      "id": "chat-24",
+      "type": "tool_call",
+      "status": "improved",
+      "old": {
+        "error": "HTTP 400: {\n  \"error\": {\n    \"message\": \"Unrecognized request argument supplied: reasoning_effort\",\n    \"type\": \"invalid_request_error\",\n    \"param\": null,\n    \"code\": null\n  }\n}",
+        "latency_ms": 214,
+        "simulated": false
+      },
+      "new": {
+        "tool_calls": [
+          {
+            "name": "placeholder_tool",
+            "arguments": {
+              "value": "Example request: \"Summarize the benefits of regular exercise in three bullet points.\""
+            }
+          }
+        ],
+        "latency_ms": 2072,
+        "usage": {
+          "prompt_tokens": 143,
+          "completion_tokens": 33,
+          "total_tokens": 176,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "audio_tokens": 0,
+            "accepted_prediction_tokens": 0,
+            "rejected_prediction_tokens": 0
+          }
+        },
+        "simulated": false,
+        "resolved_model": "gpt-6-luna"
+      },
+      "checks": {
+        "tool_names": {
+          "old": [],
+          "new": [
+            "placeholder_tool"
+          ],
+          "match": false
+        },
+        "errors": {
+          "old": [
+            "HTTP 400: {\n  \"error\": {\n    \"message\": \"Unrecognized request argument supplied: reasoning_effort\",\n    \"type\": \"invalid_request_error\",\n    \"param\": null,\n    \"code\": null\n  }\n}"
+          ],
+          "new": []
+        },
+        "argument_diff": []
+      },
+      "notes": []
+    }
+  ]
+}

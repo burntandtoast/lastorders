@@ -457,6 +457,7 @@ REQUEST_CONTENT_PARAMS = {"messages", "input", "instructions", "tools", "tool_ch
                           "response_format", "text", "text_format", "stream", "stream_options", "metadata", "store",
                           "user", "previous_response_id", "conversation", "prompt", "background", "include",
                           "extra_headers", "extra_body", "timeout", "parallel_tool_calls"}
+TOOL_PARAMS = {"tools", "functions"}
 TOKEN_LIMIT_PARAMS = {"max_tokens", "max_completion_tokens", "max_output_tokens"}
 TOKEN_CAP_PARAM = {"chat": "max_completion_tokens", "responses": "max_output_tokens"}
 

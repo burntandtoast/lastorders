@@ -1,0 +1,316 @@
+{
+  "usage": {
+    "old": {
+      "model": "gpt-4o-mini",
+      "input_tokens": 194,
+      "output_tokens": 96
+    },
+    "new": {
+      "model": "gpt-6-luna",
+      "input_tokens": 352,
+      "output_tokens": 109
+    }
+  },
+  "suite": "fix-verify-chat",
+  "api": "chat",
+  "mode": "openai",
+  "old_model": "gpt-4o-mini",
+  "new_model": "gpt-6-luna",
+  "run_at": "2026-10-15T10:17:23+0100",
+  "summary": {
+    "drift": 3
+  },
+  "cases": [
+    {
+      "id": "agent-29",
+      "type": "tool_call",
+      "status": "drift",
+      "old": {
+        "tool_calls": [
+          {
+            "name": "book_table",
+            "arguments": {
+              "date": "2023-10-15",
+              "time": "19:30",
+              "party_size": 4
+            }
+          }
+        ],
+        "latency_ms": 669,
+        "usage": {
+          "prompt_tokens": 63,
+          "completion_tokens": 30,
+          "total_tokens": 93,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "audio_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "audio_tokens": 0,
+            "accepted_prediction_tokens": 0,
+            "rejected_prediction_tokens": 0
+          }
+        },
+        "simulated": false,
+        "resolved_model": "gpt-4o-mini-2024-07-18"
+      },
+      "new": {
+        "tool_calls": [
+          {
+            "name": "book_table",
+            "arguments": {
+              "date": "2026-10-20",
+              "time": "19:00",
+              "party_size": 2
+            }
+          }
+        ],
+        "latency_ms": 1055,
+        "usage": {
+          "prompt_tokens": 144,
+          "completion_tokens": 33,
+          "total_tokens": 177,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "audio_tokens": 0,
+            "accepted_prediction_tokens": 0,
+            "rejected_prediction_tokens": 0
+          }
+        },
+        "simulated": false,
+        "resolved_model": "gpt-6-luna"
+      },
+      "checks": {
+        "tool_names": {
+          "old": [
+            "book_table"
+          ],
+          "new": [
+            "book_table"
+          ],
+          "match": true
+        },
+        "errors": {
+          "old": [],
+          "new": []
+        },
+        "argument_diff": [
+          {
+            "call": 0,
+            "tool": "book_table",
+            "diff": [
+              {
+                "path": "date",
+                "change": "changed",
+                "old": "2023-10-15",
+                "new": "2026-10-20"
+              },
+              {
+                "path": "party_size",
+                "change": "changed",
+                "old": 4,
+                "new": 2
+              },
+              {
+                "path": "time",
+                "change": "changed",
+                "old": "19:30",
+                "new": "19:00"
+              }
+            ]
+          }
+        ]
+      },
+      "notes": []
+    },
+    {
+      "id": "summarise-19",
+      "type": "structured",
+      "status": "drift",
+      "old": {
+        "text": "{\"summary\":\"The website's checkout page is not loading, preventing customers from completing their purchases.\",\"priority\":\"high\",\"tags\":[\"website\",\"checkout\",\"urgent\",\"customer-impact\"]}",
+        "latency_ms": 1588,
+        "usage": {
+          "prompt_tokens": 69,
+          "completion_tokens": 35,
+          "total_tokens": 104,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "audio_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "audio_tokens": 0,
+            "accepted_prediction_tokens": 0,
+            "rejected_prediction_tokens": 0
+          }
+        },
+        "simulated": false,
+        "resolved_model": "gpt-4o-2024-08-06"
+      },
+      "new": {
+        "text": "{\"summary\":\"Example: The user requests a realistic sample output, but no specific task or format is provided.\",\"priority\":\"low\",\"tags\":[\"example\",\"unspecified\"]}",
+        "latency_ms": 1401,
+        "usage": {
+          "prompt_tokens": 65,
+          "completion_tokens": 40,
+          "total_tokens": 105,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "audio_tokens": 0,
+            "accepted_prediction_tokens": 0,
+            "rejected_prediction_tokens": 0
+          }
+        },
+        "simulated": false,
+        "resolved_model": "gpt-6-luna"
+      },
+      "checks": {
+        "schema_valid": {
+          "old": true,
+          "new": true
+        },
+        "schema_errors": {
+          "old": [],
+          "new": []
+        },
+        "field_diff": [
+          {
+            "path": "priority",
+            "change": "changed",
+            "old": "high",
+            "new": "low"
+          },
+          {
+            "path": "summary",
+            "change": "changed",
+            "old": "The website's checkout page is not loading, preventing customers from completing their purchases.",
+            "new": "Example: The user requests a realistic sample output, but no specific task or format is provided."
+          },
+          {
+            "path": "tags",
+            "change": "changed",
+            "old": [
+              "website",
+              "checkout",
+              "urgent",
+              "customer-impact"
+            ],
+            "new": [
+              "example",
+              "unspecified"
+            ]
+          }
+        ],
+        "similarity": 0.438,
+        "similarity_threshold": 0.85
+      },
+      "notes": [
+        "Output similarity 0.438 below 0.85."
+      ]
+    },
+    {
+      "id": "chat-6",
+      "type": "tool_call",
+      "status": "drift",
+      "old": {
+        "tool_calls": [
+          {
+            "name": "placeholder_tool",
+            "arguments": {
+              "value": "Request for recent stock prices for Apple (AAPL) as of June 2024."
+            }
+          }
+        ],
+        "latency_ms": 701,
+        "usage": {
+          "prompt_tokens": 62,
+          "completion_tokens": 31,
+          "total_tokens": 93,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "audio_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "audio_tokens": 0,
+            "accepted_prediction_tokens": 0,
+            "rejected_prediction_tokens": 0
+          }
+        },
+        "simulated": false,
+        "resolved_model": "gpt-4.1-2025-04-14"
+      },
+      "new": {
+        "tool_calls": [
+          {
+            "name": "placeholder_tool",
+            "arguments": {
+              "value": "A realistic example request: summarize the key points from a short meeting note and list the action items."
+            }
+          }
+        ],
+        "latency_ms": 1858,
+        "usage": {
+          "prompt_tokens": 143,
+          "completion_tokens": 36,
+          "total_tokens": 179,
+          "prompt_tokens_details": {
+            "cached_tokens": 0,
+            "cache_write_tokens": 0,
+            "audio_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "audio_tokens": 0,
+            "accepted_prediction_tokens": 0,
+            "rejected_prediction_tokens": 0
+          }
+        },
+        "simulated": false,
+        "resolved_model": "gpt-6-luna"
+      },
+      "checks": {
+        "tool_names": {
+          "old": [
+            "placeholder_tool"
+          ],
+          "new": [
+            "placeholder_tool"
+          ],
+          "match": true
+        },
+        "errors": {
+          "old": [],
+          "new": []
+        },
+        "argument_diff": [
+          {
+            "call": 0,
+            "tool": "placeholder_tool",
+            "diff": [
+              {
+                "path": "value",
+                "change": "changed",
+                "old": "Request for recent stock prices for Apple (AAPL) as of June 2024.",
+                "new": "A realistic example request: summarize the key points from a short meeting note and list the action items."
+              }
+            ]
+          }
+        ]
+      },
+      "notes": []
+    }
+  ]
+}
