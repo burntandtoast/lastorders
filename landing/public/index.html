@@ -115,8 +115,6 @@ main details p{color:var(--soft);margin:10px 0 0}
 .cmd .c{color:#c9a876}
 .soon{margin:0 0 16px;font:600 15px/1.4 var(--body);background:var(--butter);border:1px solid var(--golden);border-radius:var(--r);padding:10px 14px}
 .soon a{color:var(--crust)}
-.prerelease .cmd{opacity:.55;filter:grayscale(.6)}
-.prerelease h3{color:var(--soft)}
 .rung{position:relative}
 .rung .num{position:absolute;top:-14px;left:22px;background:var(--golden);color:var(--crust);font:800 13px/1 var(--body);padding:6px 10px;border-radius:999px;letter-spacing:.04em}
 .price.featured{border:2px solid var(--golden);background:#fff;box-shadow:0 14px 34px -22px #3b231488}
@@ -279,12 +277,12 @@ code{background:#F4EAD6;color:#7A3E1D}
         <li>Every pinned or aliased GPT-4o and GPT-4.1 model ID, plus Anthropic Claude IDs, in code, config, env templates, seeds, tests and docs.</li>
         <li>The retirement date and the provider's recommended replacement for each one.</li>
         <li>Fine-tuned model IDs, listed separately, because they need a plan rather than a patch.</li>
-        <li>The call sites likely to break on a plain name swap: <code>max_tokens</code>, sampling parameters, and tool calls on Chat Completions.</li>
+        <li>A risk level for each finding, so you know what to deal with first.</li>
         <li>Environment variables that pick the model at runtime, so you can check their live values.</li>
       </ul>
     </div>
-    <div class="prerelease">
-      <p class="soon"><a href="#remind">Scanner release coming this week. Get a reminder below.</a></p>
+    <div>
+      <p class="soon">Out now on <a href="https://pypi.org/project/lastorders/">PyPI</a>. Install it, then run the scan in your repo.</p>
       <h3 class="sans" style="margin-bottom:10px">On your machine</h3>
       <div class="cmd">pipx install lastorders
 lastorders scan .</div>
@@ -298,7 +296,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       <span class="c"># repo: github.com/burntandtoast/lastorders</span>
-      - uses: burntandtoast/lastorders@v0
+      - uses: burntandtoast/lastorders@v0.4.0
         with:
           fail-on-high: true
           include-docs: true
@@ -438,7 +436,7 @@ jobs:
   <p>It's quick, and tells you whether you've anything to do before 23 October or 14 January. Questions, or want us to handle it? Email <a href="mailto:hello@burntandtoast.com" style="color:var(--golden)">hello@burntandtoast.com</a>.</p>
   <a class="btn" href="#scan">Run the free scan</a>
   <div class="remind" id="remind">
-    <p>Not ready to scan yet? Get one email before each shutdown date, with the models affected and what to switch to.</p>
+    <p>Want a heads-up when more models are due to retire? Get one email before each future shutdown date, with the models affected and what to switch to.</p>
     <form action="/subscribe" method="post" id="remind-form">
       <label class="hp" aria-hidden="true">Leave this empty <input type="text" name="website" tabindex="-1" autocomplete="off"></label>
       <input type="email" name="email" required maxlength="254" autocomplete="email" placeholder="you@company.com" aria-label="Email address">
@@ -479,7 +477,7 @@ jobs:
       <div class="foot-cols">
         <nav aria-labelledby="f-games"><h2 id="f-games">Games</h2><ul><li><a href="https://burntandtoast.com/inland-light/">Inland Light <span class="foot-badge">Out 31 Oct</span></a></li><li><a href="https://burntandtoast.com/halt-branch-line/">Halt! Branch Line</a></li><li><a href="https://dartistry.app/" rel="noopener">Dartistry</a></li><li><a href="https://hawfold.com/" rel="noopener">Hawfold</a></li><li><a href="https://burntandtoast.com/#games">All games</a></li></ul></nav>
         <nav aria-labelledby="f-studio"><h2 id="f-studio">Studio</h2><ul><li><a href="https://burntandtoast.com/blog">Journal</a></li><li><a href="https://burntandtoast.com/press/">Press kits</a></li><li><a href="mailto:hello@burntandtoast.com">Contact</a></li></ul></nav>
-        <nav aria-labelledby="f-more-from-us"><h2 id="f-more-from-us">More from us</h2><ul><li><a class="foot-with-note" href="https://lastorders.burntandtoast.com/"><span class="foot-label">Last Orders</span><span class="foot-desc">OpenAI model retirement checks</span></a></li><li><a class="foot-with-note" href="https://deals.burntandtoast.com/" rel="noopener"><span class="foot-label">Burnt Deals</span><span class="foot-desc">PC game deals</span></a></li><li><a class="foot-with-note" href="https://kits.burntandtoast.com/" rel="noopener"><span class="foot-label">Kits</span><span class="foot-desc">AI kits for estate agents</span></a></li></ul></nav>
+        <nav aria-labelledby="f-more-from-us"><h2 id="f-more-from-us">More from us</h2><ul><li><a class="foot-with-note" href="https://lastorders.burntandtoast.com/"><span class="foot-label">Last Orders</span><span class="foot-desc">Retiring AI model scan</span></a></li><li><a class="foot-with-note" href="https://deals.burntandtoast.com/" rel="noopener"><span class="foot-label">Burnt Deals</span><span class="foot-desc">PC game deals</span></a></li><li><a class="foot-with-note" href="https://kits.burntandtoast.com/" rel="noopener"><span class="foot-label">Kits</span><span class="foot-desc">AI kits for estate agents</span></a></li></ul></nav>
         <nav aria-labelledby="f-help"><h2 id="f-help">Help</h2><ul><li><a href="https://burntandtoast.com/support/">Support</a></li><li><a href="https://burntandtoast.com/legal/">Privacy</a></li><li><a href="https://lastorders.burntandtoast.com/terms">Last Orders terms and refunds</a></li></ul></nav>
       </div>
     </div>
