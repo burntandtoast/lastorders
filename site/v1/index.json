@@ -5,20 +5,20 @@
     {
       "provider": "anthropic",
       "name": "Anthropic Claude API (stub)",
-      "version": "2026.10.15.1",
+      "version": "2026.10.15.2",
       "status": "stub",
       "pack_format": 1,
       "url": "packs/anthropic.json",
-      "sha256": "5c7f3b651fb5d45bb2083eac62b777ffbbee19bb6608a58b6269fd4806c55e91"
+      "sha256": "d1cfc1574127221714c7ef0f60a640c199b53d36598a68fb7ed501af7c40646b"
     },
     {
       "provider": "openai",
       "name": "OpenAI API",
-      "version": "2026.10.15.2",
+      "version": "2026.10.15.4",
       "status": "stable",
       "pack_format": 1,
       "url": "packs/openai.json",
-      "sha256": "587f9189c50f7bf1865cb47b77224d3c4f6b57b6441c6d7b2b180440d7572ae7"
+      "sha256": "628bbd4d076088aac22d38aa752fbd31a14f9df2d381cea2c7bb2bd921fe46b6"
     }
   ]
 }
