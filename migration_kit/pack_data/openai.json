@@ -3,7 +3,7 @@
   "pack_format": 1,
   "provider": "openai",
   "name": "OpenAI API",
-  "version": "2026.10.15.3",
+  "version": "2026.10.15.4",
   "updated": "2026-10-15",
   "status": "stable",
   "notes": [
@@ -939,7 +939,8 @@
       "fix": {
         "action": "move_endpoint",
         "to": "responses_api",
-        "note": "The Assistants API has shut down; port threads/runs to the Responses API (conversation state, tools, file search)."
+        "note": "The Assistants API has shut down; port threads/runs to the Responses API (conversation state, tools, file search).",
+        "keep_model": true
       }
     },
     {
@@ -959,7 +960,8 @@
       "fix": {
         "action": "move_endpoint",
         "to": "responses_api",
-        "note": "Move prompt-completion calls to the Responses API (input=...)."
+        "note": "Move prompt-completion calls to the Responses API (input=...).",
+        "keep_model": true
       }
     },
     {
@@ -978,7 +980,8 @@
       "message": "Creates fine-tuning jobs: gpt-6-luna can't be fine-tuned, and new fine-tuning jobs stop on 6 Jan 2027.",
       "fix": {
         "action": "manual",
-        "note": "gpt-6-luna can't be fine-tuned; decide whether to keep a fine-tunable model or replace the fine-tune with prompting validated by eval."
+        "note": "gpt-6-luna can't be fine-tuned; decide whether to keep a fine-tunable model or replace the fine-tune with prompting validated by eval.",
+        "keep_model": true
       }
     },
     {

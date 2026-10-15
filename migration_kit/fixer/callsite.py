@@ -58,8 +58,8 @@ class CallSite:
 
 @dataclass
 class Edit:
-    """One change to one call: rename / remove / set (dotted path)."""
-    op: str                 # rename | remove | set
+    """One change to one call: rename / remove / set (dotted path) / replace (a value)."""
+    op: str                 # rename | remove | set | replace
     path: str
     new_name: str | None = None
     value: Any = None

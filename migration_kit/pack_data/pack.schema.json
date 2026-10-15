@@ -493,6 +493,10 @@
               },
               "note": {
                 "type": "string"
+              },
+              "keep_model": {
+                "type": "boolean",
+                "description": "the replacement can't serve this call (e.g. unsupported endpoint): keep the call on its current model in the patch and list it for a manual decision"
               }
             }
           }

@@ -177,7 +177,7 @@ def _edits_for(fix: dict, cs: CallSite, endpoint: str) -> tuple[list[Edit], str 
         return [Edit("set", spec["param"], value=spec["value"])], None
     if act == "move_endpoint":
         return [], f"move this call to `{fix.get('to')}` (not automated)"
-    return [], "needs a manual decision"
+    return [], fix.get("note") or "needs a manual decision"
 
 
 # ------------------------------------------------------------------ main
@@ -280,15 +280,38 @@ def plan_fixes(root: str | Path, packs: PackSet | None = None, mapping: Mapping 
                                              endpoint=endpoint, notes=[f"model expression: `{ma.src}`" if ma else "no model argument"]))
                 continue
             ready = (model == target) or (model is None and assume_model == target)
+            applicable = [r for r in pack.data.get("rules", []) if _rule_applies(r, target, migration, sig)]
+            keep = [r for r in applicable if (r.get("fix") or {}).get("keep_model")]
+            kept = False
+            if keep and model0 and model0 != model:
+                literal = ma is not None and ma.src.strip()[:1] in "\"'`"
+                if literal:
+                    file_edits.setdefault(cs.key, []).append(Edit("replace", "model", value=model0))
+                    kept, model = True, model0
+                    for r in keep:
+                        items.append(FixItem(rel, cs.line, pack.provider, r["id"], "manual", r["message"],
+                                             change=f"kept on `{model0}` in the patch (not swapped to {target}). "
+                                                    + (r["fix"].get("note") or ""),
+                                             model=model0, target=target, endpoint=endpoint,
+                                             confidence=r.get("confidence", "")))
+                else:
+                    items.append(FixItem(rel, cs.line, pack.provider, keep[0]["id"], "manual",
+                                         f"{target} can't serve this call, but its model comes from `{ma.src if ma else '?'}`, "
+                                         "which the patch switches for other calls too.",
+                                         change="give this call its own model setting before applying the swap",
+                                         model=model, target=target, endpoint=endpoint))
             rules_hit = []
-            for rule in pack.data.get("rules", []):
-                if not _rule_applies(rule, target, migration, sig):
-                    continue
+            for rule in applicable:
                 rules_hit.append(rule["id"])
                 fix = rule.get("fix")
                 conf = rule.get("confidence", "")
                 base_item = dict(file=rel, line=cs.line, provider=pack.provider, rule=rule["id"], model=model or assume_model,
                                  target=target, endpoint=endpoint, confidence=conf)
+                if kept:
+                    if rule not in keep:
+                        items.append(FixItem(**base_item, status="info" if rule["risk"] == "info" else "manual",
+                                             message=rule["message"], change="fix this when you move the call"))
+                    continue
                 if not fix:
                     items.append(FixItem(**base_item, status="info" if rule["risk"] == "info" else "manual",
                                          message=rule["message"]))
@@ -299,7 +322,7 @@ def plan_fixes(root: str | Path, packs: PackSet | None = None, mapping: Mapping 
                     continue                                    # already compliant
                 if why:
                     items.append(FixItem(**base_item, status="manual", message=rule["message"], change=why,
-                                         notes=([fix["note"]] if fix.get("note") else []) + notes))
+                                         notes=([fix["note"]] if fix.get("note") and fix["note"] != why else []) + notes))
                     continue
                 desc = "; ".join(_describe(e) for e in edits)
                 if conf not in AUTO_CONFIDENCE and not include_inferred:
@@ -328,7 +351,8 @@ def plan_fixes(root: str | Path, packs: PackSet | None = None, mapping: Mapping 
                     notes.append("Same change as another rule on this call.")
                 file_edits.setdefault(cs.key, []).extend(fresh)
                 items.append(FixItem(**base_item, status=status, message=rule["message"], change=desc, notes=notes))
-            pending.append((cs, cs0, model0, model or assume_model, pack.provider, endpoint, rules_hit))
+            if not kept:
+                pending.append((cs, cs0, model0, model or assume_model, pack.provider, endpoint, rules_hit))
         if file_edits:
             cur2, applied = _apply(lang, cur, file_edits, callees)
             done = {(k, e.op, e.path) for k, e in applied}

@@ -177,7 +177,8 @@ def _add_arg(args: list[cst.Arg], new: cst.Arg, call: cst.Call) -> list[cst.Arg]
         sep = cst.Comma(whitespace_after=call.whitespace_before_args)
     else:
         sep = cst.Comma(whitespace_after=cst.SimpleWhitespace(" "))
-    return [*args[:-1], last.with_changes(comma=sep), new.with_changes(comma=last.comma)]
+    return [*args[:-1], last.with_changes(comma=sep, whitespace_after_arg=cst.SimpleWhitespace("")),
+            new.with_changes(comma=last.comma, whitespace_after_arg=last.whitespace_after_arg)]
 
 
 def _indent_of(call: cst.Call, arg: cst.Arg) -> str:
@@ -223,11 +224,14 @@ class _Editor(cst.CSTTransformer):
         for e in self.edits[key]:
             head, _, rest = e.path.partition(".")
             idx = next((i for i, a in enumerate(args) if a.keyword is not None and a.keyword.value == head), None)
-            if e.op == "rename" and idx is not None and not rest:
+            if e.op == "replace" and idx is not None and not rest:
+                args[idx] = args[idx].with_changes(value=cst.parse_expression(py_literal(e.value, q)))
+            elif e.op == "rename" and idx is not None and not rest:
                 args[idx] = args[idx].with_changes(keyword=cst.Name(e.new_name))
             elif e.op == "remove" and idx is not None and not rest:
                 if idx == len(args) - 1 and idx > 0:
-                    args[idx - 1] = args[idx - 1].with_changes(comma=args[idx].comma)
+                    args[idx - 1] = args[idx - 1].with_changes(comma=args[idx].comma,
+                                                               whitespace_after_arg=args[idx].whitespace_after_arg)
                 del args[idx]
             elif e.op == "set" and not rest and idx is None:
                 args = _add_arg(args, _kwarg(head, e.value, q), updated)

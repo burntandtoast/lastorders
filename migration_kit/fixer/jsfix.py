@@ -312,7 +312,9 @@ def apply_edits(src: str, edits: dict[int, list[Edit]], callees: list[str]) -> t
         for e in edits[start]:
             head, _, rest = e.path.partition(".")
             p = props.get(head)
-            if e.op == "rename" and p and not rest:
+            if e.op == "replace" and p and not rest:
+                splices.append((p.val_span[0], p.val_span[1], js_literal(e.value, q)))
+            elif e.op == "rename" and p and not rest:
                 ktext = src[p.key_span[0]:p.key_span[1]]
                 nk = e.new_name if ktext[0] not in "\"'" else ktext[0] + e.new_name + ktext[0]
                 splices.append((p.key_span[0], p.key_span[1], nk))
