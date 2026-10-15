@@ -28,7 +28,9 @@ jobs:
           test "v$v" = "${GITHUB_REF_NAME}" || { echo "tag ${GITHUB_REF_NAME} != version v$v"; exit 1; }
       - name: Licence public key must be embedded
         if: startsWith(github.ref, 'refs/tags/')
-        run: python -c "from migration_kit import licence; assert licence.PUBLIC_KEYS, 'PUBLIC_KEYS is empty: run npm run keys (docs/LICENCE-SERVER.md)'"
+        # Block scalar: ": " in the message is a YAML mapping separator in a plain scalar, so GitHub rejects the file.
+        run: |
+          python -c "from migration_kit import licence; assert licence.PUBLIC_KEYS, 'PUBLIC_KEYS is empty: run npm run keys (docs/LICENCE-SERVER.md)'"
       - run: python -m build
       - uses: actions/upload-artifact@v4
         with:
