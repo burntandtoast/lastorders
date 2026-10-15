@@ -129,7 +129,10 @@ export function createApp(deps = {}) {
   async function webhook(c, request) {
     const raw = await request.text();
     const sig = await verifyStripeSignature(raw, request.headers.get("stripe-signature"), c.env.STRIPE_WEBHOOK_SECRET, { now: clock() });
-    if (!sig.ok) return json({ error: "invalid_signature", detail: sig.reason }, 400);
+    if (!sig.ok) {
+      console.error(`[webhook] rejected: ${sig.reason}`);   // usually a STRIPE_WEBHOOK_SECRET from a different endpoint or mode
+      return json({ error: "invalid_signature", detail: sig.reason }, 400);
+    }
     let event;
     try { event = JSON.parse(raw); } catch { return json({ error: "invalid_json" }, 400); }
     if (!event?.id || !event?.type) return json({ error: "invalid_event" }, 400);
@@ -179,7 +182,15 @@ export function createApp(deps = {}) {
       catch (e) { return errorPage(e instanceof StripeError && e.status === 404 ? "Checkout session not found." : "Couldn't reach the payment provider. Please refresh in a moment.", e?.status === 404 ? 404 : 502); }
       if (!isOurs(c, session)) return errorPage("Checkout session not found.", 404);
       if (!isPaid(session)) return pendingPage(c.cfg);
-      row = await fulfil(c, session, { sendEmail: false });   // the webhook sends the email
+      row = await fulfil(c, session, { sendEmail: false });
+    }
+    // Normally the webhook sends the email. If it hasn't yet (webhook late, misconfigured or failing), send it
+    // from here too, so a buyer always gets the key by email. Resend's idempotency key (licence-email-<key>)
+    // stops a duplicate if the webhook sends at the same moment. A failure here doesn't break the page; the
+    // webhook's retries still apply.
+    if (row.status === "active" && row.email_status !== "sent" && row.email_status !== "skipped") {
+      try { await fulfil(c, { id: row.stripe_session_id, customer_details: { email: row.email } }, { sendEmail: true }); }
+      catch (e) { console.error(`[success] licence email for session ${id} failed: ${e?.message}`); }
     }
     if (row.status !== "active") return errorPage("This licence has been revoked (refunded).", 410);
     return successPage({ key: row.key, email: row.email, productName: c.cfg.productName, cliName: c.cfg.cliName, baseUrl: c.baseUrl });

@@ -34,7 +34,7 @@ CLI ──POST /api/licence/verify {key, repo}──▶ bind repo on first use �
 | `GET /buy?repo=&email=` | Creates a Checkout Session and redirects (303) to Stripe. `repo` is only a hint stored in metadata. |
 | `POST /api/checkout` | The same, returning `{id, url}` as JSON (for a button on the landing page). |
 | `POST /api/stripe/webhook` | Checks the `Stripe-Signature` (v1 HMAC-SHA256 over `t.rawBody`, 5-minute tolerance, constant-time compare, two secrets allowed while rolling). Idempotent per event id and per Checkout Session. |
-| `GET /success?session_id=` | Shows the key. If the webhook hasn't arrived yet, it fetches the session from Stripe and issues the key itself (same row, no duplicates). The webhook is what sends the email. |
+| `GET /success?session_id=` | Shows the key. If the webhook hasn't arrived yet, it fetches the session from Stripe and issues the key itself (same row, no duplicates). If the key hasn't been emailed yet, it sends the email too (Resend idempotency key stops a duplicate with the webhook), so a missing or failing webhook can't leave a buyer without the email. |
 | `GET /cancel` | "No payment was taken" page. |
 | `POST /api/licence/verify` | `{key, repo}`. Binds the repo on first use (atomic `UPDATE … WHERE repo IS NULL`) and returns a signed token. Errors: `not_found` 404, `revoked` 403, `bound_to_other_repo` 403, `invalid` 400. |
 | `GET /api/licence/public-key` | The current Ed25519 public key (informational; the CLI uses keys built into it). |

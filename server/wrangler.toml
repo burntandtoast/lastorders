@@ -5,6 +5,10 @@ compatibility_date = "2026-10-01"
 workers_dev = true
 routes = [{ pattern = "packs.burntandtoast.com", custom_domain = true }]
 
+# Workers Logs (console output kept for a few days; needed to see webhook/email failures).
+[observability]
+enabled = true
+
 # Serve the static pack site (packs/v1/*.json, index) from the same Worker; API routes run first.
 [assets]
 directory = "../site"

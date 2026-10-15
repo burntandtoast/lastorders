@@ -228,7 +228,7 @@ test("full refund revokes; partial refund doesn't", async () => {
   assert.equal((await r.json()).status, "revoked");
 });
 
-test("success page: shows the key, fulfils before the webhook without emailing, handles pending/unknown", async () => {
+test("success page: shows the key, fulfils before the webhook and emails once, handles pending/unknown", async () => {
   const net = fakeNetwork();
   const env = await makeEnv();
   const h = harness(env, net);
@@ -238,13 +238,15 @@ test("success page: shows the key, fulfils before the webhook without emailing, 
   const page = await (await h.call(`/success?session_id=${id}`)).text();
   const key = KEY_IN(page);
   assert.ok(key);
-  assert.equal(net.calls.filter((c) => c.url.startsWith("https://resend.test/")).length, 0);
-  // the webhook lands later: same key, now emailed
+  // the success page emails the key itself, so a missing or failing webhook can't leave the buyer without it
+  assert.equal(net.calls.filter((c) => c.url.startsWith("https://resend.test/")).length, 1);
+  // the webhook lands later: same key, no second email
   await h.webhook({ ...paidSessionEvent(id, { email: "early@example.com", pi: "pi_e" }) });
   const row = await env.DB.prepare("SELECT * FROM licences").first();
   assert.equal(row.key, key);
   assert.equal(row.email_status, "sent");
   assert.equal(KEY_IN(await (await h.call(`/success?session_id=${id}`)).text()), key);
+  assert.equal(net.calls.filter((c) => c.url.startsWith("https://resend.test/")).length, 1);
   assert.equal((await h.call("/success?session_id=cs_test_missing")).status, 404);
   assert.equal((await h.call("/success?session_id=<script>")).status, 400);
 });
@@ -273,4 +275,18 @@ test("static assets fall through; unknown API is JSON 404; healthz reports test 
   assert.equal(await (await h.call("/v1/index.json")).text(), "asset");
   assert.equal((await h.call("/api/nope")).status, 404);
   assert.equal((await (await h.call("/healthz")).json()).stripe_mode, "test");
+});
+
+test("success page: an email failure doesn't break the page and the webhook retries it", async () => {
+  const net = fakeNetwork({ resendFails: 1 });
+  const env = await makeEnv();
+  const h = harness(env, net);
+  const { id } = await (await h.postJson("/api/checkout", {})).json();
+  Object.assign(net.sessions.get(id), { status: "complete", payment_status: "paid", customer_details: { email: "e@example.com" }, payment_intent: "pi_f" });
+  const res = await h.call(`/success?session_id=${id}`);
+  assert.equal(res.status, 200);
+  assert.ok(KEY_IN(await res.text()));
+  assert.equal((await env.DB.prepare("SELECT email_status FROM licences").first()).email_status, "failed");
+  await h.webhook(paidSessionEvent(id, { email: "e@example.com", pi: "pi_f" }));
+  assert.equal((await env.DB.prepare("SELECT email_status FROM licences").first()).email_status, "sent");
 });
