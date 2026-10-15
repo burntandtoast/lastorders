@@ -181,7 +181,12 @@ test("verify: binds on first activation, returns a signed short-lived token, rej
   assert.equal(claims.exp - claims.iat, 7 * 86400);
   assert.equal(claims.iat, t0 / 1000);
   assert.ok(!JSON.stringify(claims).includes(key), "token must not carry the raw key");
-  assert.equal(await verifyToken(body.token.slice(0, -2) + "AA", pub), null);
+  // The last two base64url characters of a 64-byte signature can decode to the same
+  // byte as "AA" (about 1 in 256 signatures). Flip the first signature character instead.
+  const sigAt = body.token.lastIndexOf(".") + 1;
+  const flipped = body.token[sigAt] === "A" ? "B" : "A";
+  const tampered = body.token.slice(0, sigAt) + flipped + body.token.slice(sigAt + 1);
+  assert.equal(await verifyToken(tampered, pub), null);
 
   const row = await env.DB.prepare("SELECT * FROM licences WHERE key = ?").bind(key).first();
   assert.equal(row.repo, "github.com/acme/shop");

@@ -20,6 +20,8 @@ from .pyfix import callee_matches
 
 _REGEX_PREV = set("(,=:[!&|?{};+-*%<>~^")
 _REGEX_KW = ("return", "typeof", "case", "do", "else", "in", "of", "new", "delete", "void", "throw", "yield", "await")
+# Identifier test lives outside f-strings: a backslash in an f-string expression is a SyntaxError on Python 3.10.
+_JS_IDENT = re.compile(r"[A-Za-z_$][\w$]*")
 
 
 def mask(src: str) -> str:
@@ -264,8 +266,11 @@ def js_literal(v: Any, quote: str = '"') -> str:
     if v is None:
         return "null"
     if isinstance(v, dict):
-        return "{ " + ", ".join(f"{k if re.fullmatch(r'[A-Za-z_$][\w$]*', k) else json.dumps(k)}: {js_literal(x, quote)}"
-                                for k, x in v.items()) + " }"
+        parts = []
+        for k, x in v.items():
+            key = k if _JS_IDENT.fullmatch(k) else json.dumps(k)
+            parts.append(f"{key}: {js_literal(x, quote)}")
+        return "{ " + ", ".join(parts) + " }"
     if isinstance(v, list):
         return "[" + ", ".join(js_literal(x, quote) for x in v) + "]"
     return json.dumps(v)

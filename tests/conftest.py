@@ -1,4 +1,5 @@
 import datetime as dt
+import subprocess
 import sys
 from pathlib import Path
 
@@ -18,6 +19,27 @@ def _isolate(monkeypatch, tmp_path_factory):
     for var in ("LASTORDERS_LICENCE", "LASTORDERS_PACKS_URL", "LASTORDERS_LICENCE_URL", "LASTORDERS_REPO",
                 "LASTORDERS_LICENCE_DEV_PUBLIC_KEYS", "GITHUB_REPOSITORY"):
         monkeypatch.delenv(var, raising=False)
+
+
+@pytest.fixture(autouse=True)
+def _checkout_has_no_origin(monkeypatch):
+    """Licence tests treat this tree as a folder with no git origin, so LASTORDERS_REPO is the identity.
+
+    A GitHub Actions checkout has origin. Hide that URL only. Repos a test creates keep theirs.
+    """
+    from migration_kit import licence
+
+    real_run = subprocess.run
+
+    def run(args, *a, **kw):
+        if isinstance(args, (list, tuple)) and list(args[-3:]) == ["config", "--get", "remote.origin.url"]:
+            cwd = kw.get("cwd") or Path.cwd()
+            top = real_run(["git", "rev-parse", "--show-toplevel"], cwd=cwd, capture_output=True, text=True)
+            if top.returncode == 0 and Path(top.stdout.strip()).resolve() == ROOT.resolve():
+                return subprocess.CompletedProcess(list(args), 1, stdout="", stderr="")
+        return real_run(args, *a, **kw)
+
+    monkeypatch.setattr(licence.subprocess, "run", run)
 
 
 @pytest.fixture(autouse=True)
