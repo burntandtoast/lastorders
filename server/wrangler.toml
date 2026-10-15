@@ -3,6 +3,7 @@ name = "lastorders-licence"
 main = "src/index.js"
 compatibility_date = "2026-10-01"
 workers_dev = true
+routes = [{ pattern = "packs.burntandtoast.com", custom_domain = true }]
 
 # Serve the static pack site (packs/v1/*.json, index) from the same Worker; API routes run first.
 [assets]
@@ -13,11 +14,9 @@ run_worker_first = ["/api/*", "/buy", "/success", "/cancel", "/healthz"]
 [[d1_databases]]
 binding = "DB"
 database_name = "lastorders-licences"
-database_id = "REPLACE_WITH_D1_DATABASE_ID"      # from `wrangler d1 create lastorders-licences`
+database_id = "4c630040-81cd-4e1c-ab2f-a05bf08b424e"      # from `wrangler d1 create lastorders-licences`
 migrations_dir = "migrations"
 
-# Custom domain (uncomment once the zone is on Cloudflare):
-# routes = [{ pattern = "packs.burntandtoast.com", custom_domain = true }]
 
 [vars]
 PRODUCT_NAME = "Last Orders"
@@ -31,11 +30,11 @@ STRIPE_AUTOMATIC_TAX = "false"    # set "true" once Stripe Tax is set up (UK VAT
 STRIPE_INVOICE_CREATION = "false" # "true" emails a Stripe invoice (useful for B2B buyers)
 TOKEN_TTL_DAYS = "7"
 LICENCE_FEATURES = "*"
-EMAIL_PROVIDER = "log"            # resend | log | none
+EMAIL_PROVIDER = "resend"         # resend | log | none
 EMAIL_FROM = "Last Orders <licences@burntandtoast.com>"
 EMAIL_REPLY_TO = ""
 SUPPORT_EMAIL = ""
-PUBLIC_BASE_URL = ""              # e.g. https://packs.burntandtoast.com (defaults to the request origin)
+PUBLIC_BASE_URL = "https://packs.burntandtoast.com"  # defaults to the request origin if empty
 
 # Secrets (never in this file):
 #   STRIPE_SECRET_KEY      sk_test_... (later sk_live_... or a restricted rk_ key)
