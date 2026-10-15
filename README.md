@@ -148,7 +148,7 @@ The tool checks for a newer pack once a day and falls back to the copy bundled w
 ## Privacy and network use
 
 - The scan runs **entirely on your machine**. Your code and prompts are never uploaded.
-- **No telemetry, analytics or tracking.**
+- **The tool has no telemetry, analytics or tracking.** (Our website counts visits anonymously with Cloudflare Web Analytics: no cookies, no ads, no tracking across sites.)
 - The tool only ever contacts us to **download the latest migration pack** (a plain GET of a static JSON file,
   with no identifiers) and, for paid features, to **check a licence key**. That check sends only the key and the
   repo name (`github.com/owner/repo`), and the signed answer is cached for a week, with a 14-day offline grace period after that.

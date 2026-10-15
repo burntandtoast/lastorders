@@ -60,6 +60,26 @@ async function subscribe(request, env) {
   }
 }
 
+// Studio stylesheets, fonts and logo, proxied from burntandtoast.com so they load from this origin
+// (no extra DNS/TLS connection before first paint). Allowlisted; short CSS cache so studio updates show quickly.
+const STUDIO_ORIGIN = "https://burntandtoast.com";
+const STUDIO_ASSETS = new Map([
+  ["chrome.css", 600], ["site.css", 600], ["logo.svg", 86400],
+  ["fonts/bricolage-grotesque-latin.woff2", 86400], ["fonts/NothingYouCouldDo-Regular.ttf", 86400],
+]);
+async function studioAsset(url, request) {
+  const rel = url.pathname.slice("/studio-assets/".length);
+  const ttl = STUDIO_ASSETS.get(rel);
+  if (!ttl || (request.method !== "GET" && request.method !== "HEAD")) return new Response("Not found", { status: 404 });
+  const upstream = await fetch(`${STUDIO_ORIGIN}/assets/${rel}`, { cf: { cacheEverything: true, cacheTtl: ttl } });
+  if (!upstream.ok) return new Response("Upstream error", { status: 502 });
+  const headers = new Headers();
+  for (const h of ["content-type", "etag", "last-modified"]) if (upstream.headers.get(h)) headers.set(h, upstream.headers.get(h));
+  headers.set("cache-control", `public, max-age=${ttl}`);
+  headers.set("access-control-allow-origin", "*");
+  return new Response(request.method === "HEAD" ? null : upstream.body, { status: 200, headers });
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -67,6 +87,11 @@ export default {
       if (request.method === "POST") return subscribe(request, env);
       return Response.redirect(`${url.origin}/#remind`, 303);
     }
+    // The studio-styled preview became the live page on 15 Oct 2026.
+    if (url.pathname === "/preview" || url.pathname.startsWith("/preview/")) {
+      return new Response(null, { status: 301, headers: { location: `${url.origin}/${url.search}` } });
+    }
+    if (url.pathname.startsWith("/studio-assets/")) return studioAsset(url, request);
     // Customer-facing licence pages are served by the licence Worker (service binding), on this host.
     if (LICENCE_PATHS.has(url.pathname.replace(/\/+$/, "") || "/")) return env.LICENCE.fetch(request);
     return env.ASSETS.fetch(request);

@@ -5,6 +5,8 @@ import { COMPANY, TERMS_VERSION } from "./terms.js";
 // Studio chrome: the same header, footer, stylesheets, logo and favicon as burntandtoast.com (loaded from the
 // studio site, which serves them with CORS). Page bodies use the Kits ".prose" pattern.
 const STUDIO = "https://burntandtoast.com";
+// Studio CSS/fonts/logo are proxied same-origin by the landing Worker (lastorders host) for a faster first paint.
+const STUDIO_ASSETS = "https://lastorders.burntandtoast.com/studio-assets";
 export const LANDING_URL = "https://lastorders.burntandtoast.com";
 const BRAND_SVG = `<svg viewBox="40 40 220 220" aria-hidden="true" focusable="false"><defs><linearGradient id="hm-char" x1="0.2" y1="0.95" x2="0.95" y2="0.05"><stop offset="0%" stop-color="#4A1E0C" stop-opacity="0"/><stop offset="22%" stop-color="#4A1E0C" stop-opacity="0.92"/><stop offset="58%" stop-color="#8A3A1E"/><stop offset="84%" stop-color="#C4551F"/><stop offset="100%" stop-color="#F0873A"/></linearGradient><clipPath id="hm-clip"><path d="M82 250 Q72 250 72 240 L72 138 C40 132 40 92 66 76 C88 62 112 56 150 56 C188 56 212 62 234 76 C260 92 260 132 228 138 L228 240 Q228 250 218 250 Z"/></clipPath></defs><g class="mark-slice"><g clip-path="url(#hm-clip)"><path d="M300 214 C262 208 252 178 234 161 C216 144 208 127 191 111 C175 95 160 85 149 62 C141 45 138 25 133 0 L300 0 Z" fill="url(#hm-char)"/><path d="M300 214 C262 208 252 178 234 161 C216 144 208 127 191 111 C175 95 160 85 149 62 C141 45 138 25 133 0" fill="none" stroke="#F0873A" stroke-width="5" stroke-opacity="0.6"/></g><path d="M82 250 Q72 250 72 240 L72 138 C40 132 40 92 66 76 C88 62 112 56 150 56 C188 56 212 62 234 76 C260 92 260 132 228 138 L228 240 Q228 250 218 250 Z" fill="none" stroke="#2B1D14" stroke-width="13" stroke-linejoin="round" stroke-linecap="round"/></g></svg>`;
 const HEADER = `<header class="site-head"><div class="head-row">
@@ -15,17 +17,32 @@ const HEADER = `<header class="site-head"><div class="head-row">
 <details class="menu"><summary><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="M4 7 H20 M4 12 H20 M4 17 H20" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg><span>Menu</span></summary>
 <ul><li><a class="menu-play" href="${LANDING_URL}/">Last Orders</a></li><li><a href="${STUDIO}/#games">Games</a></li><li><a href="${STUDIO}/#studio">Studio</a></li><li><a href="${STUDIO}/blog">Journal</a></li><li><a href="${STUDIO}/#contact">Say hello</a></li></ul></details>
 </nav></div></header>`;
-const FOOTER = `<footer class="site-foot"><div class="foot-wrap"><div class="foot-top">
-<div class="foot-brand"><img src="${STUDIO}/assets/logo.svg" alt="" width="84" height="84"><p>Burnt &amp; Toast<span class="signoff">Burnt at the edges. Still good.</span></p></div>
-<div class="foot-cols">
-<nav aria-labelledby="f-lo"><h2 id="f-lo">Last Orders</h2><ul><li><a href="${LANDING_URL}/#scan">Free scan</a></li><li><a href="${LANDING_URL}/#pricing">Pricing</a></li><li><a href="https://github.com/burntandtoast/lastorders" rel="noopener">Source on GitHub</a></li><li><a href="mailto:${COMPANY.email}">${COMPANY.email}</a></li></ul></nav>
-<nav aria-labelledby="f-studio"><h2 id="f-studio">Studio</h2><ul><li><a href="${STUDIO}/">burntandtoast.com</a></li><li><a href="${STUDIO}/blog">Journal</a></li><li><a href="https://kits.burntandtoast.com/">Kits</a></li></ul></nav>
-<nav aria-labelledby="f-legal"><h2 id="f-legal">Legal</h2><ul><li><a href="/terms">Last Orders terms and refunds</a></li><li><a href="${STUDIO}/privacy/">Website privacy</a></li><li><a href="${STUDIO}/legal/">All privacy policies</a></li></ul></nav>
-</div></div>
-<div class="foot-bottom"><p>© 2026 Burnt &amp; Toast Studios Ltd.<br>Registered in the United Kingdom, company no. ${COMPANY.number}.<br>71-75 Shelton Street, London, WC2H 9JQ.</p><a href="#top">Back to top</a></div>
-</div></footer>`;
+// Studio footer, copied from burntandtoast.com (15 Oct 2026); Last Orders added under "More from us" and "Help".
+const FOOTER = `<footer class="site-foot">
+  <div class="foot-wrap">
+    <div class="foot-top">
+      <div class="foot-brand">
+        <img src="${STUDIO_ASSETS}/logo.svg" alt="" width="84" height="84" decoding="async">
+        <p>Burnt &amp; Toast<span class="signoff">Burnt at the edges. Still good.</span></p>
+        <nav class="foot-social" aria-label="Social">
+        <ul><li><a href="https://www.youtube.com/@burntandtoaststudios" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.5a3 3 0 0 0-2.1 2.1C0 8.1 0 12 0 12s0 3.9.5 5.8a3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1c.5-1.9.5-5.8.5-5.8s0-3.9-.5-5.8zM9.5 15.6V8.4L15.8 12l-6.3 3.6z"/></svg><span class="sr-only">YouTube</span></a></li><li><a href="https://x.com/burntandtoastuk" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M18.2 2h3.3l-7.3 8.3L23 22h-6.8l-5.3-7L5.4 22H2.1l7.8-8.9L1 2h7l4.8 6.4L18.2 2zm-1.2 18h1.8L7.1 3.9H5.1L17 20z"/></svg><span class="sr-only">Burnt and Toast on X</span></a></li><li><a href="https://www.linkedin.com/company/137304224/" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M20.4 20.5h-3.6v-5.6c0-1.3 0-3-1.8-3s-2.1 1.4-2.1 2.9v5.7H9.4V9h3.4v1.6h.1c.5-.9 1.6-1.9 3.4-1.9 3.6 0 4.3 2.4 4.3 5.5v6.3zM5.3 7.4a2.1 2.1 0 1 1 0-4.2 2.1 2.1 0 0 1 0 4.2zM7.1 20.5H3.6V9h3.5v11.5zM22.2 0H1.8C.8 0 0 .8 0 1.7v20.5C0 23.2.8 24 1.8 24h20.4c1 0 1.8-.8 1.8-1.7V1.7C24 .8 23.2 0 22.2 0z"/></svg><span class="sr-only">LinkedIn</span></a></li></ul>
+      </nav>
+      </div>
+      <div class="foot-cols">
+        <nav aria-labelledby="f-games"><h2 id="f-games">Games</h2><ul><li><a href="https://burntandtoast.com/inland-light/">Inland Light <span class="foot-badge">Out 31 Oct</span></a></li><li><a href="https://burntandtoast.com/halt-branch-line/">Halt! Branch Line</a></li><li><a href="https://dartistry.app/" rel="noopener">Dartistry</a></li><li><a href="https://hawfold.com/" rel="noopener">Hawfold</a></li><li><a href="https://burntandtoast.com/#games">All games</a></li></ul></nav>
+        <nav aria-labelledby="f-studio"><h2 id="f-studio">Studio</h2><ul><li><a href="https://burntandtoast.com/blog">Journal</a></li><li><a href="https://burntandtoast.com/press/">Press kits</a></li><li><a href="mailto:hello@burntandtoast.com">Contact</a></li></ul></nav>
+        <nav aria-labelledby="f-more-from-us"><h2 id="f-more-from-us">More from us</h2><ul><li><a class="foot-with-note" href="https://lastorders.burntandtoast.com/"><span class="foot-label">Last Orders</span><span class="foot-desc">OpenAI model retirement checks</span></a></li><li><a class="foot-with-note" href="https://deals.burntandtoast.com/" rel="noopener"><span class="foot-label">Burnt Deals</span><span class="foot-desc">PC game deals</span></a></li><li><a class="foot-with-note" href="https://kits.burntandtoast.com/" rel="noopener"><span class="foot-label">Kits</span><span class="foot-desc">AI kits for estate agents</span></a></li></ul></nav>
+        <nav aria-labelledby="f-help"><h2 id="f-help">Help</h2><ul><li><a href="https://burntandtoast.com/support/">Support</a></li><li><a href="https://burntandtoast.com/legal/">Privacy</a></li><li><a href="https://lastorders.burntandtoast.com/terms">Last Orders terms and refunds</a></li></ul></nav>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <div><p>© 2026 Burnt &amp; Toast Studios Ltd · Company no. 17334149 · 71-75 Shelton Street, London WC2H 9JQ</p><p class="foot-note">We count visits anonymously. No cookies, no ads, no tracking across sites. <a href="https://burntandtoast.com/privacy/#analytics">Privacy</a></p></div>
+      <a href="#top">Back to top</a>
+    </div>
+  </div>
+</footer>`;
 // Kits' .prose rules (they live in the Kits bundle, not in the studio CSS) plus the licence-key bits.
-const PAGE_CSS = `.prose{max-width:46rem}.prose li,.prose p{margin-bottom:.8em;font-size:1.0625rem}.prose ol,.prose ul{padding-left:1.3em;margin-bottom:1em}.prose ul{list-style:disc}.prose h1{font-size:clamp(2.2rem,6vw,3.6rem);letter-spacing:-.04em;margin-bottom:.4em}.prose h2{font-size:clamp(1.6rem,3.4vw,2.3rem);margin:1.4em 0 .5em}.prose a{color:var(--crust);font-weight:650;text-underline-offset:3px}.prose .small,.prose .muted{font-size:.9rem;color:var(--muted)}
+const PAGE_CSS = `/* Metric-matched fallback for Bricolage Grotesque (Arial/Helvetica sized to match), so the font swap doesn't shift text. */@font-face{font-family:"Bricolage fallback";src:local("Arial"),local("Helvetica"),local("Liberation Sans");size-adjust:103.3%;ascent-override:90.1%;descent-override:26.1%;line-gap-override:0%}:root{--display:"Bricolage Grotesque","Bricolage fallback",ui-rounded,"Arial Rounded MT Bold",system-ui,sans-serif;--body:"Bricolage Grotesque","Bricolage fallback",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}.prose{max-width:46rem}.prose li,.prose p{margin-bottom:.8em;font-size:1.0625rem}.prose ol,.prose ul{padding-left:1.3em;margin-bottom:1em}.prose ul{list-style:disc}.prose h1{font-size:clamp(2.2rem,6vw,3.6rem);letter-spacing:-.04em;margin-bottom:.4em}.prose h2{font-size:clamp(1.6rem,3.4vw,2.3rem);margin:1.4em 0 .5em}.prose a{color:var(--crust);font-weight:650;text-underline-offset:3px}.prose .small,.prose .muted{font-size:.9rem;color:var(--muted)}
 .prose code,.prose pre,.key{font-family:ui-monospace,Menlo,Consolas,monospace}.key{font-size:1.4rem;font-weight:700;background:var(--card);border:2.5px solid var(--ink);border-radius:var(--radius);box-shadow:4px 5px 0 var(--ink);padding:12px 18px;display:inline-block;user-select:all}
 .prose pre{background:var(--card);border:2px solid var(--ink);border-radius:10px;padding:12px 16px;overflow:auto;margin-bottom:1em}`;
 
@@ -33,9 +50,9 @@ function page(title, body, status = 200, { index = false } = {}) {
   return new Response(`<!doctype html><html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 ${index ? "" : '<meta name="robots" content="noindex">'}<title>${escapeHtml(title)} | Burnt &amp; Toast</title>
 <link rel="icon" href="${STUDIO}/favicon.svg" type="image/svg+xml">
-<link rel="preload" href="${STUDIO}/assets/fonts/bricolage-grotesque-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="${STUDIO}/assets/chrome.css">
-<link rel="stylesheet" href="${STUDIO}/assets/site.css">
+<link rel="preload" href="${STUDIO_ASSETS}/fonts/bricolage-grotesque-latin.woff2" as="font" type="font/woff2" crossorigin fetchpriority="high">
+<link rel="stylesheet" href="${STUDIO_ASSETS}/chrome.css">
+<link rel="stylesheet" href="${STUDIO_ASSETS}/site.css">
 <style>${PAGE_CSS}</style></head>
 <body id="top">${HEADER}
 <main id="main"><section class="section"><div class="wrap prose">${body}</div></section></main>
