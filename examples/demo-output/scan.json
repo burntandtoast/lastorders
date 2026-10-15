@@ -1,0 +1,353 @@
+{
+  "root": "/workspace/migration-kit/examples/sample-app",
+  "files_scanned": 8,
+  "checked_on": "2026-10-15",
+  "source": "https://developers.openai.com/api/docs/deprecations",
+  "summary": {
+    "total_findings": 17,
+    "by_category": {
+      "in_scope": 11,
+      "fine_tune": 2,
+      "other_deprecated": 3,
+      "not_listed": 1
+    },
+    "by_risk": {
+      "medium": 10,
+      "low": 1,
+      "high": 5,
+      "info": 1
+    },
+    "files_with_findings": 8,
+    "fine_tuned_models": [
+      "ft:gpt-4o-mini-2024-07-18:acme-widgets:intent-v3:9xYzAbC1"
+    ],
+    "env_var_model_refs": [
+      "CLASSIFIER_MODEL",
+      "OPENAI_MODEL"
+    ]
+  },
+  "findings": [
+    {
+      "file": ".env.example",
+      "line": 2,
+      "column": 14,
+      "model": "gpt-4o-mini",
+      "kind": "env",
+      "language": "env",
+      "snippet": "OPENAI_MODEL=gpt-4o-mini",
+      "category": "in_scope",
+      "shutdown": "2027-01-14",
+      "suggested": "gpt-6-luna",
+      "confidence": "inferred",
+      "risk": "medium",
+      "notes": [
+        "Undated alias: OpenAI lists only the dated snapshots, so treating the alias as affected is inferred. Confirm with GET /v1/models (shutdown_date)."
+      ]
+    },
+    {
+      "file": ".env.example",
+      "line": 3,
+      "column": 18,
+      "model": "gpt-4.1-mini",
+      "kind": "env",
+      "language": "env",
+      "snippet": "CLASSIFIER_MODEL=gpt-4.1-mini",
+      "category": "in_scope",
+      "shutdown": "2027-01-14",
+      "suggested": "gpt-6-luna",
+      "confidence": "inferred",
+      "risk": "medium",
+      "notes": [
+        "Undated alias: OpenAI lists only the dated snapshots, so treating the alias as affected is inferred. Confirm with GET /v1/models (shutdown_date)."
+      ]
+    },
+    {
+      "file": "README.md",
+      "line": 4,
+      "column": 2,
+      "model": "gpt-4o",
+      "kind": "doc",
+      "language": "markdown",
+      "snippet": "`gpt-4o` for chat and uses a fine-tuned intent classifier.",
+      "category": "in_scope",
+      "shutdown": "2027-01-14",
+      "suggested": "gpt-6-luna",
+      "confidence": "inferred",
+      "risk": "low",
+      "notes": [
+        "Undated alias: OpenAI lists only the dated snapshots, so treating the alias as affected is inferred. Confirm with GET /v1/models (shutdown_date).",
+        "Appears in documentation/comment only."
+      ]
+    },
+    {
+      "file": "app/agent.py",
+      "line": 8,
+      "column": 36,
+      "model": "gpt-4o-mini",
+      "kind": "sdk_call",
+      "language": "python",
+      "snippet": "MODEL = os.getenv(\"OPENAI_MODEL\", \"gpt-4o-mini\")",
+      "category": "in_scope",
+      "shutdown": "2027-01-14",
+      "suggested": "gpt-6-luna",
+      "confidence": "inferred",
+      "risk": "high",
+      "notes": [
+        "Undated alias: OpenAI lists only the dated snapshots, so treating the alias as affected is inferred. Confirm with GET /v1/models (shutdown_date).",
+        "Chat Completions + tools in this file: gpt-6-luna supports function calling on Chat Completions only with reasoning_effort set to 'none' (or move to the Responses API)."
+      ]
+    },
+    {
+      "file": "app/agent.py",
+      "line": 36,
+      "column": 16,
+      "model": "ft:gpt-4o-mini-2024-07-18:acme-widgets:intent-v3:9xYzAbC1",
+      "kind": "sdk_call",
+      "language": "python",
+      "snippet": "model=\"ft:gpt-4o-mini-2024-07-18:acme-widgets:intent-v3:9xYzAbC1\",",
+      "category": "fine_tune",
+      "shutdown": "2027-01-14",
+      "suggested": null,
+      "confidence": "confirmed",
+      "risk": "high",
+      "notes": [
+        "Fine-tune of gpt-4o-mini-2024-07-18; per OpenAI it shuts down with its base model on 2027-01-14.",
+        "No automatic replacement: gpt-6-luna does not support fine-tuning. Options are prompting/few-shot on gpt-6-luna validated with `eval`, or re-training on a fine-tunable model (none confirmed by the kit). New fine-tuning jobs stop on 6 Jan 2027."
+      ]
+    },
+    {
+      "file": "app/summarise.py",
+      "line": 20,
+      "column": 16,
+      "model": "gpt-4o-2024-08-06",
+      "kind": "sdk_call",
+      "language": "python",
+      "snippet": "model=\"gpt-4o-2024-08-06\",",
+      "category": "in_scope",
+      "shutdown": "2027-01-14",
+      "suggested": "gpt-6-luna",
+      "confidence": "confirmed",
+      "risk": "medium",
+      "notes": [
+        "Structured output in this file: gpt-6-luna lists structured_outputs as supported; verify schemas with `eval`.",
+        "Sets sampling/length params (temperature, max_tokens, etc.). gpt-6-luna is a reasoning model; the kit could not confirm which of these it accepts - test with `eval`."
+      ]
+    },
+    {
+      "file": "config/models.yaml",
+      "line": 2,
+      "column": 12,
+      "model": "gpt-4o",
+      "kind": "config",
+      "language": "yaml",
+      "snippet": "default: gpt-4o",
+      "category": "in_scope",
+      "shutdown": "2027-01-14",
+      "suggested": "gpt-6-luna",
+      "confidence": "inferred",
+      "risk": "medium",
+      "notes": [
+        "Undated alias: OpenAI lists only the dated snapshots, so treating the alias as affected is inferred. Confirm with GET /v1/models (shutdown_date)."
+      ]
+    },
+    {
+      "file": "config/models.yaml",
+      "line": 3,
+      "column": 13,
+      "model": "gpt-4o-mini-2024-07-18",
+      "kind": "config",
+      "language": "yaml",
+      "snippet": "fallback: gpt-4o-mini-2024-07-18",
+      "category": "in_scope",
+      "shutdown": "2027-01-14",
+      "suggested": "gpt-6-luna",
+      "confidence": "confirmed",
+      "risk": "medium",
+      "notes": []
+    },
+    {
+      "file": "config/models.yaml",
+      "line": 4,
+      "column": 17,
+      "model": "gpt-4.1-2025-04-14",
+      "kind": "config",
+      "language": "yaml",
+      "snippet": "long_context: gpt-4.1-2025-04-14",
+      "category": "in_scope",
+      "shutdown": "2027-01-14",
+      "suggested": "gpt-6-luna",
+      "confidence": "confirmed",
+      "risk": "medium",
+      "notes": []
+    },
+    {
+      "file": "config/models.yaml",
+      "line": 5,
+      "column": 18,
+      "model": "gpt-4.1-nano",
+      "kind": "config",
+      "language": "yaml",
+      "snippet": "cheap_tagging: gpt-4.1-nano",
+      "category": "other_deprecated",
+      "shutdown": "2026-10-23",
+      "suggested": "gpt-5.6-luna",
+      "confidence": "confirmed",
+      "risk": "high",
+      "notes": [
+        "Shuts down 23 Oct 2026, before the main deadline.",
+        "Outside the GPT-4o/4.1 migration; OpenAI's listed replacement is gpt-5.6-luna."
+      ]
+    },
+    {
+      "file": "config/models.yaml",
+      "line": 6,
+      "column": 22,
+      "model": "ft:gpt-4o-mini-2024-07-18:acme-widgets:intent-v3:9xYzAbC1",
+      "kind": "config",
+      "language": "yaml",
+      "snippet": "intent_classifier: ft:gpt-4o-mini-2024-07-18:acme-widgets:intent-v3:9xYzAbC1",
+      "category": "fine_tune",
+      "shutdown": "2027-01-14",
+      "suggested": null,
+      "confidence": "confirmed",
+      "risk": "high",
+      "notes": [
+        "Fine-tune of gpt-4o-mini-2024-07-18; per OpenAI it shuts down with its base model on 2027-01-14.",
+        "No automatic replacement: gpt-6-luna does not support fine-tuning. Options are prompting/few-shot on gpt-6-luna validated with `eval`, or re-training on a fine-tunable model (none confirmed by the kit). New fine-tuning jobs stop on 6 Jan 2027."
+      ]
+    },
+    {
+      "file": "config/models.yaml",
+      "line": 8,
+      "column": 18,
+      "model": "gpt-4o-transcribe",
+      "kind": "config",
+      "language": "yaml",
+      "snippet": "transcription: gpt-4o-transcribe",
+      "category": "other_deprecated",
+      "shutdown": "2027-02-26",
+      "suggested": "gpt-live-transcribe or gpt-transcribe",
+      "confidence": "confirmed",
+      "risk": "medium",
+      "notes": [
+        "Not a chat model. Do not map to gpt-6-luna (Luna does not support transcription).",
+        "Outside the GPT-4o/4.1 migration; OpenAI's listed replacement is gpt-live-transcribe or gpt-transcribe."
+      ]
+    },
+    {
+      "file": "config/settings.json",
+      "line": 2,
+      "column": 28,
+      "model": "gpt-4o-2024-11-20",
+      "kind": "config",
+      "language": "json",
+      "snippet": "\"assistant\": { \"model\": \"gpt-4o-2024-11-20\", \"max_tokens\": 800 },",
+      "category": "in_scope",
+      "shutdown": "2027-01-14",
+      "suggested": "gpt-6-luna",
+      "confidence": "confirmed",
+      "risk": "medium",
+      "notes": []
+    },
+    {
+      "file": "config/settings.json",
+      "line": 3,
+      "column": 26,
+      "model": "gpt-5.6-sol",
+      "kind": "config",
+      "language": "json",
+      "snippet": "\"reports\": { \"model\": \"gpt-5.6-sol\" }",
+      "category": "not_listed",
+      "shutdown": null,
+      "suggested": null,
+      "confidence": "n/a",
+      "risk": "info",
+      "notes": [
+        "Not in the kit's deprecation catalogue. Leave as-is unless the client wants to consolidate."
+      ]
+    },
+    {
+      "file": "web/src/chat.ts",
+      "line": 7,
+      "column": 13,
+      "model": "gpt-4.1",
+      "kind": "sdk_call",
+      "language": "typescript",
+      "snippet": "model: \"gpt-4.1\",",
+      "category": "in_scope",
+      "shutdown": "2027-01-14",
+      "suggested": "gpt-6-luna",
+      "confidence": "inferred",
+      "risk": "high",
+      "notes": [
+        "Undated alias: OpenAI lists only the dated snapshots, so treating the alias as affected is inferred. Confirm with GET /v1/models (shutdown_date).",
+        "Chat Completions + tools in this file: gpt-6-luna supports function calling on Chat Completions only with reasoning_effort set to 'none' (or move to the Responses API)."
+      ]
+    },
+    {
+      "file": "web/src/chat.ts",
+      "line": 24,
+      "column": 55,
+      "model": "gpt-4o-transcribe",
+      "kind": "sdk_call",
+      "language": "typescript",
+      "snippet": "return openai.audio.transcriptions.create({ model: \"gpt-4o-transcribe\", file });",
+      "category": "other_deprecated",
+      "shutdown": "2027-02-26",
+      "suggested": "gpt-live-transcribe or gpt-transcribe",
+      "confidence": "confirmed",
+      "risk": "medium",
+      "notes": [
+        "Not a chat model. Do not map to gpt-6-luna (Luna does not support transcription).",
+        "Outside the GPT-4o/4.1 migration; OpenAI's listed replacement is gpt-live-transcribe or gpt-transcribe."
+      ]
+    },
+    {
+      "file": "web/src/classify.js",
+      "line": 4,
+      "column": 48,
+      "model": "gpt-4.1-mini-2025-04-14",
+      "kind": "sdk_call",
+      "language": "javascript",
+      "snippet": "const MODEL = process.env.CLASSIFIER_MODEL ?? 'gpt-4.1-mini-2025-04-14';",
+      "category": "in_scope",
+      "shutdown": "2027-01-14",
+      "suggested": "gpt-6-luna",
+      "confidence": "confirmed",
+      "risk": "medium",
+      "notes": []
+    }
+  ],
+  "env_refs": [
+    {
+      "file": "app/agent.py",
+      "line": 8,
+      "variable": "OPENAI_MODEL",
+      "snippet": "MODEL = os.getenv(\"OPENAI_MODEL\", \"gpt-4o-mini\")"
+    },
+    {
+      "file": "web/src/classify.js",
+      "line": 4,
+      "variable": "CLASSIFIER_MODEL",
+      "snippet": "const MODEL = process.env.CLASSIFIER_MODEL ?? 'gpt-4.1-mini-2025-04-14';"
+    }
+  ],
+  "file_signals": {
+    "app/agent.py": [
+      "chat_completions",
+      "tools"
+    ],
+    "app/summarise.py": [
+      "chat_completions",
+      "structured_output",
+      "sampling_params"
+    ],
+    "web/src/chat.ts": [
+      "chat_completions",
+      "tools"
+    ],
+    "web/src/classify.js": [
+      "responses_api"
+    ]
+  }
+}

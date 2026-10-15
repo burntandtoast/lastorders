@@ -1,0 +1,95 @@
+# Regression suite for the Acme Widgets sample app.
+# Run live:   OPENAI_API_KEY=... bt-migrate eval examples/evals/sample-suite.yaml
+# Run offline: bt-migrate eval examples/evals/sample-suite.yaml --dry-run
+#
+# `mock:` blocks are canned outputs used ONLY in --dry-run mode, so the demo
+# report shows what drift looks like. Live runs ignore them.
+name: acme-widgets-support-bot
+api: chat            # chat (Chat Completions) or responses
+models:
+  old: gpt-4o-2024-08-06
+  new: gpt-6-luna
+model_params:
+  old: {}
+  new:
+    # Per OpenAI's gpt-6-luna page, Chat Completions function calling needs
+    # reasoning_effort "none". Sent on every new-model request in this suite.
+    reasoning_effort: none
+
+cases:
+  - id: ticket-summary-refund
+    type: structured
+    schema_name: ticket
+    prompt: "Customer says: my order #4411 arrived broken and I want a refund today, this is the second time."
+    schema: &ticket
+      type: object
+      properties:
+        summary: {type: string}
+        priority: {type: string, enum: [low, medium, high]}
+        tags: {type: array, items: {type: string}}
+      required: [summary, priority, tags]
+      additionalProperties: false
+    mock:
+      old: {summary: "Repeat broken delivery on order 4411; customer wants refund today.", priority: high, tags: [refund, damaged]}
+      new: {summary: "Repeat broken delivery on order 4411; customer wants refund today.", priority: high, tags: [refund, damaged]}
+
+  - id: ticket-summary-question
+    type: structured
+    schema_name: ticket
+    prompt: "Hi, do you ship to Ireland and how long does it take?"
+    schema: *ticket
+    mock:
+      old: {summary: "Asks about shipping to Ireland and delivery time.", priority: low, tags: [shipping]}
+      new: {summary: "Shipping question: Ireland availability and delivery time.", priority: medium, tags: [shipping, international]}
+
+  - id: book-table-simple
+    type: tool_call
+    prompt: "Book a table for 4 on 2026-11-02 at 19:30"
+    tools: &tools
+      - name: book_table
+        description: Book a restaurant table
+        parameters:
+          type: object
+          properties:
+            date: {type: string, pattern: "^\\d{4}-\\d{2}-\\d{2}$"}
+            time: {type: string}
+            party_size: {type: integer, minimum: 1}
+          required: [date, time, party_size]
+      - name: lookup_order
+        description: Look up an order
+        parameters:
+          type: object
+          properties: {order_id: {type: string}}
+          required: [order_id]
+    expect: {tool: book_table, args: {party_size: 4}}
+    mock:
+      old: {tool_calls: [{name: book_table, arguments: {date: "2026-11-02", time: "19:30", party_size: 4}}]}
+      new: {tool_calls: [{name: book_table, arguments: {date: "2026-11-02", time: "19:30", party_size: 4}}]}
+
+  - id: book-table-relative-date
+    type: tool_call
+    prompt: "Can we get a table for two next Friday at half seven?"
+    tools: *tools
+    expect: {tool: book_table}
+    mock:
+      old: {tool_calls: [{name: book_table, arguments: {date: "2026-10-23", time: "19:30", party_size: 2}}]}
+      new: {tool_calls: [{name: book_table, arguments: {date: "23/10/2026", time: "7:30pm", party_size: 2}}]}
+
+  - id: order-lookup
+    type: tool_call
+    prompt: "Where is my order A-77812?"
+    tools: *tools
+    expect: {tool: lookup_order, args: {order_id: "A-77812"}}
+    mock:
+      old: {tool_calls: [{name: lookup_order, arguments: {order_id: "A-77812"}}]}
+      new: {tool_calls: [{name: lookup_order, arguments: {order_id: "A-77812"}}]}
+
+  - id: apology-tone
+    type: text
+    system: "You are Acme's friendly support agent. Keep replies under 60 words."
+    prompt: "Write a short apology for a late delivery."
+    must_include: [sorry]
+    min_similarity: 0.5
+    mock:
+      old: "We're so sorry your order arrived late. We know how frustrating that is, and we've passed it to our delivery team. Thanks for your patience."
+      new: "Sorry your order arrived late, and thanks for bearing with us. We've flagged it with our delivery team so it doesn't happen again."

@@ -1,0 +1,8 @@
+llm:
+  default: gpt-4o
+  fallback: gpt-4o-mini-2024-07-18
+  long_context: gpt-4.1-2025-04-14
+  cheap_tagging: gpt-4.1-nano
+  intent_classifier: ft:gpt-4o-mini-2024-07-18:acme-widgets:intent-v3:9xYzAbC1
+speech:
+  transcription: gpt-4o-transcribe

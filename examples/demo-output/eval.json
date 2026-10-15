@@ -1,0 +1,286 @@
+{
+  "suite": "acme-widgets-support-bot",
+  "api": "chat",
+  "mode": "mock",
+  "old_model": "gpt-4o-2024-08-06",
+  "new_model": "gpt-6-luna",
+  "run_at": "2026-10-15T08:59:54+0100",
+  "summary": {
+    "pass": 4,
+    "drift": 1,
+    "fail": 1
+  },
+  "cases": [
+    {
+      "id": "ticket-summary-refund",
+      "type": "structured",
+      "status": "pass",
+      "old": {
+        "text": "{\"summary\": \"Repeat broken delivery on order 4411; customer wants refund today.\", \"priority\": \"high\", \"tags\": [\"refund\", \"damaged\"]}",
+        "simulated": true
+      },
+      "new": {
+        "text": "{\"summary\": \"Repeat broken delivery on order 4411; customer wants refund today.\", \"priority\": \"high\", \"tags\": [\"refund\", \"damaged\"]}",
+        "simulated": true
+      },
+      "checks": {
+        "schema_valid": {
+          "old": true,
+          "new": true
+        },
+        "schema_errors": {
+          "old": [],
+          "new": []
+        },
+        "field_diff": [],
+        "similarity": 1.0,
+        "similarity_threshold": 0.85
+      },
+      "notes": [
+        "Simulated (dry-run) output - not a real model response."
+      ]
+    },
+    {
+      "id": "ticket-summary-question",
+      "type": "structured",
+      "status": "drift",
+      "old": {
+        "text": "{\"summary\": \"Asks about shipping to Ireland and delivery time.\", \"priority\": \"low\", \"tags\": [\"shipping\"]}",
+        "simulated": true
+      },
+      "new": {
+        "text": "{\"summary\": \"Shipping question: Ireland availability and delivery time.\", \"priority\": \"medium\", \"tags\": [\"shipping\", \"international\"]}",
+        "simulated": true
+      },
+      "checks": {
+        "schema_valid": {
+          "old": true,
+          "new": true
+        },
+        "schema_errors": {
+          "old": [],
+          "new": []
+        },
+        "field_diff": [
+          {
+            "path": "priority",
+            "change": "changed",
+            "old": "low",
+            "new": "medium"
+          },
+          {
+            "path": "summary",
+            "change": "changed",
+            "old": "Asks about shipping to Ireland and delivery time.",
+            "new": "Shipping question: Ireland availability and delivery time."
+          },
+          {
+            "path": "tags",
+            "change": "changed",
+            "old": [
+              "shipping"
+            ],
+            "new": [
+              "shipping",
+              "international"
+            ]
+          }
+        ],
+        "similarity": 0.762,
+        "similarity_threshold": 0.85
+      },
+      "notes": [
+        "Simulated (dry-run) output - not a real model response.",
+        "Output similarity 0.762 below 0.85."
+      ]
+    },
+    {
+      "id": "book-table-simple",
+      "type": "tool_call",
+      "status": "pass",
+      "old": {
+        "tool_calls": [
+          {
+            "name": "book_table",
+            "arguments": {
+              "date": "2026-11-02",
+              "time": "19:30",
+              "party_size": 4
+            }
+          }
+        ],
+        "simulated": true
+      },
+      "new": {
+        "tool_calls": [
+          {
+            "name": "book_table",
+            "arguments": {
+              "date": "2026-11-02",
+              "time": "19:30",
+              "party_size": 4
+            }
+          }
+        ],
+        "simulated": true
+      },
+      "checks": {
+        "tool_names": {
+          "old": [
+            "book_table"
+          ],
+          "new": [
+            "book_table"
+          ],
+          "match": true
+        },
+        "errors": {
+          "old": [],
+          "new": []
+        },
+        "argument_diff": []
+      },
+      "notes": [
+        "Simulated (dry-run) output - not a real model response."
+      ]
+    },
+    {
+      "id": "book-table-relative-date",
+      "type": "tool_call",
+      "status": "fail",
+      "old": {
+        "tool_calls": [
+          {
+            "name": "book_table",
+            "arguments": {
+              "date": "2026-10-23",
+              "time": "19:30",
+              "party_size": 2
+            }
+          }
+        ],
+        "simulated": true
+      },
+      "new": {
+        "tool_calls": [
+          {
+            "name": "book_table",
+            "arguments": {
+              "date": "23/10/2026",
+              "time": "7:30pm",
+              "party_size": 2
+            }
+          }
+        ],
+        "simulated": true
+      },
+      "checks": {
+        "tool_names": {
+          "old": [
+            "book_table"
+          ],
+          "new": [
+            "book_table"
+          ],
+          "match": true
+        },
+        "errors": {
+          "old": [],
+          "new": [
+            "book_table: date: '23/10/2026' does not match '^\\\\d{4}-\\\\d{2}-\\\\d{2}$'"
+          ]
+        },
+        "argument_diff": [
+          {
+            "call": 0,
+            "tool": "book_table",
+            "diff": [
+              {
+                "path": "date",
+                "change": "changed",
+                "old": "2026-10-23",
+                "new": "23/10/2026"
+              },
+              {
+                "path": "time",
+                "change": "changed",
+                "old": "19:30",
+                "new": "7:30pm"
+              }
+            ]
+          }
+        ]
+      },
+      "notes": [
+        "Simulated (dry-run) output - not a real model response."
+      ]
+    },
+    {
+      "id": "order-lookup",
+      "type": "tool_call",
+      "status": "pass",
+      "old": {
+        "tool_calls": [
+          {
+            "name": "lookup_order",
+            "arguments": {
+              "order_id": "A-77812"
+            }
+          }
+        ],
+        "simulated": true
+      },
+      "new": {
+        "tool_calls": [
+          {
+            "name": "lookup_order",
+            "arguments": {
+              "order_id": "A-77812"
+            }
+          }
+        ],
+        "simulated": true
+      },
+      "checks": {
+        "tool_names": {
+          "old": [
+            "lookup_order"
+          ],
+          "new": [
+            "lookup_order"
+          ],
+          "match": true
+        },
+        "errors": {
+          "old": [],
+          "new": []
+        },
+        "argument_diff": []
+      },
+      "notes": [
+        "Simulated (dry-run) output - not a real model response."
+      ]
+    },
+    {
+      "id": "apology-tone",
+      "type": "text",
+      "status": "pass",
+      "old": {
+        "text": "We're so sorry your order arrived late. We know how frustrating that is, and we've passed it to our delivery team. Thanks for your patience.",
+        "simulated": true
+      },
+      "new": {
+        "text": "Sorry your order arrived late, and thanks for bearing with us. We've flagged it with our delivery team so it doesn't happen again.",
+        "simulated": true
+      },
+      "checks": {
+        "similarity": 0.556,
+        "missing_phrases": [],
+        "similarity_threshold": 0.5
+      },
+      "notes": [
+        "Simulated (dry-run) output - not a real model response."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+# Mapping for the GPT-4 series shutdown on 14 Jan 2027.
+# Source: https://developers.openai.com/api/docs/deprecations (checked 2026-10-15)
+source: "OpenAI deprecations page, section '2026-10-14: GPT-4 series model deprecations'"
+
+mappings:
+  # Confirmed on the page
+  gpt-4o-2024-08-06: gpt-6-luna
+  gpt-4o-2024-11-20: gpt-6-luna
+  gpt-4o-mini-2024-07-18: gpt-6-luna
+  gpt-4.1-2025-04-14: gpt-6-luna
+  gpt-4.1-mini-2025-04-14: gpt-6-luna
+  # Undated aliases: inferred (the page names the families, not the aliases).
+  # Remove these lines if the client wants to keep aliases until confirmed.
+  gpt-4o: gpt-6-luna
+  gpt-4o-mini: gpt-6-luna
+  gpt-4.1: gpt-6-luna
+  gpt-4.1-mini: gpt-6-luna
+
+# Fine-tuned ids are never swapped unless listed here explicitly, e.g.
+#   "ft:gpt-4o-mini-2024-07-18:acme::abc123": gpt-6-luna
+# Only do this after the eval shows the base model plus prompting is good enough.
+fine_tuned: {}
+
+# Also rewrite .md/.txt docs
+include_docs: false

@@ -1,0 +1,73 @@
+--- a/.env.example
++++ b/.env.example
+@@ -1,3 +1,3 @@
+ OPENAI_API_KEY=sk-replace-me
+-OPENAI_MODEL=gpt-4o-mini
+-CLASSIFIER_MODEL=gpt-4.1-mini
++OPENAI_MODEL=gpt-6-luna
++CLASSIFIER_MODEL=gpt-6-luna
+--- a/app/agent.py
++++ b/app/agent.py
+@@ -5,7 +5,7 @@
+ from openai import OpenAI
+ 
+ client = OpenAI()
+-MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
++MODEL = os.getenv("OPENAI_MODEL", "gpt-6-luna")
+ 
+ TOOLS = [{
+     "type": "function",
+--- a/app/summarise.py
++++ b/app/summarise.py
+@@ -17,7 +17,7 @@
+ 
+ def summarise(ticket: str) -> str:
+     resp = client.chat.completions.create(
+-        model="gpt-4o-2024-08-06",
++        model="gpt-6-luna",
+         temperature=0.2,
+         max_tokens=400,
+         messages=[{"role": "user", "content": ticket}],
+--- a/config/models.yaml
++++ b/config/models.yaml
+@@ -1,7 +1,7 @@
+ llm:
+-  default: gpt-4o
+-  fallback: gpt-4o-mini-2024-07-18
+-  long_context: gpt-4.1-2025-04-14
++  default: gpt-6-luna
++  fallback: gpt-6-luna
++  long_context: gpt-6-luna
+   cheap_tagging: gpt-4.1-nano
+   intent_classifier: ft:gpt-4o-mini-2024-07-18:acme-widgets:intent-v3:9xYzAbC1
+ speech:
+--- a/config/settings.json
++++ b/config/settings.json
+@@ -1,4 +1,4 @@
+ {
+-  "assistant": { "model": "gpt-4o-2024-11-20", "max_tokens": 800 },
++  "assistant": { "model": "gpt-6-luna", "max_tokens": 800 },
+   "reports": { "model": "gpt-5.6-sol" }
+ }
+--- a/web/src/chat.ts
++++ b/web/src/chat.ts
+@@ -4,7 +4,7 @@
+ 
+ export async function reply(history: OpenAI.Chat.ChatCompletionMessageParam[]) {
+   const completion = await openai.chat.completions.create({
+-    model: "gpt-4.1",
++    model: "gpt-6-luna",
+     messages: history,
+     tools: [
+       {
+--- a/web/src/classify.js
++++ b/web/src/classify.js
+@@ -1,7 +1,7 @@
+ import OpenAI from "openai";
+ 
+ const openai = new OpenAI();
+-const MODEL = process.env.CLASSIFIER_MODEL ?? 'gpt-4.1-mini-2025-04-14';
++const MODEL = process.env.CLASSIFIER_MODEL ?? 'gpt-6-luna';
+ 
+ export async function classify(text) {
+   const response = await openai.responses.create({
