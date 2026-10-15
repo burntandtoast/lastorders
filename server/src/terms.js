@@ -26,7 +26,7 @@ export const WAIVER_FIELD = {
 };
 
 export function submitMessage(baseUrl) {
-  const host = String(baseUrl || "https://packs.burntandtoast.com").replace(/^https?:\/\//, "");
+  const host = String(baseUrl || "https://lastorders.burntandtoast.com").replace(/^https?:\/\//, "");
   return `Digital licence key, supplied immediately after payment. You asked for immediate supply and agree that you lose your 14-day right to cancel once the key is used (Consumer Contracts Regulations 2013, reg. 37). ${REFUND_LINE} ${COMPANY_LINE} Terms: ${host}/terms`;
 }
 

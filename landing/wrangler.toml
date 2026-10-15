@@ -12,7 +12,12 @@ directory = "./public"
 binding = "ASSETS"
 html_handling = "auto-trailing-slash"
 not_found_handling = "404-page"
-run_worker_first = ["/subscribe"]
+run_worker_first = ["/subscribe", "/buy", "/buy/", "/terms", "/terms/", "/success", "/success/", "/cancel", "/cancel/"]
 
 [observability]
 enabled = true
+
+# /buy, /terms, /success, /cancel are handled by the licence Worker (server/), so customers only see this host.
+[[services]]
+binding = "LICENCE"
+service = "lastorders-licence"

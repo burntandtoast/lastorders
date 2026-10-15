@@ -19,6 +19,7 @@ import { cancelPage, errorPage, pendingPage, successPage, termsPage } from "./pa
 import { TERMS_VERSION, WAIVER_FIELD, submitMessage, tosAcceptanceMessage, waiverFromSession } from "./terms.js";
 
 const DAY = 86400;
+const CUSTOMER_PATHS = new Set(["/buy", "/terms", "/success", "/cancel"]);
 
 function config(env) {
   return {
@@ -44,16 +45,17 @@ export function createApp(deps = {}) {
 
   function ctxFor(request, env) {
     const cfg = config(env);
-    const baseUrl = (env.PUBLIC_BASE_URL || new URL(request.url).origin).replace(/\/$/, "");
+    const baseUrl = (env.PUBLIC_BASE_URL || new URL(request.url).origin).replace(/\/$/, "");     // CLI/API host (token iss)
+    const siteUrl = (env.PUBLIC_SITE_URL || baseUrl).replace(/\/$/, "");                        // customer-facing host
     const store = new Store(env.DB, clock);
     const stripe = () => new Stripe({ secretKey: env.STRIPE_SECRET_KEY, apiBase: env.STRIPE_API_BASE, apiVersion: env.STRIPE_API_VERSION, fetchImpl });
     const mailer = deps.mailer || makeMailer(env, fetchImpl);
-    return { env, cfg, baseUrl, store, stripe, mailer };
+    return { env, cfg, baseUrl, siteUrl, store, stripe, mailer };
   }
 
   // ---- Checkout -------------------------------------------------------------------------------
   async function createCheckout(c, { repo, email }) {
-    const { cfg, baseUrl } = c;
+    const { cfg, siteUrl } = c;
     // Consent is collected on the Checkout page itself (required field, see terms.js); Stripe won't complete the
     // session without it. waiver_at is when the session (and the consent request) was created; the acceptance is
     // read back from the completed session and logged in licence_events.
@@ -73,16 +75,16 @@ export function createApp(deps = {}) {
     const params = {
       mode: "payment",
       line_items: [lineItem],
-      success_url: `${baseUrl}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${baseUrl}/cancel`,
+      success_url: `${siteUrl}/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${siteUrl}/cancel`,
       customer_creation: "always",
       metadata,
       payment_intent_data: { metadata },
     };
-    params.custom_text = { submit: { message: submitMessage(baseUrl) } };
+    params.custom_text = { submit: { message: submitMessage(siteUrl) } };
     if (cfg.tosConsent) {
       params.consent_collection = { terms_of_service: "required" };
-      params.custom_text.terms_of_service_acceptance = { message: tosAcceptanceMessage(baseUrl) };
+      params.custom_text.terms_of_service_acceptance = { message: tosAcceptanceMessage(siteUrl) };
     } else {
       params.custom_fields = [WAIVER_FIELD];
     }
@@ -124,7 +126,7 @@ export function createApp(deps = {}) {
     }
     if (!row) throw new Error("could not create licence");
     if (sendEmail && row.email_status !== "sent" && row.status === "active") {
-      const msg = licenceEmail({ key: row.key, productName: c.cfg.productName, cliName: c.cfg.cliName, buyerEmail: row.email, baseUrl: c.baseUrl, supportEmail: c.cfg.supportEmail });
+      const msg = licenceEmail({ key: row.key, productName: c.cfg.productName, cliName: c.cfg.cliName, buyerEmail: row.email, baseUrl: c.siteUrl, supportEmail: c.cfg.supportEmail });
       const r = await c.mailer.send(msg, `licence-email-${row.key}`);
       if (r.ok) {
         await c.store.setEmailStatus(row.key, r.skipped ? "skipped" : "sent");
@@ -208,7 +210,7 @@ export function createApp(deps = {}) {
       catch (e) { console.error(`[success] licence email for session ${id} failed: ${e?.message}`); }
     }
     if (row.status !== "active") return errorPage("This licence has been revoked (refunded).", 410);
-    return successPage({ key: row.key, email: row.email, productName: c.cfg.productName, cliName: c.cfg.cliName, baseUrl: c.baseUrl });
+    return successPage({ key: row.key, email: row.email, productName: c.cfg.productName, cliName: c.cfg.cliName, baseUrl: c.siteUrl });
   }
 
   // ---- Verify (the CLI's only licence call: sends key + repo identity, nothing else) -------------
@@ -285,13 +287,17 @@ export function createApp(deps = {}) {
         const s = await createCheckout(c, body || {});
         return json({ id: s.id, url: s.url });
       }
+      // Customer-facing pages live on PUBLIC_SITE_URL; old links to the API host get a permanent redirect.
+      if (CUSTOMER_PATHS.has(path) && c.siteUrl !== c.baseUrl && url.hostname === new URL(c.baseUrl).hostname) {
+        return new Response(null, { status: 301, headers: { location: `${c.siteUrl}${path}${url.search}`, "cache-control": "public, max-age=3600" } });
+      }
       if (path === "/buy" && request.method === "GET") {
         const s = await createCheckout(c, { repo: url.searchParams.get("repo"), email: url.searchParams.get("email") });
         return Response.redirect(s.url, 303);
       }
       if (path === "/success" && request.method === "GET") return await success(c, url);
-      if (path === "/terms" && request.method === "GET") return termsPage({ productName: c.cfg.productName, cliName: c.cfg.cliName, amount: c.cfg.amount, currency: c.cfg.currency, baseUrl: c.baseUrl });
-      if (path === "/cancel" && request.method === "GET") return cancelPage({ productName: c.cfg.productName, baseUrl: c.baseUrl });
+      if (path === "/terms" && request.method === "GET") return termsPage({ productName: c.cfg.productName, cliName: c.cfg.cliName, amount: c.cfg.amount, currency: c.cfg.currency, baseUrl: c.siteUrl });
+      if (path === "/cancel" && request.method === "GET") return cancelPage({ productName: c.cfg.productName, baseUrl: c.siteUrl });
       if (path.startsWith("/api/admin/")) return await admin(c, request, path);
       if (path.startsWith("/api/")) return json({ error: "not_found" }, 404);
       if (env.ASSETS) return env.ASSETS.fetch(request);

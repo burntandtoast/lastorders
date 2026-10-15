@@ -39,7 +39,8 @@ EMAIL_PROVIDER = "resend"         # resend | log | none
 EMAIL_FROM = "Last Orders <licences@burntandtoast.com>"
 EMAIL_REPLY_TO = ""
 SUPPORT_EMAIL = ""
-PUBLIC_BASE_URL = "https://packs.burntandtoast.com"  # defaults to the request origin if empty
+PUBLIC_BASE_URL = "https://packs.burntandtoast.com"  # CLI/API host (verify, packs, webhook); defaults to the request origin
+PUBLIC_SITE_URL = "https://lastorders.burntandtoast.com"  # customer-facing: /buy, /terms, /success, /cancel (served via the landing Worker); old links on the API host 301 here
 
 # Secrets (never in this file):
 #   STRIPE_SECRET_KEY      sk_test_... (later sk_live_... or a restricted rk_ key)

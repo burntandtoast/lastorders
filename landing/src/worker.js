@@ -3,6 +3,7 @@
 // "Remind me" form: it adds the address to Buttondown tagged lastorders-waitlist, the same way the
 // Kits site does (cloudflare/handlers.js in the burntandtoast site). Secret: BUTTONDOWN_API_KEY.
 const TAG = "lastorders-waitlist";
+const LICENCE_PATHS = new Set(["/buy", "/terms", "/success", "/cancel"]);
 const EMAIL_RE = /^[^\s@<>()",;:]+@[^\s@<>()",;:]+\.[^\s@<>()",;:]{2,}$/;
 const MSG = {
   ok: "Thanks, you're on the list. Check your inbox for a confirmation email from Burnt & Toast.",
@@ -66,6 +67,8 @@ export default {
       if (request.method === "POST") return subscribe(request, env);
       return Response.redirect(`${url.origin}/#remind`, 303);
     }
+    // Customer-facing licence pages are served by the licence Worker (service binding), on this host.
+    if (LICENCE_PATHS.has(url.pathname.replace(/\/+$/, "") || "/")) return env.LICENCE.fetch(request);
     return env.ASSETS.fetch(request);
   },
 };

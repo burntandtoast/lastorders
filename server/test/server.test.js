@@ -334,3 +334,24 @@ test("checkout: required waiver consent, policy message and waiver metadata; /te
   const html = await t.text();
   for (const s of ["17334149", "England and Wales", "regulation 37", "hello@burntandtoast.com", "never been activated", "5 working days", "£149"]) assert.ok(html.includes(s), s);
 });
+
+test("customer pages live on PUBLIC_SITE_URL: Checkout URLs, email, terms; API host 301s old links", async () => {
+  const net = fakeNetwork();
+  const env = await makeEnv({ PUBLIC_SITE_URL: "https://shop.example.test" });
+  const h = harness(env, net);
+  assert.equal((await h.call("/buy")).status, 301);      // harness requests the API host
+  const app = (await import("../src/index.js")).createApp({ fetch: net.fetch });
+  const r = await app.fetch(new Request("https://licence.example.test/success?session_id=cs_test_x"), env);
+  assert.equal(r.status, 301);
+  assert.equal(r.headers.get("location"), "https://shop.example.test/success?session_id=cs_test_x");
+  const b = await app.fetch(new Request("https://shop.example.test/buy?repo=a/b"), env);
+  assert.equal(b.status, 303);
+  const p = new URLSearchParams(net.calls.at(-1).body);
+  assert.equal(p.get("success_url"), "https://shop.example.test/success?session_id={CHECKOUT_SESSION_ID}");
+  assert.equal(p.get("cancel_url"), "https://shop.example.test/cancel");
+  assert.ok(p.get("custom_text[submit][message]").includes("shop.example.test/terms"));
+  const t = await (await app.fetch(new Request("https://shop.example.test/terms"), env)).text();
+  assert.ok(t.includes("https://shop.example.test/buy"));
+  assert.equal((await app.fetch(new Request("https://licence.example.test/healthz"), env)).status, 200);
+  assert.equal((await app.fetch(new Request("https://licence.example.test/api/stripe/webhook", { method: "POST", body: "{}" }), env)).status, 400);
+});

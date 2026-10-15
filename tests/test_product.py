@@ -21,6 +21,7 @@ def test_only_pack_fetch_talks_to_us():
         if re.search(r"\burllib\b|\brequests\b|\bhttp\.client\b|\bsocket\b", src):
             assert f.name in {"packs.py", "licence.py", "evaluator.py"}, f"network code in {f.name}"
     assert brand.LICENCE_URL.startswith(brand.SERVICE_URL) and brand.PACKS_URL.startswith(brand.SERVICE_URL)
+    assert brand.BUY_URL == "https://lastorders.burntandtoast.com/buy" and brand.TERMS_URL.startswith(brand.SITE_URL)   # customer-facing host
 
 
 def test_offline_makes_no_network_calls(tmp_path, monkeypatch):
