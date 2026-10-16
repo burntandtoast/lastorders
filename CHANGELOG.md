@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.4.2
+- **Google pack** (Vertex AI only, flag only). `gemini-2.5-pro`, `gemini-2.5-flash` and `gemini-2.5-flash-lite` retire on Vertex AI on 20 Oct 2026; suggested replacements start with `gemini-3.8-flash` (Google also lists alternatives per model). No automatic swap and no fix rules. High risk only when the same file is using Vertex (`vertexai`, `google.cloud.aiplatform`, `vertexai=True`, a truthy `GOOGLE_GENAI_USE_VERTEXAI`, an `aiplatform.googleapis.com` URL, or `@google-cloud/vertexai`). Otherwise the finding is informational: these IDs are not deprecated on the Gemini API. The hosted index can list `google` without breaking scanners 0.4.0 and 0.4.1, which skip providers they do not bundle.
+
 ## 0.4.1
 - **Licence split.** The free scan, migration packs, CLI, licence client and patch preview (`swap` / `fix` without `--apply`, including simulated `fix --verify`) are MIT (`LICENSE`). `eval`, `init-evals` and `report` are proprietary (`LICENSE-COMMERCIAL`): source is visible, use needs a paid licence, no redistribution and no bypassing the licence check. `swap --apply`, `fix --apply` and `fix --verify --live` stay behind the same check.
 

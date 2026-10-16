@@ -1,6 +1,6 @@
 {
   "index_format": 1,
-  "generated": "2026-10-15",
+  "generated": "2026-10-16",
   "packs": [
     {
       "provider": "anthropic",
@@ -10,6 +10,15 @@
       "pack_format": 1,
       "url": "packs/anthropic.json",
       "sha256": "d1cfc1574127221714c7ef0f60a640c199b53d36598a68fb7ed501af7c40646b"
+    },
+    {
+      "provider": "google",
+      "name": "Google Gemini on Vertex AI",
+      "version": "2026.10.16.1",
+      "status": "stable",
+      "pack_format": 1,
+      "url": "packs/google.json",
+      "sha256": "53040e87cd9179aae6784d86b5bc29c4c0e714b9a302c50b7d8e595eb5589bf0"
     },
     {
       "provider": "openai",

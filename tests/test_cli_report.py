@@ -19,7 +19,7 @@ def test_full_demo_pipeline(tmp_path, monkeypatch):
     assert "Anthropic Claude API (stub)" in html and "<script" not in html
     scan = json.loads((tmp_path / "scan.json").read_text())
     assert scan["summary"]["fine_tuned_models"] == ["ft:gpt-4o-mini-2024-07-18:acme-widgets:intent-v3:9xYzAbC1"]
-    assert {p["provider"] for p in scan["packs"]} == {"openai", "anthropic"}
+    assert {p["provider"] for p in scan["packs"]} == {"openai", "anthropic", "google"}
 
 
 def test_scan_free_no_key_no_licence(tmp_path, monkeypatch, capsys):

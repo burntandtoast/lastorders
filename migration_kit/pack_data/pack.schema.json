@@ -557,6 +557,17 @@
         },
         "default_risk": {
           "$ref": "#/$defs/risk"
+        },
+        "shutdown_risk_when_any": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "When set, a shutdown date raises risk to high only if the file has one of these signals. Otherwise the finding stays at default_risk."
+        },
+        "otherwise_note": {
+          "type": "string",
+          "description": "Note used instead of the model note when shutdown_risk_when_any is set and none of those signals are present."
         }
       }
     },

@@ -1,6 +1,9 @@
+import datetime as dt
+
 from conftest import ROOT, TODAY
 from migration_kit.packs import load_packs
 from migration_kit.scanner import scan
+from migration_kit.swapper import mapping_from_packs
 
 SAMPLE = ROOT / "examples" / "sample-app"
 
@@ -124,3 +127,78 @@ def test_oct_2026_fine_tunes_pro_and_image_models(tmp_path):
     assert m["gpt-4-1106-preview"][0].shutdown == "2026-10-23"
     mapping = load_packs().get("openai").default_mapping(None)
     assert not {"o3-pro-2025-06-10", "gpt-5-pro-2025-10-06", "gpt-image-1.5", "o1-pro", "gpt-image-1"} & set(mapping)
+
+
+INFO = "retires on Vertex AI 20 Oct; not deprecated on the Gemini API"
+
+
+def test_google_vertex_is_high_and_studio_is_informational(tmp_path):
+    (tmp_path / "vertex_sdk.py").write_text(
+        'import vertexai\nfrom vertexai.generative_models import GenerativeModel\n'
+        'GenerativeModel("gemini-2.5-pro")\n')
+    (tmp_path / "aiplatform.py").write_text(
+        'from google.cloud import aiplatform\nMODEL = "gemini-2.5-flash"\n')
+    (tmp_path / "genai_vertex.py").write_text(
+        'from google import genai\nclient = genai.Client(\n    vertexai=True, project="p", location="us-central1")\n'
+        'client.models.generate_content(model="gemini-2.5-flash-lite", contents="hi")\n')
+    (tmp_path / "use_vertex.env").write_text('GOOGLE_GENAI_USE_VERTEXAI=true\nMODEL=gemini-2.5-pro\n')
+    (tmp_path / "vertex_url.yaml").write_text(
+        'url: https://us-central1-aiplatform.googleapis.com/v1/projects/p/locations/us-central1/'
+        'publishers/google/models/gemini-2.5-flash:generateContent\n')
+    (tmp_path / "node.js").write_text(
+        'const {VertexAI} = require("@google-cloud/vertexai");\nconst model = "gemini-2.5-pro";\n')
+    (tmp_path / "genai_js.ts").write_text(
+        'import {GoogleGenAI} from "@google/genai";\n'
+        'const ai = new GoogleGenAI({vertexai: true, project: "p", location: "us-central1"});\n'
+        'const model = "gemini-2.5-flash";\n')
+    (tmp_path / "studio.py").write_text(
+        'from google import genai\nclient = genai.Client(api_key="x")\n'
+        'client.models.generate_content(model="gemini-2.5-pro", contents="hi")\n')
+    (tmp_path / "studio.ts").write_text(
+        'import {GoogleGenAI} from "@google/genai";\n'
+        'const ai = new GoogleGenAI({apiKey: "x"});\nconst model = "gemini-2.5-flash-lite";\n')
+    (tmp_path / "off.env").write_text('GOOGLE_GENAI_USE_VERTEXAI=false\nMODEL=gemini-2.5-flash\n')
+    (tmp_path / "alone.py").write_text('model = "gemini-2.5-flash"\n')
+    (tmp_path / "other.py").write_text('import vertexai\n')  # different file from alone.py
+    (tmp_path / "notes.md").write_text('We still call gemini-2.5-pro from AI Studio.\n')
+    (tmp_path / "near.py").write_text(
+        'model = "gemini-2.5-flash-image"\npreview = "gemini-2.5-pro-001"\n'
+        'old = "gemini-2.5-pro-preview-06-05"\n')
+
+    res = _scan(tmp_path)
+    by_file = {}
+    for f in res.findings:
+        by_file.setdefault(f.file, []).append(f)
+
+    high_files = ["vertex_sdk.py", "aiplatform.py", "genai_vertex.py", "use_vertex.env",
+                  "vertex_url.yaml", "node.js", "genai_js.ts"]
+    for name in high_files:
+        f = by_file[name][0]
+        assert f.provider == "google" and f.risk == "high" and f.shutdown == "2026-10-20", name
+        assert f.suggested == "gemini-3.8-flash" and f.category == "in_scope"
+        assert INFO not in " ".join(f.notes)
+        assert "google:vertexai" in res.file_sdks[name]
+    assert by_file["vertex_sdk.py"][0].model == "gemini-2.5-pro"
+    assert any("gemini-3.5-flash" in n for n in by_file["vertex_sdk.py"][0].notes)
+    assert by_file["genai_vertex.py"][0].model == "gemini-2.5-flash-lite"
+    assert any("gemini-3.1-flash-lite" in n for n in by_file["genai_vertex.py"][0].notes)
+    assert by_file["vertex_url.yaml"][0].model == "gemini-2.5-flash"
+
+    for name in ("studio.py", "studio.ts", "off.env", "alone.py", "notes.md"):
+        f = by_file[name][0]
+        assert f.risk == "info" and f.shutdown == "2026-10-20" and f.suggested == "gemini-3.8-flash", name
+        assert INFO in f.notes
+        assert f.rules == []
+    assert "other.py" not in by_file
+    assert "near.py" not in by_file  # image, -001 and preview IDs are not this retirement
+
+    g = load_packs().get("google")
+    assert g.data.get("rules", []) == []
+    assert g.default_mapping(None) == {}
+    assert "gemini" not in mapping_from_packs(load_packs()).replacements
+
+    later = scan(tmp_path, today=dt.date(2026, 10, 21), packs=load_packs())
+    later_by = {f.file: f for f in later.findings}
+    assert later_by["studio.py"].risk == "info"
+    assert later_by["vertex_sdk.py"].risk == "high"
+    assert any("has passed" in n for n in later_by["vertex_sdk.py"].notes)
