@@ -3,18 +3,19 @@
   "pack_format": 1,
   "provider": "openai",
   "name": "OpenAI API",
-  "version": "2026.10.15.6",
-  "updated": "2026-10-15",
+  "version": "2026.10.16.2",
+  "updated": "2026-10-16",
   "status": "stable",
   "notes": [
-    "Facts transcribed from OpenAI's docs on the date in `sources`, plus our own live API checks (confidence 'live-tested'). Re-verify before acting."
+    "Facts transcribed from OpenAI's docs on the date in `sources`, plus our own live API checks (confidence 'live-tested'). Re-verify before acting.",
+    "23 Oct 2026 chat and reasoning models are in the default mapping. Live check 16 Oct 2026 (probes/probe_56-result.json): on Chat Completions, gpt-5.6-luna, gpt-5.6-sol and gpt-5.6-terra match gpt-6-luna. The fixer renames max_tokens to max_completion_tokens and sets reasoning_effort to none for sampling parameters and Chat Completions tools, in the same change as the model switch. Responses calls with those parameters are flagged. reasoning_effort 'max' is rejected and left in place. o1-pro, gpt-image-1, fine-tunes, Assistants, legacy Completions, audio and already-shut-down models stay flag-only."
   ],
   "sources": [
     {
       "id": "deprecations",
       "title": "OpenAI deprecations",
       "url": "https://developers.openai.com/api/docs/deprecations",
-      "checked": "2026-10-15"
+      "checked": "2026-10-16"
     },
     {
       "id": "gpt-6-luna",
@@ -30,9 +31,33 @@
     },
     {
       "id": "live-probe",
-      "title": "Burnt & Toast live API checks (probes/)",
+      "title": "Burnt & Toast live API checks (probes/, including probes/probe_56-result.json)",
       "url": "probes/",
-      "checked": "2026-10-15"
+      "checked": "2026-10-16"
+    },
+    {
+      "id": "gpt-5.6-luna",
+      "title": "GPT-5.6 Luna model page",
+      "url": "https://developers.openai.com/api/docs/models/gpt-5.6-luna",
+      "checked": "2026-10-16"
+    },
+    {
+      "id": "gpt-5.6-sol",
+      "title": "GPT-5.6 Sol model page",
+      "url": "https://developers.openai.com/api/docs/models/gpt-5.6-sol",
+      "checked": "2026-10-16"
+    },
+    {
+      "id": "gpt-5.6-terra",
+      "title": "GPT-5.6 Terra model page",
+      "url": "https://developers.openai.com/api/docs/models/gpt-5.6-terra",
+      "checked": "2026-10-16"
+    },
+    {
+      "id": "reasoning",
+      "title": "Reasoning models",
+      "url": "https://developers.openai.com/api/docs/guides/reasoning",
+      "checked": "2026-10-16"
     }
   ],
   "id_patterns": [
@@ -49,11 +74,23 @@
       "pattern": "(?:whisper-1|tts-1(?:-hd)?)"
     },
     {
-      "pattern": "o[1-9](?:-(?:mini|pro|preview|deep-research)(?:-[0-9]{4}-[0-9]{2}-[0-9]{2})?|-[0-9]{4}-[0-9]{2}-[0-9]{2})?",
+      "pattern": "o[1-9](?:-(?:mini-deep-research|mini|pro|preview|deep-research)(?:-[0-9]{4}-[0-9]{2}-[0-9]{2})?|-[0-9]{4}-[0-9]{2}-[0-9]{2})?",
       "quoted_only": true
     },
     {
       "pattern": "gpt-image-[0-9][A-Za-z0-9._-]*[A-Za-z0-9]|gpt-image-[0-9]"
+    },
+    {
+      "pattern": "(?:davinci|babbage)-002"
+    },
+    {
+      "pattern": "computer-use-preview(?:-[0-9]{4}-[0-9]{2}-[0-9]{2})?"
+    },
+    {
+      "pattern": "ft-o4-mini-2025-04-16"
+    },
+    {
+      "pattern": "gpt-(?:audio-mini|realtime-mini|audio|realtime)(?:-[0-9]{4}-[0-9]{2}-[0-9]{2})?"
     }
   ],
   "fine_tune": {
@@ -146,6 +183,30 @@
       "shutdown": "2027-01-14",
       "replacement": "gpt-6-luna",
       "headline": true,
+      "source": "deprecations"
+    },
+    {
+      "id": "legacy-gpt-2026-10-23",
+      "title": "OpenAI shuts down legacy GPT chat and reasoning snapshots",
+      "announced": "2026-04-22",
+      "shutdown": "2026-10-23",
+      "headline": true,
+      "source": "deprecations"
+    },
+    {
+      "id": "legacy-gpt-2026-07-23",
+      "title": "Legacy GPT snapshots shut down on 23 Jul 2026",
+      "announced": "2026-04-22",
+      "shutdown": "2026-07-23",
+      "headline": false,
+      "source": "deprecations"
+    },
+    {
+      "id": "legacy-gpt-2026-09-28",
+      "title": "Legacy GPT snapshots shut down on 28 Sep 2026",
+      "announced": "2025-09-26",
+      "shutdown": "2026-09-28",
+      "headline": false,
       "source": "deprecations"
     }
   ],
@@ -255,7 +316,9 @@
       "section": "2026-04-22: Legacy GPT model snapshots (23 Oct 2026)",
       "confidence": "confirmed",
       "kind": "snapshot",
-      "note": "Shuts down 23 Oct 2026, before the main deadline."
+      "note": "Shuts down 23 Oct 2026.",
+      "migration": "legacy-gpt-2026-10-23",
+      "source": "deprecations"
     },
     {
       "id": "gpt-4.1-nano",
@@ -265,7 +328,9 @@
       "confidence": "confirmed",
       "kind": "alias",
       "alias_of": "gpt-4.1-nano-2025-04-14",
-      "note": "Shuts down 23 Oct 2026, before the main deadline."
+      "note": "Shuts down 23 Oct 2026.",
+      "migration": "legacy-gpt-2026-10-23",
+      "source": "deprecations"
     },
     {
       "id": "gpt-4.1-nano-2025-04-14",
@@ -274,7 +339,9 @@
       "section": "2026-04-22: Legacy GPT model snapshots (23 Oct 2026)",
       "confidence": "confirmed",
       "kind": "snapshot",
-      "note": "Shuts down 23 Oct 2026, before the main deadline."
+      "note": "Shuts down 23 Oct 2026.",
+      "migration": "legacy-gpt-2026-10-23",
+      "source": "deprecations"
     },
     {
       "id": "gpt-4-turbo",
@@ -282,7 +349,9 @@
       "replacement": "gpt-5.6-sol",
       "section": "2026-04-22: Legacy GPT model snapshots (23 Oct 2026)",
       "confidence": "confirmed",
-      "kind": "alias"
+      "kind": "alias",
+      "migration": "legacy-gpt-2026-10-23",
+      "source": "deprecations"
     },
     {
       "id": "gpt-4-turbo-2024-04-09",
@@ -290,7 +359,9 @@
       "replacement": "gpt-5.6-sol",
       "section": "2026-04-22: Legacy GPT model snapshots (23 Oct 2026)",
       "confidence": "confirmed",
-      "kind": "snapshot"
+      "kind": "snapshot",
+      "migration": "legacy-gpt-2026-10-23",
+      "source": "deprecations"
     },
     {
       "id": "gpt-4",
@@ -299,7 +370,9 @@
       "section": "2026-04-22: Legacy GPT model snapshots (23 Oct 2026)",
       "confidence": "confirmed",
       "kind": "alias",
-      "alias_of": "gpt-4-0613"
+      "alias_of": "gpt-4-0613",
+      "migration": "legacy-gpt-2026-10-23",
+      "source": "deprecations"
     },
     {
       "id": "gpt-4-0613",
@@ -307,7 +380,9 @@
       "replacement": "gpt-5.6-sol",
       "section": "2026-04-22: Legacy GPT model snapshots (23 Oct 2026)",
       "confidence": "confirmed",
-      "kind": "snapshot"
+      "kind": "snapshot",
+      "migration": "legacy-gpt-2026-10-23",
+      "source": "deprecations"
     },
     {
       "id": "gpt-3.5-turbo",
@@ -316,7 +391,9 @@
       "section": "2026-04-22: Legacy GPT model snapshots (23 Oct 2026)",
       "confidence": "confirmed",
       "kind": "alias",
-      "alias_of": "gpt-3.5-turbo-0125"
+      "alias_of": "gpt-3.5-turbo-0125",
+      "migration": "legacy-gpt-2026-10-23",
+      "source": "deprecations"
     },
     {
       "id": "gpt-3.5-turbo-0125",
@@ -324,7 +401,9 @@
       "replacement": "gpt-5.6-terra",
       "section": "2026-04-22: Legacy GPT model snapshots (23 Oct 2026)",
       "confidence": "confirmed",
-      "kind": "snapshot"
+      "kind": "snapshot",
+      "migration": "legacy-gpt-2026-10-23",
+      "source": "deprecations"
     },
     {
       "id": "o1",
@@ -332,7 +411,9 @@
       "replacement": "gpt-5.6-sol",
       "section": "2026-04-22: Legacy GPT model snapshots (23 Oct 2026)",
       "confidence": "confirmed",
-      "kind": "alias"
+      "kind": "alias",
+      "migration": "legacy-gpt-2026-10-23",
+      "source": "deprecations"
     },
     {
       "id": "o1-2024-12-17",
@@ -340,7 +421,9 @@
       "replacement": "gpt-5.6-sol",
       "section": "2026-04-22: Legacy GPT model snapshots (23 Oct 2026)",
       "confidence": "confirmed",
-      "kind": "snapshot"
+      "kind": "snapshot",
+      "migration": "legacy-gpt-2026-10-23",
+      "source": "deprecations"
     },
     {
       "id": "o3-mini",
@@ -348,7 +431,9 @@
       "replacement": "gpt-5.6-sol",
       "section": "2026-04-22: Legacy GPT model snapshots (23 Oct 2026)",
       "confidence": "confirmed",
-      "kind": "alias"
+      "kind": "alias",
+      "migration": "legacy-gpt-2026-10-23",
+      "source": "deprecations"
     },
     {
       "id": "o3-mini-2025-01-31",
@@ -356,7 +441,9 @@
       "replacement": "gpt-5.6-sol",
       "section": "2026-04-22: Legacy GPT model snapshots (23 Oct 2026)",
       "confidence": "confirmed",
-      "kind": "snapshot"
+      "kind": "snapshot",
+      "migration": "legacy-gpt-2026-10-23",
+      "source": "deprecations"
     },
     {
       "id": "o4-mini",
@@ -364,7 +451,9 @@
       "replacement": "gpt-5.6-terra",
       "section": "2026-04-22: Legacy GPT model snapshots (23 Oct 2026)",
       "confidence": "confirmed",
-      "kind": "alias"
+      "kind": "alias",
+      "migration": "legacy-gpt-2026-10-23",
+      "source": "deprecations"
     },
     {
       "id": "o4-mini-2025-04-16",
@@ -372,7 +461,9 @@
       "replacement": "gpt-5.6-terra",
       "section": "2026-04-22: Legacy GPT model snapshots (23 Oct 2026)",
       "confidence": "confirmed",
-      "kind": "snapshot"
+      "kind": "snapshot",
+      "migration": "legacy-gpt-2026-10-23",
+      "source": "deprecations"
     },
     {
       "id": "o1-pro",
@@ -382,8 +473,10 @@
       "confidence": "confirmed",
       "kind": "alias",
       "alias_of": "o1-pro-2025-03-19",
-      "note": "OpenAI's recommended replacement is gpt-5.6-sol with `reasoning.mode: pro`; a plain name swap drops pro mode, so set it explicitly.",
-      "map_automatically": false
+      "note": "OpenAI's recommended replacement is gpt-5.6-sol with reasoning.mode set to pro. The reasoning guide documents reasoning.mode on the Responses API. A name-only swap would drop pro mode, so the id is not rewritten.",
+      "map_automatically": false,
+      "migration": "legacy-gpt-2026-10-23",
+      "source": "deprecations"
     },
     {
       "id": "o1-pro-2025-03-19",
@@ -392,8 +485,10 @@
       "section": "2026-04-22: Legacy GPT model snapshots (23 Oct 2026)",
       "confidence": "confirmed",
       "kind": "snapshot",
-      "note": "OpenAI's recommended replacement is gpt-5.6-sol with `reasoning.mode: pro`; a plain name swap drops pro mode, so set it explicitly.",
-      "map_automatically": false
+      "note": "OpenAI's recommended replacement is gpt-5.6-sol with reasoning.mode set to pro. The reasoning guide documents reasoning.mode on the Responses API. A name-only swap would drop pro mode, so the id is not rewritten.",
+      "map_automatically": false,
+      "migration": "legacy-gpt-2026-10-23",
+      "source": "deprecations"
     },
     {
       "id": "gpt-image-1",
@@ -402,7 +497,9 @@
       "section": "2026-04-22: Legacy GPT model snapshots (23 Oct 2026)",
       "confidence": "confirmed",
       "note": "Image model. Do not map to a text model.",
-      "map_automatically": false
+      "map_automatically": false,
+      "migration": "legacy-gpt-2026-10-23",
+      "source": "deprecations"
     },
     {
       "id": "gpt-4-1106-preview",
@@ -411,7 +508,9 @@
       "section": "2026-04-22: Legacy GPT model snapshots (23 Oct 2026)",
       "confidence": "confirmed",
       "kind": "snapshot",
-      "note": "Also listed in OpenAI's 26 Sep 2025 notice with a 26 Mar 2026 shutdown; the 22 Apr 2026 notice gives 23 Oct 2026."
+      "note": "Also listed in OpenAI's 26 Sep 2025 notice with a 26 Mar 2026 shutdown; the 22 Apr 2026 notice gives 23 Oct 2026.",
+      "migration": "legacy-gpt-2026-10-23",
+      "source": "deprecations"
     },
     {
       "id": "gpt-5-2025-08-07",
@@ -679,7 +778,10 @@
       "replacement": "gpt-5.6-terra",
       "section": "2026-04-22: Legacy GPT model snapshots (July 2026)",
       "confidence": "confirmed",
-      "note": "Already shut down."
+      "note": "Already shut down.",
+      "migration": "legacy-gpt-2026-07-23",
+      "map_automatically": false,
+      "source": "deprecations"
     },
     {
       "id": "gpt-4o-mini-search-preview-2025-03-11",
@@ -687,7 +789,312 @@
       "replacement": "gpt-5.6-terra",
       "section": "2026-04-22: Legacy GPT model snapshots (July 2026)",
       "confidence": "confirmed",
-      "note": "Already shut down."
+      "note": "Already shut down.",
+      "migration": "legacy-gpt-2026-07-23",
+      "map_automatically": false,
+      "source": "deprecations"
+    },
+    {
+      "id": "gpt-3.5-turbo-completions",
+      "shutdown": "2026-10-23",
+      "replacement": "gpt-5.6-terra",
+      "section": "2026-04-22: Legacy GPT model snapshots (23 Oct 2026)",
+      "kind": "alias",
+      "alias_of": "gpt-3.5-turbo-0125",
+      "migration": "legacy-gpt-2026-10-23",
+      "note": "Completions alias listed with gpt-3.5-turbo-0125 on the deprecations page.",
+      "confidence": "confirmed",
+      "source": "deprecations"
+    },
+    {
+      "id": "gpt-4-0613-completions",
+      "shutdown": "2026-10-23",
+      "replacement": "gpt-5.6-sol",
+      "section": "2026-04-22: Legacy GPT model snapshots (23 Oct 2026)",
+      "kind": "alias",
+      "alias_of": "gpt-4-0613",
+      "migration": "legacy-gpt-2026-10-23",
+      "note": "Completions alias listed with gpt-4-0613 on the deprecations page.",
+      "confidence": "confirmed",
+      "source": "deprecations"
+    },
+    {
+      "id": "gpt-4-completions",
+      "shutdown": "2026-10-23",
+      "replacement": "gpt-5.6-sol",
+      "section": "2026-04-22: Legacy GPT model snapshots (23 Oct 2026)",
+      "kind": "alias",
+      "alias_of": "gpt-4-0613",
+      "migration": "legacy-gpt-2026-10-23",
+      "note": "Completions alias listed with gpt-4-0613 on the deprecations page.",
+      "confidence": "confirmed",
+      "source": "deprecations"
+    },
+    {
+      "id": "gpt-4-turbo-completions",
+      "shutdown": "2026-10-23",
+      "replacement": "gpt-5.6-sol",
+      "section": "2026-04-22: Legacy GPT model snapshots (23 Oct 2026)",
+      "kind": "alias",
+      "alias_of": "gpt-4-turbo-2024-04-09",
+      "migration": "legacy-gpt-2026-10-23",
+      "note": "Completions alias listed with gpt-4-turbo on the deprecations page.",
+      "confidence": "confirmed",
+      "source": "deprecations"
+    },
+    {
+      "id": "ft-o4-mini-2025-04-16",
+      "shutdown": "2026-10-23",
+      "replacement": "gpt-5.6-terra",
+      "section": "2026-04-22: Legacy GPT model snapshots (23 Oct 2026)",
+      "kind": "snapshot",
+      "migration": "legacy-gpt-2026-10-23",
+      "map_automatically": false,
+      "note": "Fine-tuned id in the 23 Oct 2026 model table (not an ft: id). Not swapped.",
+      "confidence": "confirmed",
+      "source": "deprecations"
+    },
+    {
+      "id": "gpt-4o-mini-transcribe-2025-03-20",
+      "shutdown": "2027-01-20",
+      "replacement": "gpt-4o-mini-transcribe-2025-12-15",
+      "section": "2026-07-20: Legacy audio, realtime, and transcription models",
+      "kind": "snapshot",
+      "map_automatically": false,
+      "note": "Dated transcription snapshot. The 20 Jul 2026 notice retires it on 20 Jan 2027 in favour of gpt-4o-mini-transcribe-2025-12-15. The undated gpt-4o-mini-transcribe id is a different row (26 Feb 2027).",
+      "confidence": "confirmed",
+      "source": "deprecations"
+    },
+    {
+      "id": "computer-use-preview-2025-03-11",
+      "shutdown": "2026-07-23",
+      "replacement": "gpt-5.6-terra",
+      "section": "2026-04-22: Legacy GPT model snapshots (July 2026 shutdown)",
+      "kind": "snapshot",
+      "migration": "legacy-gpt-2026-07-23",
+      "map_automatically": false,
+      "note": "Already shut down.",
+      "confidence": "confirmed",
+      "source": "deprecations"
+    },
+    {
+      "id": "computer-use-preview",
+      "shutdown": "2026-07-23",
+      "replacement": "gpt-5.6-terra",
+      "section": "2026-04-22: Legacy GPT model snapshots (July 2026 shutdown)",
+      "kind": "alias",
+      "alias_of": "computer-use-preview-2025-03-11",
+      "migration": "legacy-gpt-2026-07-23",
+      "map_automatically": false,
+      "note": "Already shut down.",
+      "confidence": "confirmed",
+      "source": "deprecations"
+    },
+    {
+      "id": "gpt-5-chat-latest",
+      "shutdown": "2026-07-23",
+      "replacement": "gpt-5.6-sol",
+      "section": "2026-04-22: Legacy GPT model snapshots (July 2026 shutdown)",
+      "kind": "snapshot",
+      "migration": "legacy-gpt-2026-07-23",
+      "map_automatically": false,
+      "note": "Already shut down.",
+      "confidence": "confirmed",
+      "source": "deprecations"
+    },
+    {
+      "id": "gpt-5-codex",
+      "shutdown": "2026-07-23",
+      "replacement": "gpt-5.6-sol",
+      "section": "2026-04-22: Legacy GPT model snapshots (July 2026 shutdown)",
+      "kind": "snapshot",
+      "migration": "legacy-gpt-2026-07-23",
+      "map_automatically": false,
+      "note": "Already shut down.",
+      "confidence": "confirmed",
+      "source": "deprecations"
+    },
+    {
+      "id": "gpt-5.1-chat-latest",
+      "shutdown": "2026-07-23",
+      "replacement": "gpt-5.6-sol",
+      "section": "2026-04-22: Legacy GPT model snapshots (July 2026 shutdown)",
+      "kind": "snapshot",
+      "migration": "legacy-gpt-2026-07-23",
+      "map_automatically": false,
+      "note": "Already shut down.",
+      "confidence": "confirmed",
+      "source": "deprecations"
+    },
+    {
+      "id": "gpt-5.1-codex",
+      "shutdown": "2026-07-23",
+      "replacement": "gpt-5.6-sol",
+      "section": "2026-04-22: Legacy GPT model snapshots (July 2026 shutdown)",
+      "kind": "snapshot",
+      "migration": "legacy-gpt-2026-07-23",
+      "map_automatically": false,
+      "note": "Already shut down.",
+      "confidence": "confirmed",
+      "source": "deprecations"
+    },
+    {
+      "id": "gpt-5.1-codex-max",
+      "shutdown": "2026-07-23",
+      "replacement": "gpt-5.6-sol",
+      "section": "2026-04-22: Legacy GPT model snapshots (July 2026 shutdown)",
+      "kind": "snapshot",
+      "migration": "legacy-gpt-2026-07-23",
+      "map_automatically": false,
+      "note": "Already shut down.",
+      "confidence": "confirmed",
+      "source": "deprecations"
+    },
+    {
+      "id": "gpt-5.1-codex-mini",
+      "shutdown": "2026-07-23",
+      "replacement": "gpt-5.6-terra",
+      "section": "2026-04-22: Legacy GPT model snapshots (July 2026 shutdown)",
+      "kind": "snapshot",
+      "migration": "legacy-gpt-2026-07-23",
+      "map_automatically": false,
+      "note": "Already shut down.",
+      "confidence": "confirmed",
+      "source": "deprecations"
+    },
+    {
+      "id": "gpt-audio-mini-2025-10-06",
+      "shutdown": "2026-07-23",
+      "replacement": "gpt-audio-1.5",
+      "section": "2026-04-22: Legacy GPT model snapshots (July 2026 shutdown)",
+      "kind": "snapshot",
+      "migration": "legacy-gpt-2026-07-23",
+      "map_automatically": false,
+      "note": "Already shut down. This dated snapshot is not the gpt-audio-mini family that retires on 20 Jan 2027.",
+      "confidence": "confirmed",
+      "source": "deprecations"
+    },
+    {
+      "id": "gpt-realtime-mini-2025-10-06",
+      "shutdown": "2026-07-23",
+      "replacement": "gpt-realtime-2.1-mini",
+      "section": "2026-04-22: Legacy GPT model snapshots (July 2026 shutdown)",
+      "kind": "snapshot",
+      "migration": "legacy-gpt-2026-07-23",
+      "map_automatically": false,
+      "note": "Already shut down. This dated snapshot is not the gpt-realtime-mini family that retires on 20 Jan 2027.",
+      "confidence": "confirmed",
+      "source": "deprecations"
+    },
+    {
+      "id": "o3-deep-research-2025-06-26",
+      "shutdown": "2026-07-23",
+      "replacement": "gpt-5.6-sol",
+      "section": "2026-04-22: Legacy GPT model snapshots (July 2026 shutdown)",
+      "kind": "snapshot",
+      "migration": "legacy-gpt-2026-07-23",
+      "map_automatically": false,
+      "note": "Already shut down.",
+      "confidence": "confirmed",
+      "source": "deprecations"
+    },
+    {
+      "id": "o3-deep-research",
+      "shutdown": "2026-07-23",
+      "replacement": "gpt-5.6-sol",
+      "section": "2026-04-22: Legacy GPT model snapshots (July 2026 shutdown)",
+      "kind": "alias",
+      "alias_of": "o3-deep-research-2025-06-26",
+      "migration": "legacy-gpt-2026-07-23",
+      "map_automatically": false,
+      "note": "Already shut down.",
+      "confidence": "confirmed",
+      "source": "deprecations"
+    },
+    {
+      "id": "o4-mini-deep-research-2025-06-26",
+      "shutdown": "2026-07-23",
+      "replacement": "gpt-5.6-sol",
+      "section": "2026-04-22: Legacy GPT model snapshots (July 2026 shutdown)",
+      "kind": "snapshot",
+      "migration": "legacy-gpt-2026-07-23",
+      "map_automatically": false,
+      "note": "Already shut down.",
+      "confidence": "confirmed",
+      "source": "deprecations"
+    },
+    {
+      "id": "o4-mini-deep-research",
+      "shutdown": "2026-07-23",
+      "replacement": "gpt-5.6-sol",
+      "section": "2026-04-22: Legacy GPT model snapshots (July 2026 shutdown)",
+      "kind": "alias",
+      "alias_of": "o4-mini-deep-research-2025-06-26",
+      "migration": "legacy-gpt-2026-07-23",
+      "map_automatically": false,
+      "note": "Already shut down.",
+      "confidence": "confirmed",
+      "source": "deprecations"
+    },
+    {
+      "id": "gpt-5.2-codex",
+      "shutdown": "2026-07-23",
+      "replacement": "gpt-5.6-sol",
+      "section": "2026-04-22: Legacy GPT model snapshots (July 2026 shutdown)",
+      "kind": "snapshot",
+      "migration": "legacy-gpt-2026-07-23",
+      "map_automatically": false,
+      "note": "Already shut down.",
+      "confidence": "confirmed",
+      "source": "deprecations"
+    },
+    {
+      "id": "gpt-3.5-turbo-instruct",
+      "shutdown": "2026-09-28",
+      "replacement": "gpt-5.6-terra",
+      "section": "2025-09-26: Legacy GPT model snapshots",
+      "kind": "snapshot",
+      "migration": "legacy-gpt-2026-09-28",
+      "map_automatically": false,
+      "note": "Already shut down.",
+      "confidence": "confirmed",
+      "source": "deprecations"
+    },
+    {
+      "id": "babbage-002",
+      "shutdown": "2026-09-28",
+      "replacement": "gpt-5.6-terra",
+      "section": "2025-09-26: Legacy GPT model snapshots",
+      "kind": "snapshot",
+      "migration": "legacy-gpt-2026-09-28",
+      "map_automatically": false,
+      "note": "Already shut down. Fine-tunes of this base are a separate row and shut down on 23 Oct 2026.",
+      "confidence": "confirmed",
+      "source": "deprecations"
+    },
+    {
+      "id": "davinci-002",
+      "shutdown": "2026-09-28",
+      "replacement": "gpt-5.6-terra",
+      "section": "2025-09-26: Legacy GPT model snapshots",
+      "kind": "snapshot",
+      "migration": "legacy-gpt-2026-09-28",
+      "map_automatically": false,
+      "note": "Already shut down. Fine-tunes of this base are a separate row and shut down on 23 Oct 2026.",
+      "confidence": "confirmed",
+      "source": "deprecations"
+    },
+    {
+      "id": "gpt-3.5-turbo-1106",
+      "shutdown": "2026-09-28",
+      "replacement": "gpt-5.6-terra",
+      "section": "2025-09-26: Legacy GPT model snapshots",
+      "kind": "snapshot",
+      "migration": "legacy-gpt-2026-09-28",
+      "map_automatically": false,
+      "note": "Already shut down.",
+      "confidence": "confirmed",
+      "source": "deprecations"
     }
   ],
   "signals": [
@@ -894,6 +1301,31 @@
           ],
           "reasoning.effort": [
             "none"
+          ]
+        }
+      }
+    },
+    {
+      "id": "reasoning_effort_max",
+      "languages": [
+        "python",
+        "javascript",
+        "typescript",
+        "yaml",
+        "json",
+        "toml",
+        "ini",
+        "env"
+      ],
+      "pattern": "reasoning_effort[\"']?\\s*[:=]\\s*[\"']max[\"']|effort[\"']?\\s*[:=]\\s*[\"']max[\"']",
+      "description": "reasoning effort set to max, which gpt-5.6 rejects",
+      "call": {
+        "param_values": {
+          "reasoning_effort": [
+            "max"
+          ],
+          "reasoning.effort": [
+            "max"
           ]
         }
       }
@@ -1162,6 +1594,240 @@
       "risk": "info",
       "confidence": "inferred",
       "message": "LangChain: check how your langchain-openai version maps `max_tokens` before relying on the rename; not verified by us."
+    },
+    {
+      "id": "gpt56-max-tokens",
+      "type": "param_renamed",
+      "applies_to": {
+        "replacements": [
+          "gpt-5.6-luna",
+          "gpt-5.6-sol",
+          "gpt-5.6-terra"
+        ]
+      },
+      "when_any": [
+        "max_tokens"
+      ],
+      "param": "max_tokens",
+      "new_param": "max_completion_tokens",
+      "risk": "high",
+      "confidence": "live-tested",
+      "evidence": "probes/probe_56-result.json, live 16 Oct 2026. gpt-5.6-luna, gpt-5.6-sol and gpt-5.6-terra on Chat Completions all behave the same way. max_tokens=16 is HTTP 400 unsupported_parameter at reasoning_effort none and at the omitted default ('Use max_completion_tokens instead'). max_completion_tokens=16 is HTTP 200 at both. The Responses API was not called.",
+      "message": "Uses `max_tokens`: gpt-5.6-luna, gpt-5.6-sol and gpt-5.6-terra reject it on Chat Completions with HTTP 400. Rename to `max_completion_tokens`.",
+      "fix": {
+        "action": "rename_param",
+        "from": "max_tokens",
+        "to": {
+          "chat_completions": "max_completion_tokens"
+        },
+        "requires_new_model": true,
+        "requires_new_model_evidence": "Applied only together with the switch onto gpt-5.6-luna, gpt-5.6-sol or gpt-5.6-terra (or when the call is already on one of those). The 23 Oct 2026 source models were not live-tested for max_completion_tokens. Calls that stay on the old id, including o1-pro, are flagged and left unchanged. probes/probe_56-result.json.",
+        "scope": "Chat Completions calls that pass max_tokens",
+        "note": "Responses calls that pass max_tokens are flagged, not renamed to max_output_tokens: the probe did not call the Responses API."
+      }
+    },
+    {
+      "id": "gpt56-sampling",
+      "type": "param_conditional",
+      "applies_to": {
+        "replacements": [
+          "gpt-5.6-luna",
+          "gpt-5.6-sol",
+          "gpt-5.6-terra"
+        ]
+      },
+      "when_any": [
+        "sampling_params"
+      ],
+      "unless_any": [
+        "reasoning_effort_none"
+      ],
+      "risk": "high",
+      "confidence": "live-tested",
+      "evidence": "probes/probe_56-result.json, live 16 Oct 2026. gpt-5.6-luna, gpt-5.6-sol and gpt-5.6-terra on Chat Completions all behave the same way. temperature=0.2, top_p=0.9 and logprobs are HTTP 400 at low, medium, high and xhigh, and HTTP 200 at reasoning_effort none. temperature=1 is HTTP 200 at none and at the omitted default. The Responses API was not called.",
+      "message": "Sets temperature/top_p/logprobs: gpt-5.6-luna, gpt-5.6-sol and gpt-5.6-terra accept these on Chat Completions only with reasoning_effort 'none'. At other efforts temperature must be 1, and top_p and logprobs return HTTP 400.",
+      "fix": {
+        "action": "set_param",
+        "per_endpoint": {
+          "chat_completions": {
+            "param": "reasoning_effort",
+            "value": "none"
+          }
+        },
+        "scope": "Chat Completions calls that set temperature (other than 1), top_p or logprobs",
+        "alternative": "remove temperature/top_p/logprobs/top_logprobs and keep the default reasoning effort",
+        "requires_new_model": true,
+        "requires_new_model_evidence": "reasoning_effort is set only in the same change as the switch onto gpt-5.6-luna, gpt-5.6-sol or gpt-5.6-terra. GPT-4o and GPT-4.1 reject reasoning_effort (live-tested 15 Oct 2026, probes/params3-result.json), so the setting must not land on the old model. probes/probe_56-result.json.",
+        "note": "Responses calls that set these parameters are flagged, not given reasoning.effort: the probe did not call the Responses API."
+      }
+    },
+    {
+      "id": "gpt56-chat-tools",
+      "type": "tool_calling",
+      "applies_to": {
+        "replacements": [
+          "gpt-5.6-luna",
+          "gpt-5.6-sol",
+          "gpt-5.6-terra"
+        ]
+      },
+      "when_all": [
+        "chat_completions",
+        "tools"
+      ],
+      "unless_any": [
+        "reasoning_effort_none"
+      ],
+      "risk": "high",
+      "confidence": "live-tested",
+      "evidence": "probes/probe_56-result.json, live 16 Oct 2026. gpt-5.6-luna, gpt-5.6-sol and gpt-5.6-terra on Chat Completions all behave the same way. Function tools are HTTP 400 at the omitted default and at low, medium, high and xhigh ('use /v1/responses or set reasoning_effort to none'). reasoning_effort none is HTTP 200. The Responses API was not called.",
+      "message": "Chat Completions + tools: gpt-5.6-luna, gpt-5.6-sol and gpt-5.6-terra return HTTP 400 for function tools unless reasoning_effort is 'none'. The omitted default fails too. Set it, or move to the Responses API.",
+      "fix": {
+        "action": "set_param",
+        "per_endpoint": {
+          "chat_completions": {
+            "param": "reasoning_effort",
+            "value": "none"
+          }
+        },
+        "scope": "Chat Completions calls that pass tools",
+        "alternative": "move the call to the Responses API (the error text says tools work there; that path was not probed)",
+        "requires_new_model": true,
+        "requires_new_model_evidence": "reasoning_effort is set only in the same change as the switch onto gpt-5.6-luna, gpt-5.6-sol or gpt-5.6-terra. GPT-4o and GPT-4.1 reject reasoning_effort (live-tested 15 Oct 2026, probes/params3-result.json). probes/probe_56-result.json."
+      }
+    },
+    {
+      "id": "gpt56-effort-max",
+      "type": "param_conditional",
+      "applies_to": {
+        "replacements": [
+          "gpt-5.6-luna",
+          "gpt-5.6-sol",
+          "gpt-5.6-terra"
+        ]
+      },
+      "when_any": [
+        "reasoning_effort_max"
+      ],
+      "risk": "high",
+      "confidence": "live-tested",
+      "evidence": "probes/probe_56-result.json, live 16 Oct 2026. gpt-5.6-luna, gpt-5.6-sol and gpt-5.6-terra on Chat Completions all behave the same way. reasoning_effort 'max' is HTTP 400 unsupported_value. The error lists supported values none, low, medium, high and xhigh. The model pages list max; the API rejects it.",
+      "message": "reasoning_effort 'max' is rejected by gpt-5.6-luna, gpt-5.6-sol and gpt-5.6-terra (HTTP 400). Supported values are none, low, medium, high and xhigh.",
+      "fix": {
+        "action": "manual",
+        "note": "Left reasoning_effort 'max' in place. The probe shows it is rejected. Pick none, low, medium, high or xhigh; the fixer does not guess a substitute."
+      }
+    },
+    {
+      "id": "gpt56-legacy-functions",
+      "type": "tool_calling",
+      "applies_to": {
+        "replacements": [
+          "gpt-5.6-luna",
+          "gpt-5.6-sol",
+          "gpt-5.6-terra"
+        ]
+      },
+      "when_any": [
+        "legacy_functions"
+      ],
+      "risk": "medium",
+      "confidence": "inferred",
+      "evidence": "gpt-5.6-luna, gpt-5.6-sol and gpt-5.6-terra model pages (https://developers.openai.com/api/docs/models/gpt-5.6-luna, gpt-5.6-sol, gpt-5.6-terra), checked 2026-10-16. Legacy functions and function_call are not mentioned.",
+      "message": "Uses legacy `functions` or `function_call`. Not rewritten: the gpt-5.6 model pages do not say whether those parameters are accepted.",
+      "fix": {
+        "action": "manual",
+        "note": "Left `functions` / `function_call` in place. The model page does not document a rewrite to `tools`."
+      }
+    },
+    {
+      "id": "gpt56-structured",
+      "type": "info",
+      "applies_to": {
+        "replacements": [
+          "gpt-5.6-luna",
+          "gpt-5.6-sol",
+          "gpt-5.6-terra"
+        ]
+      },
+      "when_any": [
+        "structured_output"
+      ],
+      "risk": "info",
+      "confidence": "confirmed",
+      "evidence": "gpt-5.6-luna, gpt-5.6-sol and gpt-5.6-terra model pages (https://developers.openai.com/api/docs/models/gpt-5.6-luna, gpt-5.6-sol, gpt-5.6-terra), checked 2026-10-16. Supported features include structured_outputs.",
+      "message": "Structured output: the gpt-5.6-luna, gpt-5.6-sol and gpt-5.6-terra model pages list structured_outputs as supported. Verify schemas with `eval`."
+    },
+    {
+      "id": "gpt56-assistants",
+      "type": "endpoint",
+      "applies_to": {
+        "replacements": [
+          "gpt-5.6-luna",
+          "gpt-5.6-sol",
+          "gpt-5.6-terra"
+        ]
+      },
+      "when_any": [
+        "assistants_api"
+      ],
+      "risk": "high",
+      "confidence": "confirmed",
+      "evidence": "gpt-5.6-luna, gpt-5.6-sol and gpt-5.6-terra model pages (https://developers.openai.com/api/docs/models/gpt-5.6-luna, gpt-5.6-sol, gpt-5.6-terra), checked 2026-10-16. Endpoint table: Assistants `v1/assistants` is Not supported.",
+      "message": "Assistants API: gpt-5.6-luna, gpt-5.6-sol and gpt-5.6-terra do not support it (model page endpoint table). The Assistants API shut down on 26 Aug 2026.",
+      "fix": {
+        "action": "move_endpoint",
+        "to": "responses_api",
+        "note": "The Assistants API has shut down; these replacement models do not support it. Port the call before changing the model.",
+        "keep_model": true
+      }
+    },
+    {
+      "id": "gpt56-legacy-completions",
+      "type": "endpoint",
+      "applies_to": {
+        "replacements": [
+          "gpt-5.6-luna",
+          "gpt-5.6-sol",
+          "gpt-5.6-terra"
+        ]
+      },
+      "when_any": [
+        "legacy_completions"
+      ],
+      "risk": "high",
+      "confidence": "confirmed",
+      "evidence": "gpt-5.6-luna, gpt-5.6-sol and gpt-5.6-terra model pages (https://developers.openai.com/api/docs/models/gpt-5.6-luna, gpt-5.6-sol, gpt-5.6-terra), checked 2026-10-16. Endpoint table: Completions (legacy) `v1/completions` is Not supported.",
+      "message": "Legacy /v1/completions: gpt-5.6-luna, gpt-5.6-sol and gpt-5.6-terra do not support it (model page endpoint table).",
+      "fix": {
+        "action": "move_endpoint",
+        "to": "responses_api",
+        "note": "Move prompt-completion calls off legacy /v1/completions. These replacement models do not support that endpoint.",
+        "keep_model": true
+      }
+    },
+    {
+      "id": "gpt56-fine-tuning-jobs",
+      "type": "endpoint",
+      "applies_to": {
+        "replacements": [
+          "gpt-5.6-luna",
+          "gpt-5.6-sol",
+          "gpt-5.6-terra"
+        ]
+      },
+      "when_any": [
+        "fine_tuning_jobs"
+      ],
+      "risk": "high",
+      "confidence": "confirmed",
+      "evidence": "gpt-5.6-luna, gpt-5.6-sol and gpt-5.6-terra model pages (https://developers.openai.com/api/docs/models/gpt-5.6-luna, gpt-5.6-sol, gpt-5.6-terra), checked 2026-10-16. Endpoint table: Fine-tuning `v1/fine-tuning` is Not supported.",
+      "message": "Creates fine-tuning jobs: gpt-5.6-luna, gpt-5.6-sol and gpt-5.6-terra cannot be fine-tuned (model page endpoint table).",
+      "fix": {
+        "action": "manual",
+        "note": "These replacement models cannot be fine-tuned. Keep a fine-tunable model or replace the job with prompting validated by eval.",
+        "keep_model": true
+      }
     }
   ],
   "risk_policy": {
@@ -1189,6 +1855,96 @@
         },
         "why": "Chat Completions function tools and temperature/top_p need reasoning_effort 'none' on gpt-6-luna (live-tested 15 Oct 2026)."
       }
+    },
+    "gpt-5.6-luna": {
+      "fine_tuning": false,
+      "structured_outputs": true,
+      "function_calling": true,
+      "chat_completions": true,
+      "responses": true,
+      "assistants": false,
+      "completions_legacy": false,
+      "context_window": 1050000,
+      "max_output_tokens": 128000,
+      "reasoning_effort": [
+        "none",
+        "low",
+        "medium",
+        "high",
+        "xhigh"
+      ],
+      "reasoning_effort_default": "medium",
+      "price_usd_per_1m": {
+        "input": 0.2,
+        "output": 1.2
+      },
+      "source": "gpt-5.6-luna",
+      "eval": {
+        "model_params": {
+          "reasoning_effort": "none"
+        },
+        "why": "Chat Completions function tools, and temperature other than 1, top_p and logprobs, need reasoning_effort 'none' (probes/probe_56-result.json, 16 Oct 2026). Responses was not probed."
+      }
+    },
+    "gpt-5.6-terra": {
+      "fine_tuning": false,
+      "structured_outputs": true,
+      "function_calling": true,
+      "chat_completions": true,
+      "responses": true,
+      "assistants": false,
+      "completions_legacy": false,
+      "context_window": 1050000,
+      "max_output_tokens": 128000,
+      "reasoning_effort": [
+        "none",
+        "low",
+        "medium",
+        "high",
+        "xhigh"
+      ],
+      "reasoning_effort_default": "medium",
+      "price_usd_per_1m": {
+        "input": 2,
+        "output": 12
+      },
+      "source": "gpt-5.6-terra",
+      "eval": {
+        "model_params": {
+          "reasoning_effort": "none"
+        },
+        "why": "Chat Completions function tools, and temperature other than 1, top_p and logprobs, need reasoning_effort 'none' (probes/probe_56-result.json, 16 Oct 2026). Responses was not probed."
+      }
+    },
+    "gpt-5.6-sol": {
+      "fine_tuning": false,
+      "structured_outputs": true,
+      "function_calling": true,
+      "chat_completions": true,
+      "responses": true,
+      "assistants": false,
+      "completions_legacy": false,
+      "context_window": 1050000,
+      "max_output_tokens": 128000,
+      "reasoning_effort": [
+        "none",
+        "low",
+        "medium",
+        "high",
+        "xhigh"
+      ],
+      "reasoning_effort_default": "medium",
+      "price_usd_per_1m": {
+        "input": 4,
+        "output": 20
+      },
+      "source": "gpt-5.6-sol",
+      "eval": {
+        "model_params": {
+          "reasoning_effort": "none"
+        },
+        "why": "Chat Completions function tools, and temperature other than 1, top_p and logprobs, need reasoning_effort 'none' (probes/probe_56-result.json, 16 Oct 2026). Responses was not probed."
+      }
     }
   },
   "facts": {
@@ -1199,25 +1955,36 @@
       "gpt-6-luna does not support fine-tuning. From 6 Jan 2027, active existing customers can no longer create new fine-tuning jobs.",
       "gpt-6-luna supports Chat Completions, Responses, Batch, structured outputs and function calling; on Chat Completions, function calling works only with reasoning_effort set to 'none'.",
       "gpt-6-luna does not support the Assistants API or legacy /v1/completions.",
-      "OpenAI documents a shutdown_date field on GET /v1/models (not yet filled in for this batch; see the live checks)."
+      "OpenAI documents a shutdown_date field on GET /v1/models (not yet filled in for this batch; see the live checks).",
+      "On 23 Oct 2026 OpenAI shuts down gpt-4.1-nano and gpt-4.1-nano-2025-04-14 (substitute gpt-5.6-luna); gpt-4o-2024-05-13, gpt-4, gpt-4-0613, gpt-4-turbo, gpt-4-turbo-2024-04-09, gpt-4-1106-preview, o1, o1-2024-12-17, o3-mini and o3-mini-2025-01-31 (substitute gpt-5.6-sol); and gpt-3.5-turbo, gpt-3.5-turbo-0125, o4-mini and o4-mini-2025-04-16 (substitute gpt-5.6-terra). Completions aliases on the same rows (gpt-3.5-turbo-completions, gpt-4-completions, gpt-4-0613-completions, gpt-4-turbo-completions) use the same substitutes.",
+      "o1-pro and o1-pro-2025-03-19 shut down on 23 Oct 2026. The documented substitute is gpt-5.6-sol with reasoning.mode set to pro, so the id is not swapped on its own.",
+      "gpt-image-1 shuts down on 23 Oct 2026. The documented substitutes are gpt-image-2.5-sunburst or gpt-image-2.5-flare. Image models and fine-tunes are not rewritten.",
+      "gpt-5.6-luna, gpt-5.6-sol and gpt-5.6-terra model pages list Chat Completions, Responses and Batch as supported, and Assistants, legacy Completions and fine-tuning as not supported. The pages list reasoning.effort max; the live check rejects it. function_calling and structured_outputs are supported features. The pages do not state the Chat Completions parameter rules; those come from probes/probe_56-result.json.",
+      "gpt-3.5-turbo-instruct, babbage-002, davinci-002 and gpt-3.5-turbo-1106 shut down on 28 Sep 2026. The documented substitute for each is gpt-5.6-terra.",
+      "The 23 Jul 2026 shutdown includes computer-use-preview, computer-use-preview-2025-03-11, gpt-5-chat-latest, gpt-5-codex, gpt-5.1-chat-latest, gpt-5.1-codex, gpt-5.1-codex-max, gpt-5.1-codex-mini, gpt-5.2-codex, gpt-4o-search-preview-2025-03-11, gpt-4o-mini-search-preview-2025-03-11, gpt-audio-mini-2025-10-06, gpt-realtime-mini-2025-10-06, o3-deep-research, o3-deep-research-2025-06-26, o4-mini-deep-research and o4-mini-deep-research-2025-06-26. Substitutes are on each model entry.",
+      "gpt-4o-mini-transcribe-2025-03-20 shuts down on 20 Jan 2027. The documented substitute is gpt-4o-mini-transcribe-2025-12-15."
     ],
-    "live_checked_on": "2026-10-15",
+    "live_checked_on": "2026-10-16",
     "live": [
       "gpt-6-luna rejects `max_tokens` (400 unsupported_parameter, at every reasoning effort). Use `max_completion_tokens` (Chat Completions) or `max_output_tokens` (Responses). `max_completion_tokens` also works on gpt-4o-2024-08-06.",
       "gpt-6-luna accepts temperature, top_p and logprobs only with reasoning_effort 'none'. At the default and 'low' effort, temperature is accepted only at 1, and top_p and logprobs are rejected. On the Responses API, temperature and top_p work with reasoning.effort 'none' and are rejected at the default effort.",
       "Chat Completions + function tools on gpt-6-luna returns 400 unless reasoning_effort is 'none' ('low' and the default both fail). Function tools on the Responses API work at the default effort.",
       "Undated aliases still resolve: gpt-4o -> gpt-4o-2024-08-06, gpt-4o-mini -> gpt-4o-mini-2024-07-18, gpt-4.1 -> gpt-4.1-2025-04-14, gpt-4.1-mini -> gpt-4.1-mini-2025-04-14.",
       "GET /v1/models shows shutdown_date null for all nine GPT-4o / 4.1 ids and for gpt-6-luna; the 14 Jan 2027 date isn't in the API yet. Earlier batches are populated (e.g. gpt-4.1-nano and gpt-4o-2024-05-13 show 2026-10-23).",
-      "GPT-4o / GPT-4.1 models reject reasoning_effort (Chat: 'Unrecognized request argument', Responses: reasoning.effort unsupported), so adding reasoning_effort must ship in the same deploy as the model swap (live-tested 15 Oct 2026)."
+      "GPT-4o / GPT-4.1 models reject reasoning_effort (Chat: 'Unrecognized request argument', Responses: reasoning.effort unsupported), so adding reasoning_effort must ship in the same deploy as the model swap (live-tested 15 Oct 2026).",
+      "On Chat Completions, gpt-5.6-luna, gpt-5.6-sol and gpt-5.6-terra match gpt-6-luna (probes/probe_56-result.json, 16 Oct 2026): max_tokens is rejected at every probed effort (use max_completion_tokens); temperature other than 1, top_p and logprobs are rejected unless reasoning_effort is 'none', while temperature=1 is accepted at the default; function tools are rejected at every effort except 'none', including when reasoning_effort is omitted; reasoning_effort 'max' is rejected. Supported values are none, low, medium, high and xhigh."
     ],
     "unconfirmed": [
       "Whether the undated aliases (gpt-4o, gpt-4o-mini, gpt-4.1, gpt-4.1-mini) are retired or re-pointed on 14 Jan 2027. Today they resolve to dated snapshots that are on the shutdown list, so we treat them as affected.",
-      "Output quality, latency and cost on your own workload. Only a regression eval can show that."
+      "Output quality, latency and cost on your own workload. Only a regression eval can show that.",
+      "Responses API behaviour for gpt-5.6-luna, gpt-5.6-sol and gpt-5.6-terra (max_output_tokens, reasoning.effort, and tools without reasoning_effort none). probes/probe_56-result.json covers Chat Completions only, so those calls are flagged.",
+      "Whether the model pages' reasoning.effort value 'max' will start working. The API rejected it on 16 Oct 2026 for all three gpt-5.6 replacements."
     ]
   },
   "report": {
     "next_steps": [
       "Scan: confirm the findings, including environment variables set outside the repo.",
+      "23 Oct 2026 models: the patch renames the chat and reasoning ids and, in the same change, renames Chat Completions `max_tokens` to `max_completion_tokens` and sets `reasoning_effort` to \"none\" where that call uses temperature (other than 1), top_p, logprobs or tools. Source: probes/probe_56-result.json (16 Oct 2026). Responses calls that pass those parameters are flagged. reasoning_effort 'max' is flagged and left in place. o1-pro, gpt-image-1, fine-tunes, Assistants, legacy Completions, audio and already-shut-down models are left unchanged.",
       "Swap: review and apply the patch on a branch. Then rename `max_tokens` to `max_completion_tokens`, and add `reasoning_effort: \"none\"` where Chat Completions uses tools or temperature/top_p (or move those calls to the Responses API).",
       "Eval: run the regression suite against live models and fix any DRIFT or FAIL.",
       "Handoff: merge, deploy, update environment variables, and check your API usage for any remaining calls to GPT-4o / 4.1 models. GET /v1/models doesn't show the 14 Jan 2027 date yet, so don't rely on shutdown_date alone."

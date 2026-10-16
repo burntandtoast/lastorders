@@ -115,7 +115,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: burntandtoast/lastorders@v0     # available once the repo is published
+      - uses: burntandtoast/lastorders@v0.4.4
         with:
           fail-on-high: "true"
 ```
@@ -146,10 +146,10 @@ holds the model IDs and aliases, shutdown dates, replacements, call-site pattern
 rules. Every fact links to the provider's documentation and the date we checked it. Rules we confirmed
 against the live API are marked `live-tested`, and anything we assumed is marked `inferred`.
 
-- **OpenAI**: full pack
+- **OpenAI**: full pack. The default mapping swaps the 14 Jan 2027 GPT-4o / GPT-4.1 batch to `gpt-6-luna`, and the 23 Oct 2026 chat and reasoning models to `gpt-5.6-luna`, `gpt-5.6-sol` or `gpt-5.6-terra`. For those three replacements, live-tested on 16 Oct 2026 (`probes/probe_56-result.json`), the paid `fix` renames Chat Completions `max_tokens` to `max_completion_tokens` and sets `reasoning_effort` to `none` where the call uses temperature (other than 1), `top_p`, `logprobs` or tools, in the same change as the model switch. Responses calls with those parameters are flagged. `reasoning_effort` `max` is flagged. `o1-pro` (the documented substitute is `gpt-5.6-sol` with `reasoning.mode: pro`), `gpt-image-1` and fine-tunes are flagged, not rewritten. Models that have already shut down, including the 28 Sep 2026 batch and the 23 Jul 2026 batch, are reported as already retired.
 - **Anthropic**: preview (stub). It covers Claude API retirement dates from Anthropic's deprecations page.
   Amazon Bedrock and Google Cloud dates for Claude are not covered.
-- **Google**: Vertex AI only, and flag-only. `gemini-2.5-pro`, `gemini-2.5-flash` and `gemini-2.5-flash-lite` retire on Vertex on 20 Oct 2026. The scan marks them high risk only when that file is using Vertex; on the Gemini API the same IDs are not deprecated, so the finding stays informational. Nothing is rewritten automatically.
+- **Google**: Vertex AI only, and flag-only. `gemini-2.5-pro`, `gemini-2.5-flash` and `gemini-2.5-flash-lite` retire on Vertex on 20 Oct 2026. `gemini-live-2.5-flash-native-audio` retires on 13 Dec 2026; the model versions table lists no replacement ID. `gemini-2.5-flash-image` retires on 15 Mar 2027; the table lists `gemini-3.1-flash-lite-image`. A Vertex retirement is high risk only when that file is using Vertex and the shutdown is within 30 days or already past. On the Gemini API the same IDs are not treated as this retirement, so the finding stays informational. Nothing is rewritten automatically.
 - Azure OpenAI and Bedrock: planned
 
 The tool checks for a newer pack once a day and falls back to the copy bundled with the package.

@@ -71,13 +71,15 @@ Clients only download index entries whose `provider` is one they already bundle 
 
 ## Google (Vertex AI)
 
-`google` covers three stable IDs that Vertex AI retires on 20 Oct 2026. Facts are from the [model versions](https://cloud.google.com/vertex-ai/generative-ai/docs/learn/model-versions) table (checked 16 Oct 2026). That page lists no `-001`, dated, or preview ID for these models. The same stable IDs have no shutdown date on the [Gemini API](https://ai.google.dev/gemini-api/docs/deprecations).
+`google` covers Vertex AI retirements. Facts are from the [model versions](https://cloud.google.com/vertex-ai/generative-ai/docs/learn/model-versions) table (checked 16 Oct 2026). That page lists no `-001`, dated, or preview ID for the three 20 Oct models. The same three stable IDs have no shutdown date on the [Gemini API](https://ai.google.dev/gemini-api/docs/deprecations).
 
 | Model ID | Vertex retirement | Suggested replacement | Also listed |
 |---|---|---|---|
 | `gemini-2.5-pro` | 2026-10-20 | `gemini-3.8-flash` | `gemini-3.5-flash` |
 | `gemini-2.5-flash` | 2026-10-20 | `gemini-3.8-flash` | `gemini-3.5-flash-lite`, `gemini-3.1-flash-lite` |
 | `gemini-2.5-flash-lite` | 2026-10-20 | `gemini-3.8-flash` | `gemini-3.1-flash-lite`, Gemma 4 (no model ID on the page) |
+| `gemini-live-2.5-flash-native-audio` | 2026-12-13 | none on the page | |
+| `gemini-2.5-flash-image` | 2027-03-15 | `gemini-3.1-flash-lite-image` | |
 
 The pack is flag-only: every model has `map_automatically: false` and there are no `rules`, so `swap` and `fix` do not rewrite these IDs.
 
@@ -89,4 +91,4 @@ Risk uses `shutdown_risk_when_any: ["vertex"]`. The `vertex` signal matches, in 
 - a host containing `aiplatform.googleapis.com`
 - the `@google-cloud/vertexai` package
 
-`@google/genai` on its own is the Gemini API client and does not count. When the file has no `vertex` signal, the finding stays informational and the note is `retires on Vertex AI 20 Oct; not deprecated on the Gemini API`. A Vertex import in a different file does not raise this file: that case is unclear, and unclear stays informational.
+`@google/genai` on its own is the Gemini API client and does not count. When the file has no `vertex` signal, the finding stays informational and the note is `retires on Vertex AI; not deprecated on the Gemini API`. A Vertex import in a different file does not raise this file: that case is unclear, and unclear stays informational. The shutdown date raises a Vertex finding to high only when it is within 30 days or already past.
