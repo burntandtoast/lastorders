@@ -37,3 +37,21 @@ test("terms, success and cancel still reach the licence Worker", async () => {
     assert.equal(await res.text(), `licence:${path}`);
   }
 });
+
+test("head carries a large share image for LinkedIn and X", () => {
+  const html = readFileSync(new URL("../public/index.html", import.meta.url), "utf8");
+  const head = html.slice(0, html.indexOf("</head>"));
+  const meta = (attr, key) => head.match(new RegExp(`<meta ${attr}="${key}" content="([^"]*)">`))?.[1];
+  assert.equal(meta("property", "og:image"), "https://lastorders.burntandtoast.com/og.png");
+  assert.equal(meta("property", "og:image:type"), "image/png");
+  assert.equal(meta("property", "og:image:width"), "1200");
+  assert.equal(meta("property", "og:image:height"), "630");
+  assert.ok(meta("property", "og:image:alt")?.length > 20);
+  assert.equal(meta("name", "twitter:card"), "summary_large_image");
+  assert.equal(meta("name", "twitter:image"), "https://lastorders.burntandtoast.com/og.png");
+  assert.ok(meta("name", "twitter:image:alt")?.length > 20);
+  const png = readFileSync(new URL("../public/og.png", import.meta.url));
+  assert.equal(png.readUInt32BE(16), 1200);
+  assert.equal(png.readUInt32BE(20), 630);
+  assert.ok(png.length < 300 * 1024);
+});
