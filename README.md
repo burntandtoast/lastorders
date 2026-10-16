@@ -51,10 +51,19 @@ Useful flags:
 | `--format json` | print the summary as JSON |
 | `--summary-file F` / `--annotations` | CI outputs (used by the GitHub Action) |
 
-## Fix (patch preview)
+## Fix
+
+Without a licence, `swap` and `fix` print a per-file summary of model IDs that would change. They do not print a diff, and they do not write one.
 
 ```bash
-lastorders fix .                 # writes lastorders-out/fix.diff + fix-plan.md; changes nothing on disk
+lastorders fix .
+# app/summarise.py: 1 change (gpt-4o-2024-08-06 -> gpt-6-luna)
+```
+
+With a licence, the same commands write a reviewable patch and leave the repo unchanged until you apply it:
+
+```bash
+lastorders fix .                 # writes lastorders-out/fix.diff + fix-plan.md
 lastorders fix . --verify        # also checks the patch on a scratch copy (see below)
 git apply lastorders-out/fix.diff
 ```
@@ -124,7 +133,7 @@ as an artifact. Inputs:
 | `packs-url` | built-in | override the pack URL |
 | `version` | action source | install this version from PyPI instead |
 | `python-version` | `3.12` | |
-| `fix-preview` | `false` | also attach the automatic-fix patch + plan (simulated verify, no key) |
+| `fix-preview` | `false` | also print the per-file model summary. With `LASTORDERS_LICENCE`, write the patch and run simulated verify |
 | `artifact-name` | `lastorders-scan` | |
 
 Outputs: `total`, `high` and `report-dir`.
@@ -160,8 +169,8 @@ The tool checks for a newer pack once a day and falls back to the copy bundled w
 
 | | Free | Licence (per repo) | Done for you |
 |---|---|---|---|
-| `scan`, GitHub Action, patch preview (`fix` / `swap` write a `.diff`), `fix --verify` (simulated replay) | ✓ | ✓ | ✓ |
-| `fix --apply` / `swap --apply`, `fix --verify --live`, `init-evals` + `eval` regression testing, client-ready `report` | | ✓ | ✓ |
+| `scan`, GitHub Action, per-file model summary (`fix` / `swap` with no licence) | ✓ | ✓ | ✓ |
+| `fix` / `swap` patch (`.diff`, plan, simulated `--verify`), `--apply`, `fix --verify --live`, `init-evals` + `eval`, client-ready `report` | | ✓ | ✓ |
 | We do the migration, evals and handoff | | | ✓ |
 
 One licence covers **one GitHub repository, monorepos included**. It's bound to the repo the first time
@@ -177,16 +186,16 @@ real examples. `eval` runs them against the old and new model with your own key.
 
 ## Licence
 
-The free scan is [MIT](LICENSE): the scanner, migration packs, CLI, licence client, and the patch preview (`swap` and `fix` write a `.diff` without a licence, and so does simulated `fix --verify`).
+The free scan is [MIT](LICENSE): the scanner, migration packs, CLI and licence client.
 
-`eval`, `init-evals` and `report` are proprietary ([LICENSE-COMMERCIAL](LICENSE-COMMERCIAL)). The source is in this repository so you can read it. Using those commands requires a paid licence from <https://lastorders.burntandtoast.com>. You may not redistribute that code, or modify it to skip the licence check. `swap --apply`, `fix --apply` and `fix --verify --live` are gated the same way.
+The patch is proprietary ([LICENSE-COMMERCIAL](LICENSE-COMMERCIAL)), together with `eval`, `init-evals` and `report`. That covers `migration_kit/swapper.py` and `migration_kit/fixer/`: generating the diff, writing it, applying it, and simulated or live verify. The source is in this repository so you can read it. Using it requires a paid licence from <https://lastorders.burntandtoast.com>. You may not redistribute that code, or modify it to skip the licence check. Without a licence the CLI prints only the per-file model summary.
 
 ## Limitations
 
 - Detection uses pattern matching. Model names built at runtime or stored in a database won't be found;
   env-var lookups are listed so you can check them.
 - A pack is only as current as its `updated` date. Always check the provider's documentation before acting.
-- The scan suggests changes; it doesn't decide them for you. Review every patch.
+- The scan names retiring model IDs. Review every licensed patch before you apply it.
 
 ---
 

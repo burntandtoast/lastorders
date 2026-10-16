@@ -60,15 +60,46 @@ def cmd_scan(a) -> int:
     return 2 if a.fail_on_high and s["by_risk"].get("high") else 0
 
 
+def _patch_licence(a, feature: str, repo: str | None = None) -> bool:
+    """True only when a checked licence allows writing or applying a patch.
+
+    No key, and neither --apply nor --verify: False (summary only). --apply and --verify
+    always require a licence. A key that is present is always checked, so a bad key exits 4
+    instead of falling through to a patch. Nothing here reads a bypass flag or env var.
+    """
+    repo = a.repo if repo is None else repo
+    must = bool(getattr(a, "apply", False) or getattr(a, "verify", False))
+    lic = licence.resolve(getattr(a, "licence", None), repo)
+    if lic.source == "none" and not must:
+        return False
+    print(licence.describe(licence.require(feature, getattr(a, "licence", None), repo, offline=_off(a))),
+          file=sys.stderr)
+    return True
+
+
+def _print_preview(rows) -> None:
+    from .swapper import format_preview
+    print(format_preview(rows))
+
+
+def _preview_footer() -> None:
+    print("A licence is required for the full diff and to apply it.")
+
+
 def cmd_swap(a) -> int:
     from . import swapper
-    if a.apply or licence.GATE_SWAP_PATCH:
-        print(licence.describe(licence.require("swap-apply", a.licence, a.repo, offline=_off(a))), file=sys.stderr)
+    allowed = _patch_licence(a, "swap-apply" if a.apply else "swap-patch")
     packs = _packs(a)
     mapping = swapper.load_mapping(a.mapping) if a.mapping else swapper.mapping_from_packs(packs)
     if a.include_docs:
         mapping.include_docs = True
     res = swapper.plan(a.repo, mapping, packs)
+    if not allowed:
+        _print_preview([(c.file, c.old, c.new) for c in res.changes])
+        if res.skipped_fine_tunes:
+            print(f"{len(res.skipped_fine_tunes)} fine-tuned references left alone.")
+        _preview_footer()
+        return 0
     p, s = swapper.write(res, a.out)
     print(f"{len(res.changes)} replacements in {len(res.new_contents)} files; "
           f"{len(res.skipped_fine_tunes)} fine-tuned references left alone. Mapping: {mapping.source or a.mapping}")
@@ -95,14 +126,17 @@ def _dirty(repo: str, files: list[str]) -> list[str]:
 def cmd_fix(a) -> int:
     from . import fixer, swapper
     from .fixer import verify as fverify
-    if a.apply or licence.GATE_FIX_PATCH:
-        print(licence.describe(licence.require("fix-apply", a.licence, a.repo, offline=_off(a))), file=sys.stderr)
-    if a.verify and a.live and not a._demo:
+    allowed = _patch_licence(a, "fix-apply" if a.apply else "fix-patch")
+    if allowed and a.verify and a.live and not a._demo:
         print(licence.describe(licence.require("eval", a.licence, a.repo, offline=_off(a))), file=sys.stderr)
     packs = _packs(a)
     mapping = swapper.load_mapping(a.mapping) if a.mapping else None
     res = fixer.plan_fixes(a.repo, packs, mapping=mapping, model_swap=not a.no_model_swap,
                            assume_model=a.assume_model, include_inferred=a.include_inferred)
+    if not allowed:
+        _print_preview(res.model_changes)
+        _preview_footer()
+        return 0
     paths = fixer.write(res, a.out)
     c = res.counts()
     print(f"{len(res.new_contents)} files changed ({res.swap_changes} model ID replacements). "
@@ -221,11 +255,9 @@ def cmd_demo(a) -> int:
     repo = ex / "sample-app"
     steps = [["scan", str(repo), "--out", str(out), "--offline"],
              ["swap", str(repo), "--mapping", str(HERE / "mappings" / "gpt4-series-to-gpt-6-luna.yaml"), "--out", str(out), "--offline"],
-             ["fix", str(repo), "--out", str(out), "--verify", "--offline"],
+             ["fix", str(repo), "--out", str(out), "--offline"],
              ["eval", str(ex / "evals" / "sample-suite.yaml"), "--dry-run", "--out", str(out)],
              ["report", "--client", "Acme Widgets Ltd (sample)", "--scan", str(out / "scan.json"),
-              "--swap-summary", str(out / "swap-summary.json"), "--diff", str(out / "fix.diff"),
-              "--fix-plan", str(out / "fix-plan.json"), "--fix-verify", str(out / "verify" / "verify.json"),
               "--eval", str(out / "eval.json"), "--out", str(out), "--offline",
               "--label", "Demo: simulated eval outputs on a fictional sample repo"]]
     for args in steps:
@@ -265,7 +297,7 @@ def build_parser() -> argparse.ArgumentParser:
     _pack_opts(s)
     s.set_defaults(fn=cmd_scan)
 
-    w = sub.add_parser("swap", help="write a reviewable patch (--apply needs a licence)")
+    w = sub.add_parser("swap", help="summarise model ID changes; the patch needs a licence")
     w.add_argument("repo")
     w.add_argument("--mapping", help="mapping YAML (default: generated from the packs' headline migrations)")
     w.add_argument("--out", default=f"{brand.CLI_NAME}-out")
@@ -275,7 +307,7 @@ def build_parser() -> argparse.ArgumentParser:
     _pack_opts(w)
     w.set_defaults(fn=cmd_swap)
 
-    fx = sub.add_parser("fix", help="automatic fixes from the pack rules, as a reviewable patch (--apply needs a licence)")
+    fx = sub.add_parser("fix", help="summarise model ID changes; the patch needs a licence")
     fx.add_argument("repo", nargs="?", default=".")
     fx.add_argument("--out", default=f"{brand.CLI_NAME}-out")
     fx.add_argument("--mapping", help="mapping YAML for the model swap (default: generated from the packs)")
@@ -284,7 +316,7 @@ def build_parser() -> argparse.ArgumentParser:
     fx.add_argument("--assume-model", help="model to assume for calls whose model isn't visible in the code")
     fx.add_argument("--include-inferred", action="store_true", help="also apply rules marked 'inferred' in the pack")
     fx.add_argument("--verify", action="store_true",
-                    help="apply to a scratch copy, check syntax + idempotence, and replay each fixed call old vs new")
+                    help="[licence] apply to a scratch copy, check syntax + idempotence, and replay each fixed call old vs new")
     fx.add_argument("--live", action="store_true", help="with --verify: real API calls with YOUR key [licence]")
     fx.add_argument("--evals", help="with --verify: also run your eval suite, with the fixed arguments on matching cases")
     fx.add_argument("--apply", action="store_true", help="ALSO edit files in place [licence]")

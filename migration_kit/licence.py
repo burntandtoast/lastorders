@@ -5,8 +5,9 @@ Terms (product decision): ONE licence covers ONE GitHub repository, monorepos in
 $GITHUB_REPOSITORY (in Actions), else the git `origin` remote, else $<PREFIX>_REPO, and is
 normalised to host/owner/repo. The licence server binds a key to the first repo it is used on.
 
-Free:  scan (always), swap/fix without --apply (reviewable patches)
-Paid:  swap --apply, fix --apply, fix --verify --live, init-evals, eval, report
+Free:  scan (always). swap/fix with no licence key print a per-file model-id summary only.
+Paid:  the swap/fix patch (diff, plan, simulated verify), swap --apply, fix --apply,
+       fix --verify --live, init-evals, eval, report
 
 How the check works
   1. Online: POST {"key", "repo"} to the licence server (only those two fields: no code, prompts,
@@ -43,11 +44,9 @@ ENV_VAR = brand.env_name("LICENCE")
 REPO_ENV_VAR = brand.env_name("REPO")
 KEY_RE = re.compile(r"^BTM-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$")
 
-# Patch previews stay free; only applying is paid.
-GATE_SWAP_PATCH = False
-GATE_FIX_PATCH = GATE_SWAP_PATCH
-
-PAID_FEATURES = {"swap-apply": "applying the patch in place", "fix-apply": "applying the automatic fixes in place",
+# The patch is paid. There is no flag or environment variable that writes it without a licence.
+PAID_FEATURES = {"swap-patch": "the model-swap patch", "fix-patch": "the automatic-fix patch",
+                 "swap-apply": "applying the patch in place", "fix-apply": "applying the automatic fixes in place",
                  "init-evals": "generating a starter eval suite", "eval": "the regression eval", "report": "the client report"}
 
 # Ed25519 public keys (kid -> base64url raw 32-byte key) that may sign licence tokens.

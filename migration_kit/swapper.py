@@ -1,3 +1,4 @@
+# Copyright (c) 2026 Burnt and Toast Studios Ltd. Proprietary; see LICENSE-COMMERCIAL.
 """`swap`: turn a mapping file into a reviewable unified diff."""
 from __future__ import annotations
 
@@ -46,6 +47,39 @@ class Change:
     line: int
     old: str
     new: str
+
+
+def format_preview(rows: list[tuple[str, str, str]]) -> str:
+    """Per-file summary of model-id replacements. No line numbers, code, or patch text.
+
+    ``rows`` is ``(file, old_id, new_id)`` in encounter order. The same pair is listed
+    once per file; the count is the number of replacements.
+    """
+    order: list[str] = []
+    counts: dict[str, int] = {}
+    pairs: dict[str, list[tuple[str, str]]] = {}
+    for file, old, new in rows:
+        file, old, new = _flat(file), _flat(old), _flat(new)
+        if file not in counts:
+            order.append(file)
+            counts[file] = 0
+            pairs[file] = []
+        counts[file] += 1
+        if (old, new) not in pairs[file]:
+            pairs[file].append((old, new))
+    if not order:
+        return "No model IDs would change."
+    lines = []
+    for file in order:
+        n = counts[file]
+        word = "change" if n == 1 else "changes"
+        mapping = ", ".join(f"{old} -> {new}" for old, new in pairs[file])
+        lines.append(f"{file}: {n} {word} ({mapping})")
+    return "\n".join(lines)
+
+
+def _flat(value: str) -> str:
+    return " ".join(str(value).split())
 
 
 @dataclass

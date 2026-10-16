@@ -1,3 +1,4 @@
+# Copyright (c) 2026 Burnt and Toast Studios Ltd. Proprietary; see LICENSE-COMMERCIAL.
 """Language-neutral description of an API call site, shared by the language adapters."""
 from __future__ import annotations
 

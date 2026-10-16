@@ -1,3 +1,4 @@
+# Copyright (c) 2026 Burnt and Toast Studios Ltd. Proprietary; see LICENSE-COMMERCIAL.
 """Verify a fix plan: apply it to a scratch copy, check syntax and idempotence, then run
 an eval in which each fixed call is sent exactly as it was before (old model, old
 arguments) and as it is after the patch (new model, new arguments).

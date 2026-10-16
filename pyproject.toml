@@ -10,8 +10,9 @@ readme = "README.md"
 requires-python = ">=3.10"
 authors = [{ name = "Burnt & Toast Studios" }]
 keywords = ["openai", "anthropic", "llm", "deprecation", "migration", "gpt-4o", "scanner", "github-action"]
-# MIT covers the free scan and the rest of the repo. LicenseRef-Commercial covers
-# migration_kit/evaluator.py, initevals.py and report.py (see LICENSE-COMMERCIAL).
+# MIT covers the free scan, packs, CLI and licence client. LicenseRef-Commercial covers
+# migration_kit/swapper.py, fixer/, evaluator.py, initevals.py and report.py
+# (see LICENSE-COMMERCIAL).
 license = "MIT AND LicenseRef-Commercial"
 license-files = ["LICENSE", "LICENSE-COMMERCIAL"]
 classifiers = [

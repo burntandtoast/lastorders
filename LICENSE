@@ -1,3 +1,14 @@
+The MIT licence below covers this repository except the proprietary files
+listed in LICENSE-COMMERCIAL:
+
+- migration_kit/swapper.py
+- migration_kit/fixer/ (the whole package)
+- migration_kit/evaluator.py
+- migration_kit/initevals.py
+- migration_kit/report.py
+
+Those files generate or apply the paid fix. They are not MIT.
+
 MIT License
 
 Copyright (c) 2026 Burnt and Toast Studios Ltd

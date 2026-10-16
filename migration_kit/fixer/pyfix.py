@@ -1,3 +1,4 @@
+# Copyright (c) 2026 Burnt and Toast Studios Ltd. Proprietary; see LICENSE-COMMERCIAL.
 """Python adapter: finds API calls and edits keyword arguments with libcst (lossless:
 formatting, comments and quoting outside the edited arguments are untouched)."""
 from __future__ import annotations

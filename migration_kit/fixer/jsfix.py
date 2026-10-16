@@ -1,3 +1,4 @@
+# Copyright (c) 2026 Burnt and Toast Studios Ltd. Proprietary; see LICENSE-COMMERCIAL.
 """JavaScript/TypeScript adapter, dependency-free.
 
 A small lexer masks strings, template literals, comments and regex literals (same
