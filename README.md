@@ -138,8 +138,9 @@ against the live API are marked `live-tested`, and anything we assumed is marked
 
 - **OpenAI**: full pack
 - **Anthropic**: preview (stub). It covers Claude API retirement dates from Anthropic's deprecations page.
-  Amazon Bedrock and Google Cloud dates are not covered yet.
-- Gemini, Azure OpenAI and Bedrock: planned
+  Amazon Bedrock and Google Cloud dates for Claude are not covered.
+- **Google**: Vertex AI only, and flag-only. `gemini-2.5-pro`, `gemini-2.5-flash` and `gemini-2.5-flash-lite` retire on Vertex on 20 Oct 2026. The scan marks them high risk only when that file is using Vertex; on the Gemini API the same IDs are not deprecated, so the finding stays informational. Nothing is rewritten automatically.
+- Azure OpenAI and Bedrock: planned
 
 The tool checks for a newer pack once a day and falls back to the copy bundled with the package.
 `lastorders packs list` shows which version and source you're using. The format is documented in

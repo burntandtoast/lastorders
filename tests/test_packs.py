@@ -96,11 +96,37 @@ def test_unreachable_remote_falls_back_to_bundled():
 def test_site_build(tmp_path):
     site = build_site(tmp_path / "site")
     idx = json.loads((site / "v1" / "index.json").read_text())
-    assert {e["provider"] for e in idx["packs"]} == {"openai", "anthropic"}
+    assert {e["provider"] for e in idx["packs"]} == {"openai", "anthropic", "google"}
     for e in idx["packs"]:
         assert hashlib.sha256((site / "v1" / e["url"]).read_bytes()).hexdigest() == e["sha256"]
     assert (site / "vercel.json").exists() and (site / "_headers").exists() and (site / "index.html").exists()
     assert (site / "v1" / "pack.schema.json").exists()
+
+
+def test_unknown_provider_in_remote_index_is_skipped(tmp_path):
+    """0.4.0 and 0.4.1 only fetch providers they bundle. A new index entry must not
+    be downloaded or validated, and must not fail the providers they do know."""
+    site = build_site(tmp_path / "site")
+    idx_path = site / "v1" / "index.json"
+    idx = json.loads(idx_path.read_text())
+    idx["packs"].append({
+        "provider": "future", "name": "Future", "version": "2099.01.01", "status": "stable",
+        "pack_format": 1, "url": "packs/future.json", "sha256": "0" * 64,
+    })
+    idx["packs"].append({"provider": "broken"})  # missing fields; still skipped
+    idx_path.write_text(json.dumps(idx))
+    srv = _serve(site)
+    try:
+        url = f"http://127.0.0.1:{srv.server_port}/v1"
+        remote, err = pk._fetch_remote(url, ["openai", "anthropic"])
+        assert err is None
+        assert set(remote) <= {"openai", "anthropic"}
+        assert "google" not in remote and "future" not in remote
+        ps = pk.load_packs(["openai", "anthropic"], offline=False, url=url)
+        assert {p.provider for p in ps} == {"openai", "anthropic"}
+        assert all(p.source == "bundled" for p in ps)
+    finally:
+        srv.shutdown()
 
 
 def test_action_yml_shape():

@@ -230,10 +230,17 @@ def assess(f: Finding, pack: Pack, sig: list[str], today: dt.date) -> None:
     headline = {x["id"] for x in pack.headline_migrations}
     f.category = "in_scope" if m.migration in headline else "other_deprecated"
     f.shutdown, f.suggested, f.confidence, f.migration = m.shutdown, m.replacement, m.confidence, m.migration
-    f.risk = (pack.data.get("risk_policy") or {}).get("default_risk", "medium")
-    if m.note:
+    policy = pack.data.get("risk_policy") or {}
+    f.risk = policy.get("default_risk", "medium")
+    # When shutdown_risk_when_any is set, the date raises risk only if the file
+    # has one of those signals. Otherwise the finding stays at default_risk.
+    gate = set(policy.get("shutdown_risk_when_any") or [])
+    on_platform = (not gate) or bool(gate & sigset)
+    if m.note and (on_platform or not policy.get("otherwise_note")):
         f.notes.append(m.note)
-    if m.shutdown:
+    if not on_platform and policy.get("otherwise_note"):
+        f.notes.append(policy["otherwise_note"])
+    if m.shutdown and on_platform:
         days = (dt.date.fromisoformat(m.shutdown) - today).days
         if days < 0:
             f.risk = "high"
@@ -252,7 +259,8 @@ def assess(f: Finding, pack: Pack, sig: list[str], today: dt.date) -> None:
             if rule["risk"] != "info":
                 f.risk = _bump(f.risk, rule["risk"])
     if f.kind in ("doc", "comment"):
-        f.risk = "low"
+        if RISK_RANK[f.risk] > RISK_RANK["low"]:
+            f.risk = "low"
         f.notes.append("Appears in documentation/comment only.")
 
 

@@ -1,0 +1,146 @@
+{
+  "$schema": "https://packs.burntandtoast.com/v1/pack.schema.json",
+  "pack_format": 1,
+  "provider": "google",
+  "name": "Google Gemini on Vertex AI",
+  "version": "2026.10.16.1",
+  "updated": "2026-10-16",
+  "status": "stable",
+  "notes": [
+    "Flag only. No automatic swap (map_automatically is false on every model) and no rules, so fix and swap leave these IDs alone.",
+    "Vertex detection is file-level, using the signal id 'vertex'. A finding is high risk only when that signal matches the same file as the model ID. Vertex usage in a different file, or no signal at all, stays informational: the call might be the Gemini API (AI Studio), which has not announced a shutdown for these three IDs.",
+    "Checked https://cloud.google.com/vertex-ai/generative-ai/docs/learn/model-versions on 16 Oct 2026. That URL redirects to the Gemini Enterprise Agent Platform model-versions page (last updated 2026-10-15 UTC). The lifecycle table lists gemini-2.5-pro, gemini-2.5-flash and gemini-2.5-flash-lite with retirement date 20 Oct 2026. It lists no -001, dated, or preview ID for these three.",
+    "The same three stable IDs have 'No shutdown date announced' on the Gemini API deprecations page. Preview IDs (for example gemini-2.5-pro-preview-06-05) are different models with their own, already passed, Gemini API shutdowns and are not this retirement.",
+    "Suggested replacement is the first model ID in Google's 'or' list. The other listed options are in each model's note. Gemma 4 is named for gemini-2.5-flash-lite but the page does not give it a model ID."
+  ],
+  "sources": [
+    {
+      "id": "model-versions",
+      "title": "Model versions and lifecycle (Vertex AI / Gemini Enterprise Agent Platform)",
+      "url": "https://cloud.google.com/vertex-ai/generative-ai/docs/learn/model-versions",
+      "checked": "2026-10-16"
+    },
+    {
+      "id": "gemini-api-deprecations",
+      "title": "Gemini API deprecations",
+      "url": "https://ai.google.dev/gemini-api/docs/deprecations",
+      "checked": "2026-10-16"
+    }
+  ],
+  "id_patterns": [
+    {
+      "pattern": "gemini-2\\.5-(?:flash-lite|flash|pro)"
+    }
+  ],
+  "migrations": [
+    {
+      "id": "gemini-2-5-vertex-2026-10-20",
+      "title": "Vertex AI retires Gemini 2.5 Pro, Flash and Flash-Lite",
+      "shutdown": "2026-10-20",
+      "replacement": "gemini-3.8-flash",
+      "headline": true,
+      "source": "model-versions"
+    }
+  ],
+  "models": [
+    {
+      "id": "gemini-2.5-pro",
+      "kind": "alias",
+      "match": "exact",
+      "shutdown": "2026-10-20",
+      "replacement": "gemini-3.8-flash",
+      "migration": "gemini-2-5-vertex-2026-10-20",
+      "section": "Latest available models: Gemini models available for at least 12 months after release",
+      "confidence": "confirmed",
+      "source": "model-versions",
+      "map_automatically": false,
+      "note": "Vertex AI also lists gemini-3.5-flash. No -001 or preview ID is published for this model."
+    },
+    {
+      "id": "gemini-2.5-flash",
+      "kind": "alias",
+      "match": "exact",
+      "shutdown": "2026-10-20",
+      "replacement": "gemini-3.8-flash",
+      "migration": "gemini-2-5-vertex-2026-10-20",
+      "section": "Latest available models: Gemini models available for at least 12 months after release",
+      "confidence": "confirmed",
+      "source": "model-versions",
+      "map_automatically": false,
+      "note": "Vertex AI also lists gemini-3.5-flash-lite and gemini-3.1-flash-lite. No -001 or preview ID is published for this model."
+    },
+    {
+      "id": "gemini-2.5-flash-lite",
+      "kind": "alias",
+      "match": "exact",
+      "shutdown": "2026-10-20",
+      "replacement": "gemini-3.8-flash",
+      "migration": "gemini-2-5-vertex-2026-10-20",
+      "section": "Latest available models: Gemini models available for at least 12 months after release",
+      "confidence": "confirmed",
+      "source": "model-versions",
+      "map_automatically": false,
+      "note": "Vertex AI also lists gemini-3.1-flash-lite and Gemma 4. No -001 or preview ID is published for this model."
+    }
+  ],
+  "signals": [
+    {
+      "id": "vertex",
+      "sdk": "vertexai",
+      "languages": ["python"],
+      "pattern": "\\bimport vertexai\\b|\\bfrom vertexai\\b|google\\.cloud\\.aiplatform|\\bfrom google\\.cloud import aiplatform\\b",
+      "description": "Vertex AI Python SDK (vertexai or google.cloud.aiplatform)"
+    },
+    {
+      "id": "vertex",
+      "sdk": "vertexai",
+      "languages": ["python", "javascript", "typescript"],
+      "pattern": "vertexai\\s*[:=]\\s*(?:True|true)\\b",
+      "description": "google-genai client built with vertexai true (Python genai.Client or JS GoogleGenAI)"
+    },
+    {
+      "id": "vertex",
+      "sdk": "vertexai",
+      "languages": ["python", "javascript", "typescript", "yaml", "json", "toml", "ini", "env"],
+      "pattern": "GOOGLE_GENAI_USE_VERTEXAI[\"']?\\]?\\s*=\\s*[\"']?(?:1|true|True|TRUE|yes|YES)\\b",
+      "description": "GOOGLE_GENAI_USE_VERTEXAI set to a truthy value, which sends google-genai to Vertex"
+    },
+    {
+      "id": "vertex",
+      "sdk": "vertexai",
+      "languages": ["python", "javascript", "typescript", "yaml", "json", "toml", "ini", "env"],
+      "pattern": "aiplatform\\.googleapis\\.com",
+      "description": "Vertex AI endpoint host, including regional hosts such as us-central1-aiplatform.googleapis.com"
+    },
+    {
+      "id": "vertex",
+      "sdk": "vertexai",
+      "languages": ["javascript", "typescript", "json"],
+      "pattern": "@google-cloud/vertexai",
+      "description": "Vertex AI Node.js SDK"
+    }
+  ],
+  "risk_policy": {
+    "urgent_days": 30,
+    "default_risk": "info",
+    "shutdown_risk_when_any": ["vertex"],
+    "otherwise_note": "retires on Vertex AI 20 Oct; not deprecated on the Gemini API"
+  },
+  "facts": {
+    "confirmed": [
+      "On Vertex AI, gemini-2.5-pro (released 17 Jun 2025), gemini-2.5-flash (released 17 Jun 2025) and gemini-2.5-flash-lite (released 22 Jul 2025) retire on 20 Oct 2026.",
+      "Documented Vertex replacements: gemini-2.5-pro -> gemini-3.8-flash or gemini-3.5-flash; gemini-2.5-flash -> gemini-3.8-flash or gemini-3.5-flash-lite or gemini-3.1-flash-lite; gemini-2.5-flash-lite -> gemini-3.8-flash or gemini-3.1-flash-lite or Gemma 4.",
+      "The model versions table does not list a -001, dated, or preview ID for these three stable models.",
+      "On the Gemini API, gemini-2.5-pro, gemini-2.5-flash and gemini-2.5-flash-lite have no shutdown date announced."
+    ],
+    "unconfirmed": [
+      "No live API calls were made. Replacements were not checked for parameter compatibility, so this pack does not swap or rewrite calls."
+    ]
+  },
+  "report": {
+    "next_steps": [
+      "If the call uses Vertex AI, point it at the suggested replacement and test it. This pack only flags the ID; it does not rewrite code.",
+      "If the call uses the Gemini API (AI Studio / generativelanguage.googleapis.com), these three IDs are not deprecated. No change is required for this retirement."
+    ]
+  }
+}

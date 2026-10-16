@@ -72,9 +72,11 @@ def _vkey(v: str) -> tuple[int, ...]:
     return tuple(int(x) for x in v.split("."))
 
 
-# ------------------------------------------------------------------ compiled pack
-B = r"(?<![A-Za-z0-9._:/-])"
-E = r"(?![A-Za-z0-9._:-])"
+# Token boundaries. `/` is a separator so a model id is found in a URL path
+# (`.../models/<id>`). `:` may follow an id (`<id>:generateContent`) and is not
+# part of it. `:` still glues on the left so `key:o3` does not start a new token.
+B = r"(?<![A-Za-z0-9._:-])"
+E = r"(?![A-Za-z0-9._-])"
 
 
 @dataclass
@@ -227,6 +229,8 @@ def _fetch_remote(base: str, providers: list[str]) -> tuple[dict[str, dict], str
         return out, f"remote unavailable ({type(e).__name__})"
     for entry in index.get("packs", []):
         prov = entry.get("provider")
+        # Skip providers this install does not know. Released 0.4.0 and 0.4.1
+        # depend on this: a new provider in the hosted index is ignored, not fetched.
         if prov not in providers or entry.get("pack_format") != PACK_FORMAT:
             continue
         try:
