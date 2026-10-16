@@ -18,10 +18,13 @@ run_worker_first = ["/subscribe", "/buy", "/buy/", "/terms", "/terms/", "/succes
 enabled = true
 
 # /buy, /terms, /success, /cancel are handled by the licence Worker (server/), so customers only see this host.
-# BUY_OPEN stays unset. While it is not "1", GET /buy (and /buy/) 302s to /#remind instead of Stripe.
+# BUY_OPEN = "1" (opened 16 Oct 2026). If it is not "1", GET /buy (and /buy/) 302s to /#remind instead of Stripe.
 # The pricing button is a static link to #remind as well, so opening checkout is two edits: set
 # BUY_OPEN = "1" in [vars] here, and point that button back at /buy. Then deploy this Worker.
 # Sandbox checkout while this is closed does not use lastorders.burntandtoast.com/buy. See docs/LICENCE-SERVER.md.
+[vars]
+BUY_OPEN = "1"
+
 [[services]]
 binding = "LICENCE"
 service = "lastorders-licence"
