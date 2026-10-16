@@ -27,7 +27,7 @@ PRODUCT_NAME = "Last Orders"
 CLI_NAME = "lastorders"
 PRODUCT_CODE = "lastorders-repo"
 CURRENCY = "gbp"
-PRICE_AMOUNT = "14900"            # minor units (14900 = £149.00). Ignored if STRIPE_PRICE_ID is set.
+PRICE_AMOUNT = "17900"            # minor units (17900 = £179.00, VAT included under Managed Payments). Ignored if STRIPE_PRICE_ID is set.
 STRIPE_PRICE_ID = ""              # optional: a Price from the Stripe Dashboard instead of inline price_data. With MANAGED_PAYMENTS, that product needs tax code txcd_10202003 and the price needs tax_behavior=inclusive (see scripts/ensure-product.mjs).
 ALLOW_PROMOTION_CODES = "false"
 STRIPE_AUTOMATIC_TAX = "false"    # set "true" once Stripe Tax is set up (UK VAT). Ignored while MANAGED_PAYMENTS is "1" (Link calculates tax).

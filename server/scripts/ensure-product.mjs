@@ -1,8 +1,8 @@
-// Create or update the Last Orders product and its £149 one-time GBP price.
+// Create or update the Last Orders product and its £179 one-time GBP price.
 //
 // The product gets tax code txcd_10202003 (Downloadable Software — business use).
-// The price is unit_amount 14900, currency gbp, tax_behavior inclusive, so the
-// buyer pays £149 in total. Inclusive pricing is allowed with Managed Payments:
+// The price is unit_amount 17900, currency gbp, tax_behavior inclusive, so the
+// buyer pays £179 in total. Inclusive pricing is allowed with Managed Payments:
 // Stripe uses the price's tax_behavior, and if you omit it, tax is added on top.
 //
 // Idempotent. A second run reuses the product (metadata.product = PRODUCT_CODE)
@@ -56,7 +56,7 @@ export async function ensureProduct(stripe, opts = {}) {
   const description = opts.description || PRODUCT_DESCRIPTION;
   const taxCode = opts.taxCode || TAX_CODE;
   const currency = (opts.currency || "gbp").toLowerCase();
-  const unitAmount = Number(opts.unitAmount ?? 14900);
+  const unitAmount = Number(opts.unitAmount ?? 17900);
   const taxBehavior = opts.taxBehavior || TAX_BEHAVIOR;
   if (taxBehavior !== "inclusive" && taxBehavior !== "exclusive") {
     throw new Error(`tax_behavior must be inclusive or exclusive, got ${taxBehavior}`);

@@ -1,5 +1,8 @@
 # Changelog
 
+## Unreleased
+- The licence price is now £179 including VAT.
+
 ## 0.4.3
 - **R, R Markdown and Quarto are scanned.** `.R`, `.Rmd` and `.qmd` were missing from the extension list, so a file such as `R/llm_interpret.R` was never opened. Model IDs in code strings are reported as in other languages. Roxygen (`#'`) and other `#` comments are reported too, at low severity, the same cap used for comments elsewhere. In `.Rmd` and `.qmd`, prose outside ` ``` ` fences is documentation (low); IDs inside a code chunk stay at the normal severity.
 - **Generated and vendored files are one line each.** By default, `*.generated.*`, `*.gen.*`, `*_pb2.py`, `*.min.js`, files whose first lines say `@generated`, `DO NOT EDIT` or `auto-generated`, and paths under `vendor/`, `third_party/`, `node_modules/`, `.yarn/` or `dist/` are not findings. Each file that contains model IDs is one summary line (`models.generated.ts: 97 model IDs in a generated file, skipped; use --include-generated to scan it`). They do not count toward `--fail-on-high`. `--include-generated` scans them.

@@ -33,7 +33,7 @@ function config(env) {
     cliName: env.CLI_NAME || "lastorders",
     productCode: env.PRODUCT_CODE || "lastorders-repo",
     currency: (env.CURRENCY || "gbp").toLowerCase(),
-    amount: Number.parseInt(env.PRICE_AMOUNT || "14900", 10),     // minor units: 14900 = £149.00
+    amount: Number.parseInt(env.PRICE_AMOUNT || "17900", 10),     // minor units: 17900 = £179.00
     priceId: env.STRIPE_PRICE_ID || "",
     tokenTtl: Number.parseInt(env.TOKEN_TTL_DAYS || "7", 10) * DAY,
     features: (env.LICENCE_FEATURES || "*").split(",").map((s) => s.trim()).filter(Boolean),
@@ -77,7 +77,7 @@ export function createApp(deps = {}) {
           price_data: {
             currency: cfg.currency,
             unit_amount: cfg.amount,
-            // Inclusive: the buyer pays the unit amount (GBP 14900 = £149). Managed Payments
+            // Inclusive: the buyer pays the unit amount (GBP 17900 = £179). Managed Payments
             // otherwise adds tax on top. Allowed with Managed Payments; see managed-payments.js.
             tax_behavior: TAX_BEHAVIOR,
             product_data: {
