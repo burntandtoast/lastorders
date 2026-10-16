@@ -186,13 +186,12 @@ npx wrangler deploy
 
 1. `curl https://packs.burntandtoast.com/healthz` returns `{"ok":true,"stripe_mode":"test"}`.
    `curl …/v1/index.json` returns the packs.
-2. Open `https://lastorders.burntandtoast.com/buy?repo=github.com/you/test-repo` and pay with `4242 4242 4242 4242`
-   (any future date, any CVC). The success page should show a key and the email should arrive.
+2. The public Buy button and `https://lastorders.burntandtoast.com/buy` go to the sign-up box until `BUY_OPEN=1` on the landing Worker. Test checkout with the steps under "Sandbox checkout while Buy is closed" below. Card `4242 4242 4242 4242` (any future date, any CVC). The success page should show a key and the email should arrive.
 3. `LASTORDERS_LICENCE=<key> lastorders licence status` in that repo should say "verified online".
    In another repo it should say "bound to …".
 4. Refund in the Dashboard. The next `licence status` after the cached token's daily refresh says "revoked".
    Use `licence forget` to check straight away.
-5. Point the landing page's buy button at `/buy` (or `POST /api/checkout`). That's the other agent's file, so it's left alone here.
+5. When payments should be public: in `landing/wrangler.toml` set `BUY_OPEN = "1"`, point the pricing button back at `/buy`, and deploy the landing Worker. Until then the button says "Paid fix opens soon" and links to `#remind`.
 
 **Local trial without any accounts:** `cd server && node scripts/local-server.mjs`. It prints a URL, a dev
 public key and a test-issued key. Point the CLI at it with:
@@ -224,6 +223,22 @@ Do this from your machine. Nothing in this repo deploys the Worker or calls Stri
    Put the printed `price_…` in `STRIPE_PRICE_ID`. Leave `STRIPE_PRICE_ID` empty to use inline `price_data` instead; that path already sets tax code `txcd_10202003` and `tax_behavior=inclusive`.
 4. In `wrangler.toml` set `MANAGED_PAYMENTS = "1"`. Leave `STRIPE_AUTOMATIC_TAX` and `STRIPE_INVOICE_CREATION` as `"false"` (they are not sent while the flag is on). `STRIPE_API_VERSION` is optional; Checkout create sends `2025-03-31.basil` unless that var is a later date.
 5. `npx wrangler deploy` from `server/`. To sell through ordinary Stripe again, set `MANAGED_PAYMENTS = "0"` and deploy. No code change.
+
+### Sandbox checkout while Buy is closed
+
+The landing Worker redirects `/buy` to `/#remind` until `BUY_OPEN=1`. `https://packs.burntandtoast.com/buy` does not skip that: the licence Worker 301s it to `https://lastorders.burntandtoast.com/buy` (cached for an hour), and the landing Worker then sends the browser to the sign-up box.
+
+Start the session on the licence Worker instead. `POST /api/checkout` is not behind `BUY_OPEN`:
+
+```bash
+curl -sS -X POST https://packs.burntandtoast.com/api/checkout \
+  -H 'content-type: application/json' \
+  -d '{"repo":"github.com/you/test-repo","email":"you@example.com"}'
+```
+
+Open the `url` in the JSON. Pay with `4242 4242 4242 4242`, any future expiry, any CVC. For a Managed Payments session the Link passcode is `000000`. Success and cancel return to lastorders (`/success` and `/cancel` are not redirected).
+
+The same hatch works locally, where the request host is not `packs.burntandtoast.com`, so the 301 does not run: `cd server && npm run dev`, then open `http://localhost:8787/buy`.
 
 ## Going live
 
