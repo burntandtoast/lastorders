@@ -317,7 +317,7 @@ test("checkout: required waiver consent, policy message and waiver metadata; /te
   assert.equal(p.get("custom_fields[0][dropdown][default_value]"), null);         // consent must not be pre-selected
   assert.equal(p.get("consent_collection[terms_of_service]"), null);
   const msg = p.get("custom_text[submit][message]");
-  for (const s of ["reg. 37", "never been activated", "5 working days", "17334149", "71-75 Shelton Street", "Not VAT registered", "/terms"]) assert.ok(msg.includes(s), s);
+  for (const s of ["reg. 37", "never been activated", "14 days of purchase", "5 working days", "17334149", "71-75 Shelton Street", "Not VAT registered", "/terms"]) assert.ok(msg.includes(s), s);
   assert.ok(msg.length <= 1200);
   assert.equal(p.get("metadata[waiver_consent]"), "required_at_checkout");
   assert.match(p.get("metadata[waiver_at]"), /^\d{4}-\d\d-\d\dT/);
@@ -339,13 +339,13 @@ test("checkout: required waiver consent, policy message and waiver metadata; /te
   assert.equal(evRow.detail, "checkout_custom_field terms=2026-10-15");
   const mail = net.calls.find((c) => c.url.startsWith("https://resend.test/"));
   const body = JSON.parse(mail.body);
-  assert.ok(body.text.includes("never been activated") && body.text.includes("/terms"));
+  assert.ok(body.text.includes("never been activated") && body.text.includes("14 days of purchase") && body.text.includes("/terms"));
   assert.ok(body.html.includes("5 working days"));
 
   const t = await h.call("/terms");
   assert.equal(t.status, 200);
   const html = await t.text();
-  for (const s of ["17334149", "England and Wales", "regulation 37", "hello@burntandtoast.com", "never been activated", "5 working days", "£179"]) assert.ok(html.includes(s), s);
+  for (const s of ["17334149", "England and Wales", "regulation 37", "hello@burntandtoast.com", "never been activated", "14 days of purchase", "5 working days", "£179"]) assert.ok(html.includes(s), s);
   assert.equal(html.includes("Sold through Link"), false);
 });
 
@@ -450,7 +450,7 @@ test("managed payments: pinned Stripe version, tax code, waiver kept, disallowed
   assert.equal(netOld.calls[0].headers["stripe-version"], "2025-03-31.basil");
 
   const terms = await (await h.call("/terms")).text();
-  for (const s of ["Sold through Link", "LINK.COM*", "payment support", "60 days", "48 hours", "never been activated", "5 working days"]) {
+  for (const s of ["Sold through Link", "LINK.COM*", "payment support", "60 days", "48 hours", "never been activated", "14 days of purchase", "5 working days"]) {
     assert.ok(terms.includes(s), s);
   }
 });

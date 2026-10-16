@@ -7,10 +7,10 @@ export const COMPANY = {
   vat: "Not VAT registered",
   email: "hello@burntandtoast.com",
 };
-export const TERMS_VERSION = "2026-10-16";
+export const TERMS_VERSION = "2026-10-16.2";
 export const COMPANY_LINE = `${COMPANY.name}, company no. ${COMPANY.number}, ${COMPANY.address}. ${COMPANY.vat}.`;
 export const REFUND_LINE =
-  "Refunds: a full refund on request if your licence key has never been activated. Once activated, a refund if the fix fails on your repo and we can't resolve it within 5 working days.";
+  "Refunds: a full refund if your licence key has never been activated and you ask within 14 days of purchase. Once activated, a refund only if the fix fails on your repo and we can't resolve it within 5 working days.";
 
 // Stripe custom_fields has no checkbox type (text, numeric or dropdown only), and consent_collection.terms_of_service
 // needs a Terms URL set in the Stripe Dashboard. A required dropdown with a single, unselected "I agree" option is the
