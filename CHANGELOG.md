@@ -2,6 +2,7 @@
 
 ## Unreleased
 - The licence price is now £179 including VAT.
+- Refund policy (terms version 2026-10-16.2): an unactivated licence key is fully refundable if you ask within 14 days of purchase. After activation, a refund only if the fix fails on your repo and we can't resolve it within 5 working days. Wording updated on the website, `/terms`, Checkout and the licence key email.
 
 ## 0.4.4
 - **23 Oct 2026 is in the default mapping.** `lastorders mapping` swaps the chat and reasoning models that shut down that day: `gpt-4.1-nano` (and its snapshot) to `gpt-5.6-luna`; `gpt-4o-2024-05-13`, `gpt-4`, `gpt-4-turbo`, `gpt-4-1106-preview`, `o1`, `o3-mini` (and their snapshots and completions aliases) to `gpt-5.6-sol`; `gpt-3.5-turbo` and `o4-mini` (and their snapshots and the completions alias) to `gpt-5.6-terra`. Dates and substitutes are from OpenAI's deprecations page.

@@ -105,12 +105,12 @@ ${linkSection}
 <li>The licence unlocks the paid features (automatic fixes, verified patches and reports) for that repository, including updates for future model retirements. The free scan never needs a licence.</li>
 <li>The key is for your organisation's use on that repository. Please don't share it for use on other repositories.</li></ul>
 <h2>Refund policy</h2>
-<ul><li><b>Never activated:</b> a full refund on request, as long as the licence key has never been activated (we record when it is first used).</li>
-<li><b>Activated:</b> a refund if the fix fails on your repository and we can't resolve it within 5 working days of you telling us.</li></ul>
+<ul><li><b>Never activated:</b> a full refund if the licence key has never been activated (we record when it is first used) and you ask within 14 days of purchase. After 14 days, an unactivated key isn't refundable under this policy.</li>
+<li><b>Activated:</b> a refund only if the fix fails on your repository and we can't resolve it within 5 working days of you telling us.</li></ul>
 <p>To ask for a refund, email ${mail} with your licence key or the email address you paid with. Refunds go back to the original payment method. A refunded licence stops working.</p>
 ${linkRefund}
 <h2>Your right to cancel (consumers)</h2>
-<p>If you buy as a consumer, you would normally have 14 days to cancel. Because the licence key is digital content supplied straight away, at checkout you expressly ask for immediate supply and acknowledge that you lose the 14-day right to cancel once the key is used (Consumer Contracts Regulations 2013, regulation 37). Until the key is used, you can cancel and get a full refund. The refund policy above still applies after that. Businesses have no statutory cooling-off right; the refund policy above applies to them too.</p>
+<p>If you buy as a consumer, you would normally have 14 days to cancel. Because the licence key is digital content supplied straight away, at checkout you expressly ask for immediate supply and acknowledge that you lose the 14-day right to cancel once the key is used (Consumer Contracts Regulations 2013, regulation 37). If you haven't used the key, you can cancel within 14 days of purchase and get a full refund, the same as the never-activated refund above. Once the key is used, the 14-day right to cancel ends and the activated-key refund above applies. Businesses have no statutory cooling-off right; the refund policy above applies to them too.</p>
 <p>Nothing in these terms affects your statutory rights, for example if the licence or the software isn't as described.</p>
 <h2>Liability</h2>
 <p>${e(productName)} proposes code changes for you to review. You're responsible for reviewing, testing and deploying them. Our total liability for a licence is limited to the price you paid for it, except where the law doesn't allow liability to be limited.</p>
