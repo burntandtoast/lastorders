@@ -7,7 +7,7 @@ export const COMPANY = {
   vat: "Not VAT registered",
   email: "hello@burntandtoast.com",
 };
-export const TERMS_VERSION = "2026-10-15";
+export const TERMS_VERSION = "2026-10-16";
 export const COMPANY_LINE = `${COMPANY.name}, company no. ${COMPANY.number}, ${COMPANY.address}. ${COMPANY.vat}.`;
 export const REFUND_LINE =
   "Refunds: a full refund on request if your licence key has never been activated. Once activated, a refund if the fix fails on your repo and we can't resolve it within 5 working days.";

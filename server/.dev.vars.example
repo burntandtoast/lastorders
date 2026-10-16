@@ -4,3 +4,7 @@ STRIPE_WEBHOOK_SECRET=whsec_...        # printed by `stripe listen --forward-to 
 RESEND_API_KEY=re_...
 LICENCE_SIGNING_KEY={"kid":"dev","d":"...","x":"..."}
 ADMIN_TOKEN=change-me-to-a-long-random-string
+# MANAGED_PAYMENTS is a wrangler var (default "0" in wrangler.toml), not a secret.
+# Set it to 1 to sell through Link. Checkout then pins Stripe-Version to
+# 2025-03-31.basil unless STRIPE_API_VERSION is a later date.
+# STRIPE_API_VERSION=2025-03-31.basil

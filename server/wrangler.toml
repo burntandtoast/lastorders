@@ -28,11 +28,12 @@ CLI_NAME = "lastorders"
 PRODUCT_CODE = "lastorders-repo"
 CURRENCY = "gbp"
 PRICE_AMOUNT = "14900"            # minor units (14900 = £149.00). Ignored if STRIPE_PRICE_ID is set.
-STRIPE_PRICE_ID = ""              # optional: a Price from the Stripe Dashboard instead of inline price_data
+STRIPE_PRICE_ID = ""              # optional: a Price from the Stripe Dashboard instead of inline price_data. With MANAGED_PAYMENTS, that product needs tax code txcd_10202003 and the price needs tax_behavior=inclusive (see scripts/ensure-product.mjs).
 ALLOW_PROMOTION_CODES = "false"
-STRIPE_AUTOMATIC_TAX = "false"    # set "true" once Stripe Tax is set up (UK VAT)
+STRIPE_AUTOMATIC_TAX = "false"    # set "true" once Stripe Tax is set up (UK VAT). Ignored while MANAGED_PAYMENTS is "1" (Link calculates tax).
 STRIPE_TOS_CONSENT = "false"     # "true" once a Terms URL is set in Stripe Dashboard → Settings → Public details
-STRIPE_INVOICE_CREATION = "false" # "true" emails a Stripe invoice (useful for B2B buyers)
+STRIPE_INVOICE_CREATION = "false" # "true" emails a Stripe invoice (useful for B2B buyers). Ignored while MANAGED_PAYMENTS is "1" (Link sends receipts).
+MANAGED_PAYMENTS = "0"            # "1": Link is merchant of record. Checkout sends managed_payments[enabled]=true and Stripe-Version 2025-03-31.basil (or STRIPE_API_VERSION if that date is later). "0" is ordinary Stripe Checkout.
 TOKEN_TTL_DAYS = "7"
 LICENCE_FEATURES = "*"
 EMAIL_PROVIDER = "resend"         # resend | log | none

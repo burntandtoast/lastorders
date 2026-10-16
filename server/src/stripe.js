@@ -28,9 +28,12 @@ export class Stripe {
 
   get testMode() { return this.secretKey.startsWith("sk_test_") || this.secretKey.startsWith("rk_test_"); }
 
-  async request(method, path, params, idempotencyKey) {
+  async request(method, path, params, opts = {}) {
+    // The fourth argument used to be an idempotency-key string.
+    const idempotencyKey = typeof opts === "string" ? opts : opts.idempotencyKey;
+    const apiVersion = (typeof opts === "string" ? "" : opts.apiVersion) || this.apiVersion;
     const headers = { authorization: `Bearer ${this.secretKey}` };
-    if (this.apiVersion) headers["stripe-version"] = this.apiVersion;   // default: the account's pinned version
+    if (apiVersion) headers["stripe-version"] = apiVersion;   // default: the account's pinned version
     let url = `${this.apiBase}${path}`;
     let body;
     if (params && method === "GET") url += `?${formEncode(params)}`;
@@ -42,7 +45,7 @@ export class Stripe {
     return data;
   }
 
-  createCheckoutSession(params, idempotencyKey) { return this.request("POST", "/v1/checkout/sessions", params, idempotencyKey); }
+  createCheckoutSession(params, opts) { return this.request("POST", "/v1/checkout/sessions", params, opts); }
   retrieveCheckoutSession(id) { return this.request("GET", `/v1/checkout/sessions/${encodeURIComponent(id)}`); }
 }
 

@@ -37,7 +37,7 @@ CLI ──POST /api/licence/verify {key, repo}──▶ bind repo on first use �
 | `GET /success?session_id=` | Shows the key. If the webhook hasn't arrived yet, it fetches the session from Stripe and issues the key itself (same row, no duplicates). If the key hasn't been emailed yet, it sends the email too (Resend idempotency key stops a duplicate with the webhook), so a missing or failing webhook can't leave a buyer without the email. |
 | `GET /cancel` | "No payment was taken" page. |
 | (hosts) | Customer pages (`/buy`, `/terms`, `/success`, `/cancel`) are served at `PUBLIC_SITE_URL` (lastorders.burntandtoast.com) through the landing Worker's service binding; on the API host (`PUBLIC_BASE_URL`, packs.burntandtoast.com) they 301 there. The API, packs, `/healthz` and the webhook stay on the API host. |
-| `GET /terms` | Licence terms and refund policy (wording in `src/terms.js`). Checkout requires the buyer to agree to immediate supply and the loss of the 14-day cancellation right once the key is used (CCR 2013 reg. 37) via a required `custom_fields` dropdown, shows the refund policy and company details in `custom_text.submit`, and sets `waiver_consent`/`waiver_at`/`terms_version` metadata. The acceptance is logged as a `waiver_consent` licence event. Set `STRIPE_TOS_CONSENT="true"` once a Terms URL is set in Stripe Dashboard → Settings → Public details to use Stripe's own terms checkbox instead. |
+| `GET /terms` | Licence terms and refund policy (wording in `src/terms.js`). Checkout requires the buyer to agree to immediate supply and the loss of the 14-day cancellation right once the key is used (CCR 2013 reg. 37) via a required `custom_fields` dropdown, shows the refund policy and company details in `custom_text.submit`, and sets `waiver_consent`/`waiver_at`/`terms_version` metadata. The acceptance is logged as a `waiver_consent` licence event. Set `STRIPE_TOS_CONSENT="true"` once a Terms URL is set in Stripe Dashboard → Settings → Public details to use Stripe's own terms checkbox instead. Those Checkout fields stay when `MANAGED_PAYMENTS=1`: Stripe's Checkout Session disallow list does not include `consent_collection`, `custom_fields` or `custom_text` (Payment Links do reject `custom_text`; this server does not create Payment Links). With the flag on, `/terms` and `/success` also say the purchase is Sold through Link. |
 | `POST /api/licence/verify` | `{key, repo}`. Binds the repo on first use (atomic `UPDATE … WHERE repo IS NULL`) and returns a signed token. Errors: `not_found` 404, `revoked` 403, `bound_to_other_repo` 403, `invalid` 400. |
 | `GET /api/licence/public-key` | The current Ed25519 public key (informational; the CLI uses keys built into it). |
 | `/api/admin/licences/:key` (`GET`), `…/revoke`, `…/rebind`, `…/resend-email` (`POST`) | Support tools, behind `Authorization: Bearer $ADMIN_TOKEN`. |
@@ -48,7 +48,8 @@ CLI ──POST /api/licence/verify {key, repo}──▶ bind repo on first use �
 - `checkout.session.completed`: issues the key if `payment_status` is `paid`. Otherwise it waits.
 - `checkout.session.async_payment_succeeded`: issues the key for delayed payment methods.
 - `checkout.session.async_payment_failed`: logged.
-- `charge.refunded`: a **full** refund revokes the licence. Partial refunds don't.
+- `charge.refunded`: a **full** refund revokes the licence. Partial refunds don't. The charge's own `amount` and `amount_refunded` are compared, so an Adaptive Pricing charge in the buyer's currency still revokes. Fulfilment stores `amount_total` and `currency` from the session and does not require GBP or 14900.
+- `charge.dispute.created`: revokes the licence and records the dispute id (`revoke_reason` `dispute dp_…`). Link can open or accept a dispute without us.
 
 Sessions from other products on the same Stripe account are ignored (`metadata.product` must be `lastorders-repo`).
 If the email fails, the webhook returns 500, so Stripe retries, for up to 3 days. The retry sends the email
@@ -83,14 +84,14 @@ Adding a provider means implementing `send(msg)` in `src/email.js`.
 
 ### Tests
 
-- `cd server && npm test` runs 16 tests, using sql.js as D1 and fake Stripe and Resend. They cover:
+- `cd server && npm test` runs the licence-server tests, using sql.js as D1 and fake Stripe and Resend. They cover:
   - signature edge cases;
-  - checkout params, including amount, currency, price id and promo codes;
+  - checkout params, including amount, currency, tax code, price id, promo codes and the Managed Payments flag;
   - idempotency and duplicate events;
   - async payments;
   - an email-failure retry;
   - first-activation binding and other-repo rejection;
-  - refunds;
+  - refunds in the charge's own currency, and disputes;
   - the success page racing the webhook;
   - admin;
   - static fall-through.
@@ -112,21 +113,32 @@ Adding a provider means implementing `send(msg)` in `src/email.js`.
 |---|---|---|
 | **Test secret key** `sk_test_…`. A restricted key `rk_test_…` is better, with **Checkout Sessions: Write** (that covers create and retrieve) and nothing else. | Dashboard → Developers → API keys (test mode toggle on, or a Sandbox) | `wrangler secret put STRIPE_SECRET_KEY` |
 | **Webhook signing secret** `whsec_…` | Dashboard → Developers → Webhooks (Workbench → Event destinations) → Add endpoint, as below | `wrangler secret put STRIPE_WEBHOOK_SECRET` |
-| (optional) **Price ID** `price_…` | Product catalogue → "Last Orders licence: one repository", one-off £149 | `STRIPE_PRICE_ID` in `wrangler.toml` (otherwise the Worker uses inline `price_data` from `PRICE_AMOUNT`/`CURRENCY`) |
+| (optional) **Price ID** `price_…` | Product catalogue → "Last Orders licence: one repository", one-off £149, tax code `txcd_10202003`, `tax_behavior=inclusive` | `STRIPE_PRICE_ID` in `wrangler.toml`. If it is empty, the Worker sends inline `price_data` with that tax code and inclusive behavior. `node scripts/ensure-product.mjs` creates or updates the product and price (see below). |
 
-**Webhook endpoint settings:**
+**Webhook endpoint settings** (subscribe these in the Dashboard; this repo does not change the endpoint):
 - URL: `https://packs.burntandtoast.com/api/stripe/webhook`, or the `*.workers.dev` URL until DNS is ready.
 - Events: `checkout.session.completed`, `checkout.session.async_payment_succeeded`,
-  `checkout.session.async_payment_failed`, `charge.refunded`.
-- Payload style: snapshot (the default). The API version can stay as the account default; the Worker only reads stable fields.
+  `checkout.session.async_payment_failed`, `charge.refunded`, `charge.dispute.created`.
+- Payload style: snapshot (the default). The Worker reads stable fields (`amount_total`, `currency`, `payment_intent`, `custom_fields`, `consent`). Checkout Session **create** pins `Stripe-Version: 2025-03-31.basil` when `MANAGED_PAYMENTS=1`. The webhook endpoint's own API version can stay on the account default.
 - For local testing, the Stripe CLI prints a **different** `whsec_` for `stripe listen`. Use that one in `.dev.vars`, not the Dashboard one.
 
 **Stripe account settings worth checking:**
-- Business name and logo (shown on Checkout).
-- Customer emails → "Successful payments" on (Stripe's receipt).
-- Statement descriptor.
-- UK VAT: if registered, set up Stripe Tax and set `STRIPE_AUTOMATIC_TAX = "true"`.
-- `STRIPE_INVOICE_CREATION = "true"` emails a proper invoice, which agencies' clients often want.
+- Business name and logo (shown on Checkout). With Managed Payments the statement shows `LINK.COM*` plus the account statement descriptor. Do not send `payment_intent_data.statement_descriptor` on a Managed Payments session; Stripe rejects it.
+- Customer emails → "Successful payments". With Managed Payments, Link sends the receipt (in sandbox you send the test receipt by hand; live mode sends it).
+- UK VAT: ordinary Checkout can set `STRIPE_AUTOMATIC_TAX = "true"`. Managed Payments calculates tax itself, so that var and `STRIPE_INVOICE_CREATION` are ignored while `MANAGED_PAYMENTS=1`.
+- Managed Payments (Link as merchant of record): set `MANAGED_PAYMENTS = "1"` in `wrangler.toml`. The product needs tax code `txcd_10202003`. The £149 price needs `tax_behavior=inclusive` so the buyer pays £149 total. Inclusive behavior is allowed; omitting it makes Managed Payments add tax on top.
+
+### Managed Payments product
+
+`server/scripts/ensure-product.mjs` is idempotent. It finds the product by `metadata.product` (`PRODUCT_CODE`, default `lastorders-repo`), sets tax code `txcd_10202003`, and creates the £149 GBP one-time price if an active inclusive price is not already there. Prices cannot change amount or tax behavior, so a non-inclusive price is left active and a new inclusive price is created.
+
+```bash
+cd server
+STRIPE_SECRET_KEY=sk_test_... node scripts/ensure-product.mjs
+# prints a price_... id. Put it in wrangler.toml as STRIPE_PRICE_ID.
+```
+
+Use the test secret for the sandbox purchase. Do not point the script at a live key until you mean to create the live product. Inline `price_data` (empty `STRIPE_PRICE_ID`) already sends the same tax code and `tax_behavior=inclusive`.
 
 ### Resend
 
@@ -196,6 +208,23 @@ public key and a test-issued key. Point the CLI at it with:
 `stripe trigger checkout.session.completed --add checkout_session:metadata.product=lastorders-repo` also works
 (without the metadata, the event is ignored as "not this product").
 
+## Switch on Managed Payments
+
+Do this from your machine. Nothing in this repo deploys the Worker or calls Stripe.
+
+1. In the Stripe Dashboard, confirm Managed Payments is on and the Managed Payments terms are accepted. Sandbox can take a test payment (card `4242 4242 4242 4242`, any future expiry, any CVC; Link passcode `000000`). Sandbox does not email receipts on its own: send the test receipt from the payment's Receipt history. Test purchases do not show in the Link app.
+2. Subscribe the webhook endpoint to `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, `charge.refunded` and `charge.dispute.created`. Payload style stays snapshot.
+3. Create the product in the same Stripe mode you will deploy against:
+
+   ```bash
+   cd server
+   STRIPE_SECRET_KEY=sk_test_... node scripts/ensure-product.mjs
+   ```
+
+   Put the printed `price_…` in `STRIPE_PRICE_ID`. Leave `STRIPE_PRICE_ID` empty to use inline `price_data` instead; that path already sets tax code `txcd_10202003` and `tax_behavior=inclusive`.
+4. In `wrangler.toml` set `MANAGED_PAYMENTS = "1"`. Leave `STRIPE_AUTOMATIC_TAX` and `STRIPE_INVOICE_CREATION` as `"false"` (they are not sent while the flag is on). `STRIPE_API_VERSION` is optional; Checkout create sends `2025-03-31.basil` unless that var is a later date.
+5. `npx wrangler deploy` from `server/`. To sell through ordinary Stripe again, set `MANAGED_PAYMENTS = "0"` and deploy. No code change.
+
 ## Going live
 
 1. In Stripe live mode, create the same webhook endpoint. It gets a **new** `whsec_`.
@@ -209,7 +238,7 @@ public key and a test-issued key. Point the CLI at it with:
 - **Move a licence to another repo:**
   `curl -X POST -H "Authorization: Bearer $ADMIN_TOKEN" -d '{"repo":"github.com/owner/new"}' https://…/api/admin/licences/BTM-…/rebind`.
   Use `{"repo":null}` to unbind, so the next use binds.
-- **Revoke** (for example after a chargeback): `…/revoke` with `{"reason":"chargeback"}`. Disputes aren't automatic.
+- **Revoke** (for example after a chargeback you handle yourself): `…/revoke` with `{"reason":"chargeback"}`. `charge.dispute.created` also revokes, with reason `dispute dp_…`. There is no un-revoke; a dispute Stripe later wins needs a new key or a manual status edit.
 - **Resend the email:** `…/resend-email`.
 - **Roll the webhook secret:** Stripe keeps the old one valid for up to 24 hours.
   Set `STRIPE_WEBHOOK_SECRET="whsec_new,whsec_old"`, then drop the old one.
