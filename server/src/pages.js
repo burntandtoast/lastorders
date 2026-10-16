@@ -100,7 +100,7 @@ export function termsPage({ productName, cliName, amount, currency, baseUrl, man
 <p>${e(COMPANY.name)}, a company registered in England and Wales, company no. ${e(COMPANY.number)}. Registered office: ${e(COMPANY.address)}. ${e(COMPANY.vat)}. Contact: ${mail}.</p>
 ${linkSection}
 <h2>What you get</h2>
-<ul><li>A licence key for one GitHub repository (a monorepo counts as one), for ${e(price)}, paid once.</li>
+<ul><li>A licence key for one GitHub repository (a monorepo counts as one), for ${e(price)} including any VAT, paid once.</li>
 <li>The repository is bound to the key the first time the key is used (activated) with the <code>${e(cliName)}</code> tool. We can move a licence to another repository on request, for example after a rename or transfer.</li>
 <li>The licence unlocks the paid features (automatic fixes, verified patches and reports) for that repository, including updates for future model retirements. The free scan never needs a licence.</li>
 <li>The key is for your organisation's use on that repository. Please don't share it for use on other repositories.</li></ul>
