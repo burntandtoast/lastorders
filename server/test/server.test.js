@@ -399,7 +399,7 @@ test("applyManagedPayments strips the update-checkout disallow list and keeps th
   assert.equal(params.subscription_data, undefined);
   assert.deepEqual(params.payment_intent_data, { metadata: { product: "lastorders-repo" } });
   assert.equal(params.custom_fields[0].key, "waiver");
-  assert.equal(params.custom_text.submit.message, "waiver");
+  assert.equal(params.custom_text, undefined); // rejected by Managed Payments
   assert.equal(params.consent_collection.terms_of_service, "required");
 });
 
@@ -414,7 +414,7 @@ test("managed payments: pinned Stripe version, tax code, waiver kept, disallowed
   assert.equal(p.get("line_items[0][price_data][tax_behavior]"), "inclusive");
   assert.equal(p.get("line_items[0][price_data][product_data][tax_code]"), "txcd_10202003");
   assert.equal(p.get("custom_fields[0][key]"), "waiver");
-  assert.equal(p.get("custom_text[submit][message]")?.includes("reg. 37"), true);
+  assert.equal(p.get("custom_text[submit][message]"), null);
   assert.equal(p.get("automatic_tax[enabled]"), null);
   assert.equal(p.get("invoice_creation[enabled]"), null);
   for (const key of [

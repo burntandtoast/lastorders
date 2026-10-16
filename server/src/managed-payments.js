@@ -8,9 +8,10 @@
 //
 // Kept on purpose. They are not in that table, and How Managed Payments works
 // still lets you add your own terms of service in Checkout settings:
-//   consent_collection, custom_fields, custom_text
-// Payment Links reject custom_text. This integration creates Checkout Sessions,
-// not Payment Links, so the 14-day waiver stays on the Stripe page.
+//   consent_collection, custom_fields
+// custom_text IS rejected on Checkout Sessions too ("You cannot use custom_text
+// with Managed Payments", sandbox probe 2026-10-16), so it is stripped. The
+// 14-day waiver stays on the Stripe page as the required custom_fields dropdown.
 //
 // Not stripped. The Managed Payments changelog allows them, and the
 // update-checkout table does not list them:
@@ -45,6 +46,7 @@ export const DISALLOWED_CHECKOUT_PARAMS = [
   "shipping_address_collection",
   "shipping_options",
   "invoice_creation",
+  "custom_text",
 ];
 
 /** customer_update[name] and customer_update[address]. */
