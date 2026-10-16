@@ -1,0 +1,20 @@
+Last Orders commercial licence
+
+Copyright (c) 2026 Burnt and Toast Studios Ltd. Company no. 17334149.
+All rights reserved.
+
+This notice covers the paid, licence-gated modules:
+
+- migration_kit/evaluator.py (`eval`, and the live provider used by `fix --verify --live`)
+- migration_kit/initevals.py (`init-evals`)
+- migration_kit/report.py (`report`)
+
+The source is visible so you can see what those features do. That is not a licence to use them.
+
+Use requires a paid licence from https://lastorders.burntandtoast.com.
+
+No redistribution. No modification to bypass the licence check.
+
+These files are not covered by the MIT licence in LICENSE. The free simulated
+`fix --verify` calls into some of this code from the CLI. That does not make the
+files MIT, and it does not permit any other use.

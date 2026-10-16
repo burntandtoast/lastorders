@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
+requires = ["setuptools>=77", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -10,7 +10,10 @@ readme = "README.md"
 requires-python = ">=3.10"
 authors = [{ name = "Burnt & Toast Studios" }]
 keywords = ["openai", "anthropic", "llm", "deprecation", "migration", "gpt-4o", "scanner", "github-action"]
-# TODO before publishing: choose a licence (see docs/PUBLISHING.md) and add `license = "..."` + LICENSE file.
+# MIT covers the free scan and the rest of the repo. LicenseRef-Commercial covers
+# migration_kit/evaluator.py, initevals.py and report.py (see LICENSE-COMMERCIAL).
+license = "MIT AND LicenseRef-Commercial"
+license-files = ["LICENSE", "LICENSE-COMMERCIAL"]
 classifiers = [
   "Development Status :: 4 - Beta",
   "Environment :: Console",

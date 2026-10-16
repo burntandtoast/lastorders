@@ -174,6 +174,12 @@ can set `LASTORDERS_REPO=github.com/owner/repo`. The licence server lives in `se
 they can be read from the code, and writes a starter `evals/regression.yaml`. You then edit it into 10 to 20
 real examples. `eval` runs them against the old and new model with your own key.
 
+## Licence
+
+The free scan is [MIT](LICENSE): the scanner, migration packs, CLI, licence client, and the patch preview (`swap` and `fix` write a `.diff` without a licence, and so does simulated `fix --verify`).
+
+`eval`, `init-evals` and `report` are proprietary ([LICENSE-COMMERCIAL](LICENSE-COMMERCIAL)). The source is in this repository so you can read it. Using those commands requires a paid licence from <https://lastorders.burntandtoast.com>. You may not redistribute that code, or modify it to skip the licence check. `swap --apply`, `fix --apply` and `fix --verify --live` are gated the same way.
+
 ## Limitations
 
 - Detection uses pattern matching. Model names built at runtime or stored in a database won't be found;

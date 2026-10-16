@@ -1,3 +1,4 @@
+# Copyright (c) 2026 Burnt and Toast Studios Ltd. Proprietary; see LICENSE-COMMERCIAL.
 """`eval`: regression harness comparing an old and a new model on a YAML suite."""
 from __future__ import annotations
 

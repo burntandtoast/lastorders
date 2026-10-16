@@ -1,3 +1,4 @@
+# Copyright (c) 2026 Burnt and Toast Studios Ltd. Proprietary; see LICENSE-COMMERCIAL.
 """`init-evals`: generate a starter eval suite from the call sites the scan found.
 
 Python call sites are read with `ast` (model, system/user messages, response_format JSON
