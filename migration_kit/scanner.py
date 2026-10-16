@@ -20,7 +20,8 @@ SKIP_DIRS = {".git", ".venv", "venv", "env", "__pycache__", "build",
 VENDORED_DIRS = {"vendor", "third_party", "node_modules", ".yarn", "dist"}
 CODE_EXT = {".py": "python", ".js": "javascript", ".mjs": "javascript", ".cjs": "javascript",
             ".jsx": "javascript", ".ts": "typescript", ".tsx": "typescript", ".mts": "typescript",
-            ".r": "r", ".rmd": "r", ".qmd": "r"}
+            ".r": "r", ".rmd": "r", ".qmd": "r",
+            ".php": "php", ".rs": "rust", ".cs": "csharp", ".go": "go", ".ejs": "ejs"}
 CONFIG_EXT = {".yaml": "yaml", ".yml": "yaml", ".json": "json", ".toml": "toml", ".ini": "ini",
               ".cfg": "ini", ".conf": "ini"}
 DOC_EXT = {".md": "markdown", ".txt": "text", ".rst": "text"}
@@ -34,7 +35,16 @@ MODEL_KEY_RE = re.compile(r"""(?:\bmodel(?:_name|_id|Name|Id)?\b|\bdeployment\b|
 # The key must sit immediately before a short id (`model = "o1"`, `engine: o3`).
 # A bare `=o1(` in minified code is not this.
 _SHORT_KEY_BEFORE = re.compile(
-    r"""(?:\bmodel(?:_name|_id|Name|Id)?\b|\bdeployment\b|\bengine\b)\s*["']?\s*[:=]\s*["']?\s*$""", re.I)
+    r"""(?:\bmodel(?:_name|_id|Name|Id)?\b|\bdeployment\b|\bengine\b)\s*["']?\s*(?:=>|[:=])\s*["']?\s*$""", re.I)
+# A prefixed identifier key such as `orgId: "o1"` or `organization_id: "o1"`
+# sits immediately before the token. Bare `id` is not this: model catalogues use
+# `{ id: "o3-mini" }`. Model keys (`modelId`, `model_id`) are not this either.
+_ID_KEY = re.compile(r"""(?:[a-z0-9]Ids?$|[a-zA-Z0-9]IDs?$|_ids?$|_IDs?$)""")
+_MODEL_KEY_NAME = re.compile(r"model|deployment|engine", re.I)
+# Docs search indexes (pkgdown, MkDocs, Sphinx, Hugo, Jekyll) under a docs output folder.
+SEARCH_INDEX_NAMES = {"search.json", "search_index.json", "searchindex.js", "searchindex.json",
+                      "search-index.json", "search_index.js"}
+DOCS_OUTPUT_DIRS = {"docs", "site", "_build", "public", "_site"}
 GENERATED_HEADER = re.compile(r"@generated|DO NOT EDIT|auto-generated", re.I)
 ENV_REF_RE = re.compile(
     r"""(?:os\.environ\.get|os\.getenv|os\.environ\[|process\.env\.|process\.env\[|import\.meta\.env\.)\(?\s*["']?([A-Z][A-Z0-9_]*MODEL[A-Z0-9_]*)""")
@@ -144,10 +154,20 @@ def _peek_head(path: Path, n: int = 5) -> str:
         return ""
 
 
+def _is_docs_search_index(rel: str) -> bool:
+    parts = Path(rel).parts
+    name = parts[-1].lower() if parts else ""
+    if name not in SEARCH_INDEX_NAMES:
+        return False
+    return bool(set(parts[:-1]) & DOCS_OUTPUT_DIRS)
+
+
 def file_skip_reason(path: Path, rel: str, text: str | None = None) -> str | None:
     """Why this file is generated, minified or vendored, or None to scan it."""
     if set(Path(rel).parts) & VENDORED_DIRS:
         return "vendored"
+    if _is_docs_search_index(rel):
+        return "generated"
     named = _name_skip_reason(path.name)
     if named:
         return named
@@ -184,8 +204,13 @@ def _is_comment(line: str, lang: str) -> bool:
     # Roxygen (`#'`) and Quarto/R Markdown chunk comments are `#` comments.
     if lang in ("python", "r", "yaml", "toml", "ini", "env"):
         return s.startswith("#")
-    if lang in ("javascript", "typescript"):
+    if lang in ("javascript", "typescript", "rust", "csharp", "go"):
         return s.startswith(("//", "/*", "*"))
+    if lang == "php":
+        # `#[Attribute]` is PHP 8 syntax, not a comment.
+        return s.startswith(("//", "/*", "*")) or (s.startswith("#") and not s.startswith("#["))
+    if lang == "ejs":
+        return s.startswith(("<%#", "<!--"))
     return False
 
 
@@ -221,8 +246,19 @@ def _config_value(line: str, start: int, end: int) -> bool:
     return bool(re.search(r"(?:[:=]\s*|-\s+)$", line[:start]))
 
 
+def _non_model_id_key(before: str) -> bool:
+    """`orgId: "o1"`, `organization_id: "o1"`, `rowId: 'o1'`: an identifier, not a model."""
+    m = re.search(r"""(?<![\w$])["']?([A-Za-z_$][\w$]*)["']?\s*(?:=>|[:=])\s*["'`]?\s*$""", before)
+    if not m:
+        return False
+    key = m.group(1)
+    return bool(_ID_KEY.search(key)) and not _MODEL_KEY_NAME.search(key)
+
+
 def short_id_in_context(line: str, start: int, end: int, lang: str, prev: str) -> bool:
     """Bare o1/o3-style ids count only in a model context, not in minified identifiers."""
+    if _non_model_id_key(line[:start]):
+        return False
     if _whole_quoted_token(line, start, end):
         return True
     if _SHORT_KEY_BEFORE.search(line[:start]):

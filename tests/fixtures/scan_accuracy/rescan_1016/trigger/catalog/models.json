@@ -1,0 +1,9 @@
+{
+  "o1": {
+    "modelName": "o1",
+    "provider": "openai"
+  },
+  "o1-pro": {
+    "modelName": "o1-pro"
+  }
+}
