@@ -93,7 +93,10 @@ export default {
     }
     if (url.pathname.startsWith("/studio-assets/")) return studioAsset(url, request);
     // Customer-facing licence pages are served by the licence Worker (service binding), on this host.
-    if (LICENCE_PATHS.has(url.pathname.replace(/\/+$/, "") || "/")) return env.LICENCE.fetch(request);
+    const path = url.pathname.replace(/\/+$/, "") || "/";
+    // Until live payments are switched on (env BUY_OPEN = "1"), /buy goes to the sign-up box instead of checkout.
+    if (path === "/buy" && env.BUY_OPEN !== "1") return Response.redirect(`${url.origin}/#remind`, 302);
+    if (LICENCE_PATHS.has(path)) return env.LICENCE.fetch(request);
     return env.ASSETS.fetch(request);
   },
 };
