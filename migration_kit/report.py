@@ -1,3 +1,4 @@
+# Copyright (c) 2026 Burnt and Toast Studios Ltd. Proprietary; see LICENSE-COMMERCIAL.
 """Client-facing report (Markdown + self-contained HTML). Generic: all provider facts,
 deadlines and advice come from the migration packs."""
 from __future__ import annotations

@@ -1,6 +1,9 @@
 # Changelog
 
-## 0.4.0 (unreleased)
+## 0.4.1
+- **Licence split.** The free scan, migration packs, CLI, licence client and patch preview (`swap` / `fix` without `--apply`, including simulated `fix --verify`) are MIT (`LICENSE`). `eval`, `init-evals` and `report` are proprietary (`LICENSE-COMMERCIAL`): source is visible, use needs a paid licence, no redistribution and no bypassing the licence check. `swap --apply`, `fix --apply` and `fix --verify --live` stay behind the same check.
+
+## 0.4.0 (2026-10-15)
 - **Renamed to Last Orders.** Package, CLI and PyPI name `lastorders`; env vars `LASTORDERS_*` (was the placeholder
   `modelmigrate` / `MODELMIGRATE_*`); output marker `.lastorders-output`; Action `burntandtoast/lastorders@v0`;
   Worker `lastorders-licence`, D1 database `lastorders-licences`, Stripe metadata product `lastorders-repo`.
