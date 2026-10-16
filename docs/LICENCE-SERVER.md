@@ -5,7 +5,7 @@ pack site (`site/`). It has been built and tested locally only. **Nothing is dep
 Stripe, Resend or Cloudflare credentials anywhere in the repo.**
 
 ```
-buyer ──/buy──▶ Worker ──▶ Stripe Checkout (£149, test mode) ──▶ /success shows the key
+buyer ──/buy──▶ Worker ──▶ Stripe Checkout (£179, test mode) ──▶ /success shows the key
                   ▲                         │
                   │      checkout.session.completed (signed webhook)
                   │                         ▼
@@ -113,7 +113,7 @@ Adding a provider means implementing `send(msg)` in `src/email.js`.
 |---|---|---|
 | **Test secret key** `sk_test_…`. A restricted key `rk_test_…` is better, with **Checkout Sessions: Write** (that covers create and retrieve) and nothing else. | Dashboard → Developers → API keys (test mode toggle on, or a Sandbox) | `wrangler secret put STRIPE_SECRET_KEY` |
 | **Webhook signing secret** `whsec_…` | Dashboard → Developers → Webhooks (Workbench → Event destinations) → Add endpoint, as below | `wrangler secret put STRIPE_WEBHOOK_SECRET` |
-| (optional) **Price ID** `price_…` | Product catalogue → "Last Orders licence: one repository", one-off £149, tax code `txcd_10202003`, `tax_behavior=inclusive` | `STRIPE_PRICE_ID` in `wrangler.toml`. If it is empty, the Worker sends inline `price_data` with that tax code and inclusive behavior. `node scripts/ensure-product.mjs` creates or updates the product and price (see below). |
+| (optional) **Price ID** `price_…` | Product catalogue → "Last Orders licence: one repository", one-off £179, tax code `txcd_10202003`, `tax_behavior=inclusive` | `STRIPE_PRICE_ID` in `wrangler.toml`. If it is empty, the Worker sends inline `price_data` with that tax code and inclusive behavior. `node scripts/ensure-product.mjs` creates or updates the product and price (see below). |
 
 **Webhook endpoint settings** (subscribe these in the Dashboard; this repo does not change the endpoint):
 - URL: `https://packs.burntandtoast.com/api/stripe/webhook`, or the `*.workers.dev` URL until DNS is ready.
@@ -126,11 +126,11 @@ Adding a provider means implementing `send(msg)` in `src/email.js`.
 - Business name and logo (shown on Checkout). With Managed Payments the statement shows `LINK.COM*` plus the account statement descriptor. Do not send `payment_intent_data.statement_descriptor` on a Managed Payments session; Stripe rejects it.
 - Customer emails → "Successful payments". With Managed Payments, Link sends the receipt (in sandbox you send the test receipt by hand; live mode sends it).
 - UK VAT: ordinary Checkout can set `STRIPE_AUTOMATIC_TAX = "true"`. Managed Payments calculates tax itself, so that var and `STRIPE_INVOICE_CREATION` are ignored while `MANAGED_PAYMENTS=1`.
-- Managed Payments (Link as merchant of record): set `MANAGED_PAYMENTS = "1"` in `wrangler.toml`. The product needs tax code `txcd_10202003`. The £149 price needs `tax_behavior=inclusive` so the buyer pays £149 total. Inclusive behavior is allowed; omitting it makes Managed Payments add tax on top.
+- Managed Payments (Link as merchant of record): set `MANAGED_PAYMENTS = "1"` in `wrangler.toml`. The product needs tax code `txcd_10202003`. The £179 price needs `tax_behavior=inclusive` so the buyer pays £179 total. Inclusive behavior is allowed; omitting it makes Managed Payments add tax on top.
 
 ### Managed Payments product
 
-`server/scripts/ensure-product.mjs` is idempotent. It finds the product by `metadata.product` (`PRODUCT_CODE`, default `lastorders-repo`), sets tax code `txcd_10202003`, and creates the £149 GBP one-time price if an active inclusive price is not already there. Prices cannot change amount or tax behavior, so a non-inclusive price is left active and a new inclusive price is created.
+`server/scripts/ensure-product.mjs` is idempotent. It finds the product by `metadata.product` (`PRODUCT_CODE`, default `lastorders-repo`), sets tax code `txcd_10202003`, and creates the £179 GBP one-time price if an active inclusive price is not already there. Prices cannot change amount or tax behavior, so a non-inclusive price is left active and a new inclusive price is created.
 
 ```bash
 cd server

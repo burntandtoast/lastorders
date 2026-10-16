@@ -26,7 +26,7 @@ export const MANAGED_PAYMENTS_API_VERSION = "2025-03-31.basil";
 /** Downloadable Software — business use. Eligible for Managed Payments. */
 export const TAX_CODE = "txcd_10202003";
 
-/** Tax is included in the unit amount, so a £149 price charges £149 in total. */
+/** Tax is included in the unit amount, so a £179 price charges £179 in total. */
 export const TAX_BEHAVIOR = "inclusive";
 
 export const PRODUCT_DESCRIPTION =

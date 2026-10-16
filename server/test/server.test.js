@@ -49,7 +49,7 @@ test("form encoding matches Stripe's bracket syntax", () => {
   assert.equal(f.has("skip"), false);
 });
 
-test("checkout: £149 inline price by default, configurable amount, price id, redirect", async () => {
+test("checkout: £179 inline price by default, configurable amount, price id, redirect", async () => {
   const net = fakeNetwork();
   const env = await makeEnv();
   const h = harness(env, net);
@@ -62,7 +62,7 @@ test("checkout: £149 inline price by default, configurable amount, price id, re
   assert.equal(net.calls[0].headers.authorization, "Bearer sk_test_dummy");
   assert.equal(p.get("mode"), "payment");
   assert.equal(p.get("line_items[0][price_data][currency]"), "gbp");
-  assert.equal(p.get("line_items[0][price_data][unit_amount]"), "14900");
+  assert.equal(p.get("line_items[0][price_data][unit_amount]"), "17900");
   assert.equal(p.get("line_items[0][price_data][tax_behavior]"), "inclusive");
   assert.equal(p.get("line_items[0][price_data][product_data][tax_code]"), "txcd_10202003");
   assert.equal(p.get("managed_payments[enabled]"), null);
@@ -345,7 +345,7 @@ test("checkout: required waiver consent, policy message and waiver metadata; /te
   const t = await h.call("/terms");
   assert.equal(t.status, 200);
   const html = await t.text();
-  for (const s of ["17334149", "England and Wales", "regulation 37", "hello@burntandtoast.com", "never been activated", "5 working days", "£149"]) assert.ok(html.includes(s), s);
+  for (const s of ["17334149", "England and Wales", "regulation 37", "hello@burntandtoast.com", "never been activated", "5 working days", "£179"]) assert.ok(html.includes(s), s);
   assert.equal(html.includes("Sold through Link"), false);
 });
 

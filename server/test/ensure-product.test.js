@@ -41,14 +41,14 @@ function memoryStripe() {
   };
 }
 
-test("ensure-product creates the tax code and inclusive £149 price once", async () => {
+test("ensure-product creates the tax code and inclusive £179 price once", async () => {
   const stripe = memoryStripe();
   const first = await ensureProduct(stripe);
   assert.equal(first.createdProduct, true);
   assert.equal(first.createdPrice, true);
   assert.equal(first.taxCode, "txcd_10202003");
   assert.equal(first.taxBehavior, "inclusive");
-  assert.equal(first.unitAmount, 14900);
+  assert.equal(first.unitAmount, 17900);
   assert.equal(first.currency, "gbp");
   assert.equal(stripe.products.length, 1);
   assert.equal(stripe.prices.length, 1);
