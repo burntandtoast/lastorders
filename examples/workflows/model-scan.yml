@@ -19,8 +19,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Last Orders free scan
         id: btm
-        # TODO: replace with the published repo, pinned to a tag or commit SHA
-        uses: burntandtoast/lastorders@v0
+        uses: burntandtoast/lastorders@v0.4.4
         with:
           fail-on-high: "true"
           # packs: "openai,anthropic"

@@ -3,13 +3,13 @@
   "pack_format": 1,
   "provider": "google",
   "name": "Google Gemini on Vertex AI",
-  "version": "2026.10.16.1",
+  "version": "2026.10.16.2",
   "updated": "2026-10-16",
   "status": "stable",
   "notes": [
     "Flag only. No automatic swap (map_automatically is false on every model) and no rules, so fix and swap leave these IDs alone.",
-    "Vertex detection is file-level, using the signal id 'vertex'. A finding is high risk only when that signal matches the same file as the model ID. Vertex usage in a different file, or no signal at all, stays informational: the call might be the Gemini API (AI Studio), which has not announced a shutdown for these three IDs.",
-    "Checked https://cloud.google.com/vertex-ai/generative-ai/docs/learn/model-versions on 16 Oct 2026. That URL redirects to the Gemini Enterprise Agent Platform model-versions page (last updated 2026-10-15 UTC). The lifecycle table lists gemini-2.5-pro, gemini-2.5-flash and gemini-2.5-flash-lite with retirement date 20 Oct 2026. It lists no -001, dated, or preview ID for these three.",
+    "Vertex detection is file-level, using the signal id 'vertex'. A finding is high risk only when that signal matches the same file as the model ID and the shutdown is within urgent_days or already past. Vertex usage in a different file, or no signal at all, stays informational: the call might be the Gemini API (AI Studio).",
+    "Checked https://cloud.google.com/vertex-ai/generative-ai/docs/learn/model-versions on 16 Oct 2026. That URL redirects to the Gemini Enterprise Agent Platform model-versions page. The lifecycle table lists gemini-2.5-pro, gemini-2.5-flash and gemini-2.5-flash-lite with retirement date 20 Oct 2026. It lists no -001, dated, or preview ID for these three. gemini-live-2.5-flash-native-audio retires 13 Dec 2026 with no replacement model ID in that cell. gemini-2.5-flash-image retires 15 Mar 2027; the replacement cell is gemini-3.1-flash-lite-image.",
     "The same three stable IDs have 'No shutdown date announced' on the Gemini API deprecations page. Preview IDs (for example gemini-2.5-pro-preview-06-05) are different models with their own, already passed, Gemini API shutdowns and are not this retirement.",
     "Suggested replacement is the first model ID in Google's 'or' list. The other listed options are in each model's note. Gemma 4 is named for gemini-2.5-flash-lite but the page does not give it a model ID."
   ],
@@ -30,6 +30,12 @@
   "id_patterns": [
     {
       "pattern": "gemini-2\\.5-(?:flash-lite|flash|pro)"
+    },
+    {
+      "pattern": "gemini-2\\.5-flash-image"
+    },
+    {
+      "pattern": "gemini-live-2\\.5-flash-native-audio"
     }
   ],
   "migrations": [
@@ -38,6 +44,21 @@
       "title": "Vertex AI retires Gemini 2.5 Pro, Flash and Flash-Lite",
       "shutdown": "2026-10-20",
       "replacement": "gemini-3.8-flash",
+      "headline": true,
+      "source": "model-versions"
+    },
+    {
+      "id": "gemini-live-2-5-native-audio-2026-12-13",
+      "title": "Vertex AI retires Gemini 2.5 Flash Live native audio",
+      "shutdown": "2026-12-13",
+      "headline": true,
+      "source": "model-versions"
+    },
+    {
+      "id": "gemini-2-5-flash-image-2027-03-15",
+      "title": "Vertex AI retires Gemini 2.5 Flash Image",
+      "shutdown": "2027-03-15",
+      "replacement": "gemini-3.1-flash-lite-image",
       "headline": true,
       "source": "model-versions"
     }
@@ -81,6 +102,31 @@
       "source": "model-versions",
       "map_automatically": false,
       "note": "Vertex AI also lists gemini-3.1-flash-lite and Gemma 4. No -001 or preview ID is published for this model."
+    },
+    {
+      "id": "gemini-live-2.5-flash-native-audio",
+      "kind": "alias",
+      "match": "exact",
+      "shutdown": "2026-12-13",
+      "migration": "gemini-live-2-5-native-audio-2026-12-13",
+      "section": "Gemini Live models",
+      "confidence": "confirmed",
+      "source": "model-versions",
+      "map_automatically": false,
+      "note": "Released 12 Dec 2025. The model versions table lists retirement on 13 Dec 2026 and no replacement model ID."
+    },
+    {
+      "id": "gemini-2.5-flash-image",
+      "kind": "alias",
+      "match": "exact",
+      "shutdown": "2027-03-15",
+      "replacement": "gemini-3.1-flash-lite-image",
+      "migration": "gemini-2-5-flash-image-2027-03-15",
+      "section": "Gemini image models",
+      "confidence": "confirmed",
+      "source": "model-versions",
+      "map_automatically": false,
+      "note": "Released 2 Oct 2025. Image model. The model versions table lists gemini-3.1-flash-lite-image as the replacement."
     }
   ],
   "signals": [
@@ -124,14 +170,16 @@
     "urgent_days": 30,
     "default_risk": "info",
     "shutdown_risk_when_any": ["vertex"],
-    "otherwise_note": "retires on Vertex AI 20 Oct; not deprecated on the Gemini API"
+    "otherwise_note": "retires on Vertex AI; not deprecated on the Gemini API"
   },
   "facts": {
     "confirmed": [
       "On Vertex AI, gemini-2.5-pro (released 17 Jun 2025), gemini-2.5-flash (released 17 Jun 2025) and gemini-2.5-flash-lite (released 22 Jul 2025) retire on 20 Oct 2026.",
       "Documented Vertex replacements: gemini-2.5-pro -> gemini-3.8-flash or gemini-3.5-flash; gemini-2.5-flash -> gemini-3.8-flash or gemini-3.5-flash-lite or gemini-3.1-flash-lite; gemini-2.5-flash-lite -> gemini-3.8-flash or gemini-3.1-flash-lite or Gemma 4.",
       "The model versions table does not list a -001, dated, or preview ID for these three stable models.",
-      "On the Gemini API, gemini-2.5-pro, gemini-2.5-flash and gemini-2.5-flash-lite have no shutdown date announced."
+      "On the Gemini API, gemini-2.5-pro, gemini-2.5-flash and gemini-2.5-flash-lite have no shutdown date announced.",
+      "On Vertex AI, gemini-live-2.5-flash-native-audio (released 12 Dec 2025) retires on 13 Dec 2026. The model versions table's replacement cell for that row is empty.",
+      "On Vertex AI, gemini-2.5-flash-image (released 2 Oct 2025) retires on 15 Mar 2027. The model versions table lists gemini-3.1-flash-lite-image as the replacement."
     ],
     "unconfirmed": [
       "No live API calls were made. Replacements were not checked for parameter compatibility, so this pack does not swap or rewrite calls."

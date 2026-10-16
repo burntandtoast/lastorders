@@ -129,7 +129,7 @@ def test_oct_2026_fine_tunes_pro_and_image_models(tmp_path):
     assert not {"o3-pro-2025-06-10", "gpt-5-pro-2025-10-06", "gpt-image-1.5", "o1-pro", "gpt-image-1"} & set(mapping)
 
 
-INFO = "retires on Vertex AI 20 Oct; not deprecated on the Gemini API"
+INFO = "retires on Vertex AI; not deprecated on the Gemini API"
 
 
 def test_google_vertex_is_high_and_studio_is_informational(tmp_path):
@@ -190,7 +190,11 @@ def test_google_vertex_is_high_and_studio_is_informational(tmp_path):
         assert INFO in f.notes
         assert f.rules == []
     assert "other.py" not in by_file
-    assert "near.py" not in by_file  # image, -001 and preview IDs are not this retirement
+    near = {f.model: f for f in by_file["near.py"]}
+    assert set(near) == {"gemini-2.5-flash-image"}
+    assert near["gemini-2.5-flash-image"].shutdown == "2027-03-15"
+    assert near["gemini-2.5-flash-image"].suggested == "gemini-3.1-flash-lite-image"
+    assert near["gemini-2.5-flash-image"].risk == "info"
 
     g = load_packs().get("google")
     assert g.data.get("rules", []) == []

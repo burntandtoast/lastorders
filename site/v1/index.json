@@ -14,20 +14,20 @@
     {
       "provider": "google",
       "name": "Google Gemini on Vertex AI",
-      "version": "2026.10.16.1",
+      "version": "2026.10.16.2",
       "status": "stable",
       "pack_format": 1,
       "url": "packs/google.json",
-      "sha256": "53040e87cd9179aae6784d86b5bc29c4c0e714b9a302c50b7d8e595eb5589bf0"
+      "sha256": "f24bfdb78ef1def7c4ae7b5313d1a8a8f8760e28588bda59e037481d4866387e"
     },
     {
       "provider": "openai",
       "name": "OpenAI API",
-      "version": "2026.10.15.6",
+      "version": "2026.10.16.1",
       "status": "stable",
       "pack_format": 1,
       "url": "packs/openai.json",
-      "sha256": "a0b856f34420de1f9bc2bcb46492ad7a2881fda71430af17628ca94bbe8d7cc6"
+      "sha256": "9114cce7b0c521cce01b021fcb125d994b977a849237d06b544058be0578e6b3"
     }
   ]
 }

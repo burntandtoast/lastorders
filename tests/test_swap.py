@@ -78,6 +78,8 @@ def test_default_mapping_from_packs(repo, tmp_path):
     m = swapper.mapping_from_packs(load_packs())
     assert m.replacements["gpt-4o-2024-08-06"] == "gpt-6-luna"
     assert m.replacements["claude-sonnet-4-5-20250929"] == "claude-sonnet-5-5"
-    assert "gpt-4o-transcribe" not in m.replacements and "gpt-4.1-nano" not in m.replacements
+    assert m.replacements["gpt-4.1-nano"] == "gpt-5.6-luna"
+    assert "gpt-4o-transcribe" not in m.replacements and "o1-pro" not in m.replacements
     res = swapper.plan(repo, m)
     assert "claude-sonnet-4-5-20250929" in [c.old for c in res.changes]
+    assert ("config/models.yaml", "gpt-4.1-nano", "gpt-5.6-luna") in {(c.file, c.old, c.new) for c in res.changes}
