@@ -34,7 +34,7 @@ inputs:
     description: "Python version to run the scan with."
     default: "3.12"
   fix-preview:
-    description: "Also write the automatic-fix patch (fix.diff + fix-plan.md) and check it with a simulated replay. Free, no API key; nothing is committed."
+    description: "Also print a per-file summary of model IDs that would change. With LASTORDERS_LICENCE, write the patch and run a simulated verify. Nothing is committed."
     default: "false"
   artifact-name:
     description: "Name of the uploaded artifact."
@@ -109,36 +109,44 @@ runs:
         BTM_PACKS_URL: ${{ inputs.packs-url }}
       run: |
         out="$RUNNER_TEMP/lastorders"
-        args=(fix "$BTM_PATH" --out "$out" --verify)
+        mkdir -p "$out"
+        args=(fix "$BTM_PATH" --out "$out")
+        # The patch and simulated verify exist only when a licence key is set. No other env var enables them.
+        if [ -n "${LASTORDERS_LICENCE:-}" ]; then
+          args+=(--verify)
+        fi
         [ -n "$BTM_PACKS" ] && args+=(--pack "$BTM_PACKS")
         [ "$BTM_OFFLINE" = "true" ] && args+=(--offline)
         [ -n "$BTM_PACKS_URL" ] && args+=(--packs-url "$BTM_PACKS_URL")
-        lastorders "${args[@]}" || true
-        python - "$out" >> "$GITHUB_STEP_SUMMARY" <<'PY'
+        lastorders "${args[@]}" | tee "$out/fix-preview.txt"
+        {
+          echo ""
+          echo "### Automatic fix preview"
+          echo ""
+          echo '```'
+          cat "$out/fix-preview.txt"
+          echo '```'
+        } >> "$GITHUB_STEP_SUMMARY"
+        if [ -n "${LASTORDERS_LICENCE:-}" ] && [ -f "$out/fix-plan.json" ]; then
+          python - "$out" >> "$GITHUB_STEP_SUMMARY" <<'PY'
         import json, sys, pathlib
         out = pathlib.Path(sys.argv[1])
         p = json.loads((out / "fix-plan.json").read_text())
         n = p["summary"]["items"]
         v = json.loads((out / "verify" / "verify.json").read_text()) if (out / "verify" / "verify.json").exists() else None
-        print("\n### Automatic fix preview\n")
         print(f"- {p['summary']['files_changed']} files in the patch, {n.get('fixed', 0) + n.get('fixed-coupled', 0)} code fixes, "
               f"{n.get('manual', 0)} items need a decision (see `fix-plan.md` in the artifact).")
         if v:
             print(f"- Simulated verification: {'PASS' if v['ok'] else 'FAIL'} (patch applies, files parse, fixer is idempotent).")
         PY
+        fi
 
     - name: Upload scan report
       if: always()
       uses: actions/upload-artifact@v4
       with:
         name: ${{ inputs.artifact-name }}
-        path: |
-          ${{ runner.temp }}/lastorders/scan.json
-          ${{ runner.temp }}/lastorders/scan.md
-          ${{ runner.temp }}/lastorders/fix.diff
-          ${{ runner.temp }}/lastorders/fix-plan.md
-          ${{ runner.temp }}/lastorders/fix-plan.json
-          ${{ runner.temp }}/lastorders/verify/verify.md
+        path: ${{ runner.temp }}/lastorders/**
         if-no-files-found: warn
 
     - name: Fail on high-risk findings

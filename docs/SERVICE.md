@@ -97,8 +97,9 @@ lastorders swap /path/to/client-repo --mapping mappings/gpt4-series-to-gpt-6-lun
 git -C /path/to/client-repo apply --check out/model-swap.diff   # then apply on a branch
 ```
 
-Exact-token replacement driven by the mapping YAML. It writes `model-swap.diff` and `swap-summary.json`
-and **does not modify the repo** unless you pass `--apply`. Fine-tuned ids are skipped unless listed
+Exact-token replacement driven by the mapping YAML. With a licence it writes `model-swap.diff` and
+`swap-summary.json` and **does not modify the repo** unless you pass `--apply`. Without a licence it
+prints a per-file model summary and writes nothing. Fine-tuned ids are skipped unless listed
 individually under `fine_tuned:`. Docs are skipped unless `include_docs: true` or `--include-docs` is set.
 The swap changes model ids only. Code changes such as adding `reasoning_effort` are flagged in the scan,
 and we make them by hand.
@@ -140,9 +141,10 @@ example to mark a demo or a live run.
 
 ### Demo
 
-`lastorders demo` runs the whole pipeline on `examples/sample-app` (a fictional "Acme Widgets" codebase) and
-writes to `examples/demo-output/`. The demo eval is a dry run with one deliberate DRIFT and one FAIL, so
-the report shows what problems look like.
+`lastorders demo` runs scan, the unlicensed model-id summary, a simulated eval and a report on
+`examples/sample-app` (a fictional "Acme Widgets" codebase) and writes to `examples/demo-output/`.
+It does not write a patch. The demo eval is a dry run with one deliberate DRIFT and one FAIL, so
+the report shows what problems look like. A licensed `swap` or `fix` is what writes `model-swap.diff` and `fix.diff`.
 
 ## The service: scan, swap, eval, handoff
 

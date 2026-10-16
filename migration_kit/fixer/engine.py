@@ -1,3 +1,4 @@
+# Copyright (c) 2026 Burnt and Toast Studios Ltd. Proprietary; see LICENSE-COMMERCIAL.
 """Fixer engine: evaluates pack rules per call site and turns their `fix` specs into edits.
 
 Pipeline: (1) swap model IDs with the pack mapping (same engine as `swap`), (2) find API
@@ -71,6 +72,7 @@ class FixResult:
     calls: list[CallRecord]
     packs: list[dict]
     options: dict
+    model_changes: list[tuple[str, str, str]] = field(default_factory=list)  # file, old id, new id
 
     def counts(self) -> dict:
         c: dict[str, int] = {}
@@ -383,9 +385,11 @@ def plan_fixes(root: str | Path, packs: PackSet | None = None, mapping: Mapping 
 
     _file_level_items(root, packs, items, parsed_providers, swapped)
     items.sort(key=lambda i: (i.file, i.line, i.rule))
+    model_changes = [(c.file, c.old, c.new) for c in swapped.changes] if swapped else []
     return FixResult(str(root), items, "".join(diffs), new_contents, len(swapped.changes) if swapped else 0, records,
                      packs.info(), {"model_swap": model_swap, "assume_model": assume_model,
-                                    "include_inferred": include_inferred, "mapping": mapping.source})
+                                    "include_inferred": include_inferred, "mapping": mapping.source},
+                     model_changes)
 
 
 def _match_after(before: list[CallSite], after: list[CallSite], wanted: list[CallSite]) -> list[CallSite | None]:

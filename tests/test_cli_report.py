@@ -9,12 +9,14 @@ SUITE = str(ROOT / "examples" / "evals" / "sample-suite.yaml")
 
 def test_full_demo_pipeline(tmp_path, monkeypatch):
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
-    assert main(["demo", "--out", str(tmp_path)]) == 0       # demo needs no licence
-    for f in ["scan.json", "scan.md", "model-swap.diff", "swap-summary.json", "eval.json", "eval.md",
-              "client-report.html", "client-report.md"]:
+    assert main(["demo", "--out", str(tmp_path)]) == 0       # demo needs no licence, and writes no patch
+    for f in ["scan.json", "scan.md", "eval.json", "eval.md", "client-report.html", "client-report.md"]:
         assert (tmp_path / f).exists(), f
+    for f in ["model-swap.diff", "swap-summary.json", "fix.diff", "fix-plan.json", "fix-plan.md"]:
+        assert not (tmp_path / f).exists(), f
     html = (tmp_path / "client-report.html").read_text()
     assert "gpt-6-luna" in html and "14 Jan 2027" in html and "Demo run" in html
+    assert "--- a/" not in html and "@@" not in html
     assert "ft:gpt-4o-mini-2024-07-18" in html and "claude-sonnet-4-5-20250929" in html
     assert "Anthropic Claude API (stub)" in html and "<script" not in html
     scan = json.loads((tmp_path / "scan.json").read_text())
@@ -44,7 +46,9 @@ def test_paid_commands_gated(tmp_path, capsys):
     assert main(["eval", SUITE, "--dry-run", "--out", str(tmp_path)]) == 4
     assert main(["report", "--client", "X", "--scan", str(scan_dir / "scan.json"), "--out", str(tmp_path)]) == 4
     assert main(["swap", SAMPLE, "--out", str(tmp_path), "--apply"]) == 4
-    assert main(["swap", SAMPLE, "--out", str(tmp_path)]) == 0           # diff only stays free
+    assert main(["swap", SAMPLE, "--out", str(tmp_path)]) == 0           # summary only; no patch
+    assert not (tmp_path / "model-swap.diff").exists()
+    assert not (tmp_path / "swap-summary.json").exists()
     assert main(["report", "--client", "X", "--scan", str(scan_dir / "scan.json"), "--out", str(tmp_path),
                  "--licence", "nope"]) == 4
     assert "licence" in capsys.readouterr().err

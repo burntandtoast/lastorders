@@ -224,7 +224,7 @@ code{background:#F4EAD6;color:#7A3E1D}
 <div class="hero"><div class="wrap">
   <span class="kicker">Last Orders · OpenAI model retirements</span>
   <h1>Is your code pinned to a model OpenAI is retiring? Find out for free.</h1>
-  <p class="lede">Some GPT-4o and GPT-4.1 snapshots are switched off on 23&nbsp;October 2026, the rest on 14&nbsp;January 2027. Last Orders scans your repo, on your machine or in your own CI, lists every retiring model ID and tells you the date that applies. If it's a one-line fix, it says so. If it isn't, you can fix it yourself, buy the automatic patch, or have us do it.</p>
+  <p class="lede">Some GPT-4o and GPT-4.1 snapshots are switched off on 23&nbsp;October 2026, the rest on 14&nbsp;January 2027. Last Orders scans your repo, on your machine or in your own CI, lists every retiring model ID and tells you the date that applies. The free scan does not write a patch. You can fix it yourself, buy the automatic patch, or have us do it.</p>
   <div class="cta-row">
     <a class="btn" href="#scan">Run the free scan</a>
     <a class="btn ghost" href="#report">See a sample report</a>
@@ -418,7 +418,7 @@ jobs:
 <section id="faq"><div class="wrap">
   <h2>Questions</h2>
   <p class="intro">If yours isn't here, email us. A person reads it.</p>
-  <details><summary>Is the scan really free? What's the catch?</summary><p>It's free, with no account and no card. It tells you what's affected and when. If that's a one-line fix, it says so, and you can make it yourself. You only pay if you want the automatic patch and the regression report, or want us to do the work.</p></details>
+  <details><summary>Is the scan really free? What's the catch?</summary><p>It's free, with no account and no card. It tells you which models are affected and when. It does not write a diff. You only pay if you want the automatic patch and the regression report, or want us to do the work.</p></details>
   <details><summary>Does my code leave my machine?</summary><p>No. The scan and the licensed fix both run where your code already is, on your laptop or in your own CI. There's no telemetry, and your code and prompts never leave your machine. The only contact with us is to fetch the retirement list and check a licence key; pass <code>--offline</code> to use the bundled list instead. The regression report calls OpenAI with your own API key, so your prompts go to OpenAI as they do today and nowhere else.</p></details>
   <details><summary>Can't we just change the model name ourselves?</summary><p>Often you can, and the scan will say so. The traps are tool calls on Chat Completions (which need <code>reasoning_effort</code> set to <code>none</code> on <code>gpt-6-luna</code>), <code>max_tokens</code> (which <code>gpt-6-luna</code> rejects outright), sampling parameters that only work with <code>reasoning_effort: "none"</code>, fine-tunes, and quiet output drift. The report exists so you can see whether any of those apply to you.</p></details>
   <details><summary>Can I change the settings first and switch models later?</summary><p>No. GPT-4o and GPT-4.1 reject <code>reasoning_effort</code>, and <code>gpt-6-luna</code> needs it (and rejects <code>max_tokens</code>), so the settings changes and the model switch must ship together in one change; Last Orders enforces this. Found in our own API checks.</p></details>

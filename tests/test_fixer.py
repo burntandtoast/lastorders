@@ -238,11 +238,17 @@ def test_cli_fix_gating_and_apply(tmp_path, monkeypatch, capsys):
     repo = tmp_path / "repo"
     shutil.copytree(SAMPLE, repo, ignore=shutil.ignore_patterns("node_modules"))
     out = tmp_path / "out"
-    assert main(["fix", str(repo), "--out", str(out), "--verify"]) == 0           # free: patch + mock verify
-    assert (out / "fix.diff").read_text() and (out / "verify" / "verify.md").exists()
+    preview = main(["fix", str(repo), "--out", str(out)])
+    assert preview == 0
+    text = capsys.readouterr().out
+    assert "app/summarise.py:" in text and "->" in text
+    assert "--- a/" not in text and "+++" not in text and "@@" not in text
+    assert not (out / "fix.diff").exists() and not (out / "fix-plan.json").exists()
     assert "max_tokens=400" in (repo / "app" / "summarise.py").read_text()          # nothing touched
+    assert main(["fix", str(repo), "--out", str(out), "--verify"]) == 4            # patch + verify need a licence
     assert main(["fix", str(repo), "--out", str(out), "--apply"]) == 4             # licence needed
     assert main(["fix", str(repo), "--out", str(out), "--verify", "--live"]) == 4  # live eval needs a licence too
+    assert not (out / "fix.diff").exists() and not (out / "verify").exists()
     monkeypatch.setenv("LASTORDERS_LICENCE", "BTM-TEST-0000-0000")
     subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
     subprocess.run(["git", "add", "-A"], cwd=repo, check=True)
@@ -251,6 +257,8 @@ def test_cli_fix_gating_and_apply(tmp_path, monkeypatch, capsys):
     assert main(["fix", str(repo), "--out", str(out), "--apply"]) == 7             # uncommitted change in a touched file
     subprocess.run(["git", "checkout", "--", "."], cwd=repo, check=True)
     assert main(["fix", str(repo), "--out", str(out), "--apply", "--verify"]) == 0
+    assert (out / "fix.diff").read_text().startswith("--- ") or "--- a/" in (out / "fix.diff").read_text()
+    assert (out / "verify" / "verify.md").exists()
     assert "max_completion_tokens=400" in (repo / "app" / "summarise.py").read_text()
 
 
@@ -274,11 +282,11 @@ def test_verify_merges_customer_suite(tmp_path):
     assert "max_tokens" in s["model_params"]["old"] and s["max_output_tokens"] is None
 
 
-def test_outputs_inside_repo_are_skipped(tmp_path, monkeypatch):
+def test_outputs_inside_repo_are_skipped(tmp_path, monkeypatch, licensed):
     repo = tmp_path / "repo"
     shutil.copytree(SAMPLE, repo, ignore=shutil.ignore_patterns("node_modules"))
     monkeypatch.chdir(repo)
-    assert main(["fix", ".", "--verify"]) == 0               # default out dir lands inside the repo
+    assert main(["fix", ".", "--verify"]) == 0               # licensed: default out dir lands inside the repo
     assert main(["scan", "."]) == 0
     assert main(["fix", ".", "--verify"]) == 0               # and is ignored on the next runs
     plan = json.loads((repo / "lastorders-out" / "fix-plan.json").read_text())
