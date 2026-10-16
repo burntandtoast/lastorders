@@ -25,7 +25,7 @@ If the scan shows a paid migration would help, that is a fixed-price job (usuall
 Would a free scan be useful?
 
 Leigh Efford
-Burnt & Toast Studios Ltd · burntandtoast.com · hello@burntandtoast.com
+Burnt and Toast Studios Ltd · burntandtoast.com · hello@burntandtoast.com
 
 (For dated 23 Oct IDs such as `gpt-4.1-nano` or `gpt-4o-2024-05-13`, you may add: "Given the 23 October date, I can start this week." Do not invent a date for undated names like `gpt-4o` or `gpt-4o-mini`.)
 
