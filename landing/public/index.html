@@ -230,9 +230,9 @@ code,kbd,samp,pre,.cmd,.cmd .c,.err-block,.report .bar{font-family:ui-monospace,
 
 <main>
 <div class="hero"><div class="wrap">
-  <span class="kicker">Last Orders · OpenAI model retirements</span>
-  <h1>Is your code pinned to a model OpenAI is retiring? Find out for free.</h1>
-  <p class="lede">Some GPT-4o and GPT-4.1 snapshots are switched off on 23&nbsp;October 2026, the rest on 14&nbsp;January 2027. Last Orders scans your repo, on your machine or in your own CI, lists every retiring model ID and tells you the date that applies. The free scan does not write a patch. You can fix it yourself, buy the automatic patch, or have us do it.</p>
+  <span class="kicker">Last Orders · AI model retirements</span>
+  <h1>Is your code pinned to an AI model that's being retired? Find out for free.</h1>
+  <p class="lede">Gemini 2.5 retires on Vertex AI on 20&nbsp;October 2026. OpenAI switches off o1, o3-mini, o4-mini, gpt-3.5-turbo and some GPT-4o and GPT-4.1 snapshots on 23&nbsp;October, and the rest of GPT-4o and GPT-4.1 on 14&nbsp;January 2027. Claude Sonnet 4.5 goes on 30&nbsp;November. Last Orders scans your repo, on your machine or in your own CI, lists every retiring model ID and tells you the date that applies. The free scan does not write a patch. You can fix it yourself, buy the automatic patch, or have us do it.</p>
   <div class="cta-row">
     <a class="btn" href="#scan">Run the free scan</a>
     <a class="btn ghost" href="#report">See a sample report</a>
@@ -326,7 +326,7 @@ jobs:
   <p class="intro">Swapping the model name looks like a five-minute job. Usually it's mostly that, plus the bits that break quietly.</p>
   <div class="grid g3">
     <div class="card trap"><h3>Tool calls can stop working</h3><p>On Chat Completions, the January replacement <code>gpt-6-luna</code> only supports function calling when <code>reasoning_effort</code> is set to <code>none</code>. The default is <code>medium</code>. Change only the model string and your tool calls break. The fix is a code change, or a move to the Responses API.</p></div>
-    <div class="card trap"><h3><code>max_tokens</code> and sampling parameters break</h3><p><code>gpt-6-luna</code> rejects <code>max_tokens</code> outright. <code>temperature</code> (other than 1), <code>top_p</code> and <code>logprobs</code> only work with <code>reasoning_effort</code> set to <code>none</code>. Nearly any production code breaks on a plain name swap. Use <code>max_completion_tokens</code> (or <code>max_output_tokens</code> on the Responses API) and set <code>reasoning_effort</code> where you still need those parameters.</p></div>
+    <div class="card trap"><h3><code>max_tokens</code> and sampling parameters break</h3><p><code>gpt-6-luna</code> rejects <code>max_tokens</code> outright. <code>temperature</code> (other than 1), <code>top_p</code> and <code>logprobs</code> only work with <code>reasoning_effort</code> set to <code>none</code>. Most code that sets <code>max_tokens</code> or sampling parameters breaks on a plain name swap. Use <code>max_completion_tokens</code> (or <code>max_output_tokens</code> on the Responses API) and set <code>reasoning_effort</code> where you still need those parameters.</p></div>
     <div class="card trap"><h3>Fine-tunes have no direct replacement</h3><p><code>gpt-6-luna</code> can't be fine-tuned. Your fine-tuned model is switched off with its base model on 14 January, and new fine-tuning jobs stop on 6 January. You need a plan before then, not a patch afterwards.</p></div>
     <div class="card"><h3>Outputs drift</h3><p>A new model answers slightly differently. JSON fields get renamed, a classifier sorts things into different buckets, a summary runs longer. Nothing errors, but something downstream does the wrong thing.</p></div>
     <div class="card"><h3>Model IDs hide everywhere</h3><p>Config files, environment variables, database seeds, test fixtures, settings migrations, docs your users copy. The ones you forget about turn up on shutdown day.</p></div>
