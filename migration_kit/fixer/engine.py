@@ -263,6 +263,8 @@ def plan_fixes(root: str | Path, packs: PackSet | None = None, mapping: Mapping 
                 continue
             lm = pack.lookup(model) if model else None
             lm0 = pack.lookup(model0) if model0 else None
+            if lm and not lm.map_automatically and lm.replacement:
+                items.append(_flag_only_item(rel, cs.line, pack.provider, model, lm, endpoint))
             if model and model in pc.replacements:
                 target = model
             elif lm and lm.replacement:
@@ -397,14 +399,30 @@ def _match_after(before: list[CallSite], after: list[CallSite], wanted: list[Cal
     return [after[idx[id(w)]] if len(after) == len(before) else None for w in wanted]
 
 
+def _flag_only_item(file: str, line: int, provider: str, model: str, m, endpoint: str | None = None) -> FixItem:
+    """A retiring id that is never swapped automatically (o1-pro, image models, ...)."""
+    return FixItem(file, line, provider, "flag-only", "manual",
+                   f"`{model}` shuts down {m.shutdown or '(date not announced)'}. Replacement: {m.replacement}. "
+                   "Not switched automatically: " + (m.note or "a name-only swap is not enough."),
+                   change="not changed; switch this model by hand", model=model, target=m.replacement,
+                   endpoint=endpoint)
+
+
 def _file_level_items(root: Path, packs: PackSet, items: list[FixItem], parsed: dict[str, set[str]], swapped) -> None:
     """Rules the scanner found in files where no call could be parsed (configs, raw HTTP, ...)
-    and fine-tunes outside parsed calls: listed for a manual decision."""
+    and fine-tunes outside parsed calls: listed for a manual decision. Flag-only models
+    (never swapped) are listed once per file and model."""
     res = scan(root, include_docs=False, packs=packs)
     have_ft = {(i.file, i.model) for i in items if i.rule == "fine-tune"}
+    have_flag = {(i.file, i.model) for i in items if i.rule == "flag-only"}
     seen = set()
     for f in res.findings:
         pack = packs.get(f.provider)
+        if not f.auto_swap and f.kind not in ("comment", "name_check") and (f.file, f.model) not in have_flag and pack:
+            lm = pack.lookup(f.model)
+            if lm:
+                have_flag.add((f.file, f.model))
+                items.append(_flag_only_item(f.file, f.line, f.provider, f.model, lm))
         if f.category == "fine_tune" and (f.file, f.model) not in have_ft:
             have_ft.add((f.file, f.model))
             items.append(FixItem(f.file, f.line, f.provider, "fine-tune", "manual",

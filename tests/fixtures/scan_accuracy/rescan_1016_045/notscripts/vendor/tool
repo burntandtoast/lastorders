@@ -1,0 +1,2 @@
+#!/usr/bin/env node
+const m = "gpt-4.1-nano";

@@ -11,7 +11,7 @@ import yaml
 
 from .scanner import mark_output as _mark
 from .packs import PackSet, load_packs
-from .scanner import iter_files, iter_model_tokens
+from .scanner import is_name_check, iter_files, iter_model_tokens, line_modes
 
 
 @dataclass
@@ -20,15 +20,19 @@ class Mapping:
     fine_tuned: dict[str, str] = field(default_factory=dict)
     include_docs: bool = False
     source: str = ""
+    # Retiring ids that are deliberately never swapped (e.g. o1-pro): id -> details.
+    flag_only: dict[str, dict] = field(default_factory=dict)
 
 
 def mapping_from_packs(packs: PackSet, migrations: list[str] | None = None) -> Mapping:
     """Default mapping: every auto-mappable model in each pack's headline migration(s)."""
     reps: dict[str, str] = {}
+    flag: dict[str, dict] = {}
     for p in packs:
         reps.update(p.default_mapping(migrations))
+        flag.update(p.flag_only(migrations))
     srcs = ", ".join(f"{p.provider} pack v{p.version}" for p in packs)
-    return Mapping(reps, {}, False, f"generated from {srcs}")
+    return Mapping(reps, {}, False, f"generated from {srcs}", flag)
 
 
 def load_mapping(path: str | Path) -> Mapping:
@@ -88,12 +92,14 @@ class SwapResult:
     skipped_fine_tunes: list[tuple[str, int, str]]
     diff: str
     new_contents: dict[str, str]
+    skipped_name_checks: list[tuple[str, int, str]] = field(default_factory=list)
 
     def summary(self) -> dict:
         return {
             "files_changed": len(self.new_contents),
             "replacements": len(self.changes),
             "skipped_fine_tunes": [{"file": f, "line": l, "model": m} for f, l, m in self.skipped_fine_tunes],
+            "skipped_name_checks": [{"file": f, "line": l, "model": m} for f, l, m in self.skipped_name_checks],
             "changes": [c.__dict__ for c in self.changes],
         }
 
@@ -103,6 +109,7 @@ def plan(root: str | Path, mapping: Mapping, packs: PackSet | None = None) -> Sw
     packs = packs or load_packs()
     changes: list[Change] = []
     skipped: list[tuple[str, int, str]] = []
+    name_checks: list[tuple[str, int, str]] = []
     diffs: list[str] = []
     new_contents: dict[str, str] = {}
     table = {**mapping.replacements, **mapping.fine_tuned}
@@ -113,13 +120,21 @@ def plan(root: str | Path, mapping: Mapping, packs: PackSet | None = None) -> Sw
             continue
         rel = path.relative_to(root).as_posix()
         old_lines = text.splitlines(keepends=True)
+        modes = line_modes(old_lines, path, lang)
         new_lines = []
         for i, line in enumerate(old_lines, 1):
+            if modes[i - 1] is None:          # HTML outside <script>: not scanned, not rewritten
+                new_lines.append(line)
+                continue
             prev = old_lines[i - 2] if i > 1 else ""
             pieces, last = [], 0
             for s, e, model, pack in iter_model_tokens(line, packs, lang, prev):
                 if pack.fine_tune_base(model) is not None and model not in mapping.fine_tuned:
                     skipped.append((rel, i, model))
+                    continue
+                if model in table and is_name_check(line, s, e):
+                    # `startsWith("o1")` is a family check; renaming it changes the logic.
+                    name_checks.append((rel, i, model))
                     continue
                 if model in table:
                     pieces.append(line[last:s])
@@ -131,7 +146,7 @@ def plan(root: str | Path, mapping: Mapping, packs: PackSet | None = None) -> Sw
         if new_lines != old_lines:
             new_contents[rel] = "".join(new_lines)
             diffs.append(_unified(old_lines, new_lines, rel))
-    return SwapResult(changes, skipped, "".join(diffs), new_contents)
+    return SwapResult(changes, skipped, "".join(diffs), new_contents, name_checks)
 
 
 def _unified(old_lines: list[str], new_lines: list[str], rel: str) -> str:
