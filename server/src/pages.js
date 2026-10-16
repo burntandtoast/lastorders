@@ -36,7 +36,7 @@ const FOOTER = `<footer class="site-foot">
       </div>
     </div>
     <div class="foot-bottom">
-      <div><p>© 2026 Burnt &amp; Toast Studios Ltd · Company no. 17334149 · 71-75 Shelton Street, London WC2H 9JQ</p><p class="foot-note">We count visits anonymously. No cookies, no ads, no tracking across sites. <a href="https://burntandtoast.com/privacy/#analytics">Privacy</a></p></div>
+      <div><p>© 2026 Burnt and Toast Studios Ltd · Company no. 17334149 · 71-75 Shelton Street, London WC2H 9JQ</p><p class="foot-note">We count visits anonymously. No cookies, no ads, no tracking across sites. <a href="https://burntandtoast.com/privacy/#analytics">Privacy</a></p></div>
       <a href="#top">Back to top</a>
     </div>
   </div>
