@@ -21,13 +21,25 @@ VENDORED_DIRS = {"vendor", "third_party", "node_modules", ".yarn", "dist"}
 CODE_EXT = {".py": "python", ".js": "javascript", ".mjs": "javascript", ".cjs": "javascript",
             ".jsx": "javascript", ".ts": "typescript", ".tsx": "typescript", ".mts": "typescript",
             ".r": "r", ".rmd": "r", ".qmd": "r",
-            ".php": "php", ".rs": "rust", ".cs": "csharp", ".go": "go", ".ejs": "ejs"}
+            ".php": "php", ".rs": "rust", ".cs": "csharp", ".go": "go", ".ejs": "ejs",
+            ".sh": "shell", ".bash": "shell", ".zsh": "shell", ".http": "http", ".rest": "http",
+            ".html": "html", ".htm": "html", ".mdx": "mdx"}
 CONFIG_EXT = {".yaml": "yaml", ".yml": "yaml", ".json": "json", ".toml": "toml", ".ini": "ini",
               ".cfg": "ini", ".conf": "ini"}
 DOC_EXT = {".md": "markdown", ".txt": "text", ".rst": "text"}
 CODE_LANGS = set(CODE_EXT.values())
 CONFIG_LANGS = set(CONFIG_EXT.values()) | {"env"}
 DOC_LANGS = {"markdown", "text"}
+# Skipped with --no-docs (and by swap/fix unless include_docs). .mdx is documentation
+# even though its code fences are scanned at normal severity.
+DOCS_SKIP_LANGS = DOC_LANGS | {"mdx"}
+# Prose outside ``` fences is documentation; code chunks are source.
+LITERATE_EXT = {".rmd", ".qmd", ".mdx"}
+# Extensionless scripts: only a text file whose first line is a shebang for one of these.
+SHEBANG_RE = re.compile(rb"^#![ \t]*(?:\S*/)?(?:env[ \t]+(?:-\S+[ \t]+)*)?(?:\S*/)?([A-Za-z][A-Za-z-]*)")
+SHEBANG_LANG = {"python": "python", "node": "javascript", "nodejs": "javascript", "bun": "javascript",
+                "deno": "typescript", "tsx": "typescript", "ts-node": "typescript",
+                "bash": "shell", "sh": "shell", "zsh": "shell", "dash": "shell", "ksh": "shell"}
 MAX_BYTES = 2_000_000
 RISK_RANK = {"info": 0, "low": 1, "medium": 2, "high": 3}
 
@@ -68,6 +80,7 @@ class Finding:
     migration: str | None = None
     rules: list[str] = field(default_factory=list)
     notes: list[str] = field(default_factory=list)
+    auto_swap: bool = True   # False for flag-only models (fix/swap never rewrite them)
 
 
 @dataclass
@@ -115,12 +128,75 @@ class ScanResult:
         }
 
 
+def _shebang_language(path: Path) -> str | None:
+    """`#!/usr/bin/env python3`, `#!/bin/bash`, ... on an extensionless text file."""
+    try:
+        with path.open("rb") as fh:
+            head = fh.read(256)
+    except OSError:
+        return None
+    if not head.startswith(b"#!") or b"\0" in head:
+        return None
+    m = SHEBANG_RE.match(head)
+    if not m:
+        return None
+    name = m.group(1).decode("ascii").lower()
+    return SHEBANG_LANG.get(name) or SHEBANG_LANG.get(name.rstrip("-"))
+
+
 def _language(path: Path) -> str | None:
     name = path.name
     if name.startswith(".env") or name.endswith(".env"):
         return "env"
     ext = path.suffix.lower()
-    return CODE_EXT.get(ext) or CONFIG_EXT.get(ext) or DOC_EXT.get(ext)
+    lang = CODE_EXT.get(ext) or CONFIG_EXT.get(ext) or DOC_EXT.get(ext)
+    if lang is None and not ext and not name.startswith(".") and path.is_file() and not path.is_symlink():
+        return _shebang_language(path)
+    return lang
+
+
+_SCRIPT_OPEN = re.compile(r"<script\b[^>]*>", re.I)
+_SCRIPT_CLOSE = re.compile(r"</script\s*>", re.I)
+_HTML_COMMENT = re.compile(r"<!--.*?-->")
+
+
+def line_modes(lines: list[str], path: Path | str, lang: str) -> list[bool | None]:
+    """Per line: True = code, False = prose (documentation), None = not scanned.
+
+    R Markdown / Quarto / MDX: prose outside ``` fences is documentation (the fence
+    line itself too). HTML: only lines inside <script> blocks are scanned; markup is not.
+    Everything else: every line is code."""
+    suffix = Path(path).suffix.lower()
+    if suffix in LITERATE_EXT:
+        out: list[bool | None] = []
+        in_code = False
+        for line in lines:
+            if line.strip().startswith("```"):
+                out.append(False)
+                in_code = not in_code
+            else:
+                out.append(in_code)
+        return out
+    if lang == "html":
+        out = []
+        in_script = False
+        for raw in lines:
+            line = raw if in_script else _HTML_COMMENT.sub(lambda m: " " * len(m.group(0)), raw)
+            pos, touched = 0, in_script
+            while True:
+                if in_script:
+                    m = _SCRIPT_CLOSE.search(line, pos)
+                    if not m:
+                        break
+                    in_script, pos = False, m.end()
+                else:
+                    m = _SCRIPT_OPEN.search(line, pos)
+                    if not m:
+                        break
+                    in_script, pos, touched = True, m.end(), True
+            out.append(True if touched else None)
+        return out
+    return [True] * len(lines)
 
 
 OUTPUT_MARKER = f".{brand.CLI_NAME}-output"   # dropped into every output folder so later runs skip it
@@ -185,7 +261,7 @@ def iter_files(root: Path, include_docs: bool = True, include_generated: bool = 
         for fn in sorted(filenames):
             p = base / fn
             lang = _language(p)
-            if lang is None or (not include_docs and lang in DOC_LANGS):
+            if lang is None or (not include_docs and lang in DOCS_SKIP_LANGS):
                 continue
             try:
                 if p.stat().st_size > MAX_BYTES:
@@ -202,10 +278,16 @@ def iter_files(root: Path, include_docs: bool = True, include_generated: bool = 
 def _is_comment(line: str, lang: str) -> bool:
     s = line.strip()
     # Roxygen (`#'`) and Quarto/R Markdown chunk comments are `#` comments.
-    if lang in ("python", "r", "yaml", "toml", "ini", "env"):
+    if lang in ("python", "r", "yaml", "toml", "ini", "env", "shell"):
         return s.startswith("#")
     if lang in ("javascript", "typescript", "rust", "csharp", "go"):
         return s.startswith(("//", "/*", "*"))
+    if lang == "html":       # inside <script>
+        return s.startswith(("//", "/*", "*", "<!--"))
+    if lang == "http":
+        return s.startswith(("#", "//"))
+    if lang == "mdx":        # inside a code fence (JS/TS, shell or Python snippets)
+        return s.startswith(("//", "/*", "*", "#"))
     if lang == "php":
         # `#[Attribute]` is PHP 8 syntax, not a comment.
         return s.startswith(("//", "/*", "*")) or (s.startswith("#") and not s.startswith("#["))
@@ -255,11 +337,61 @@ def _non_model_id_key(before: str) -> bool:
     return bool(_ID_KEY.search(key)) and not _MODEL_KEY_NAME.search(key)
 
 
-def short_id_in_context(line: str, start: int, end: int, lang: str, prev: str) -> bool:
+# A router / provider prefix right before a short id: `<provider>/o1`, `openrouter/<provider>/o4-mini`,
+# `azure/o3-mini`. The last segment is the pack's provider name or an Azure host prefix
+# (`azure`, `azure_ai`, `azure-<provider>`). The prefixed id must end the quoted string or value.
+_ROUTER_PREFIX_RES: dict[str, re.Pattern] = {}
+
+
+def _router_prefix_re(provider: str) -> re.Pattern:
+    rx = _ROUTER_PREFIX_RES.get(provider)
+    if rx is None:
+        prov = re.escape(provider)
+        rx = re.compile(r"""(?:(["'`])|[:=]\s*)(?:[A-Za-z0-9_.-]+/)*(?:""" + prov
+                        + r"""|azure(?:[-_]?(?:ai|""" + prov + r"""))?)/$""", re.I)
+        _ROUTER_PREFIX_RES[provider] = rx
+    return rx
+
+
+def router_prefixed(line: str, start: int, end: int, provider: str) -> bool:
+    """`"<provider>/o1"` (closing quote matches) or `model: <provider>/o1` (end of the value)."""
+    if not provider or start < 1 or line[start - 1] != "/":
+        return False
+    m = _router_prefix_re(provider).search(line[max(0, start - 120):start])
+    if not m:
+        return False
+    if m.group(1):
+        return end < len(line) and line[end] == m.group(1)
+    tail = line[end:].lstrip()
+    return not tail or tail[0] in "#,}]"
+
+
+# A model-name check, not a pinned model: `m.startsWith("o1")`, `s.includes('o1')`,
+# `name.startswith(("o1", "o3"))`, `strings.HasPrefix(m, "o1")`, `str_contains($m, 'o1')`,
+# `"o1" in model`. The token is the whole quoted argument.
+_NAME_CHECK_FN = (r"startsWith|endsWith|includes|indexOf|lastIndexOf|startswith|endswith|starts_with|ends_with"
+                  r"|contains|Contains|StartsWith|EndsWith|HasPrefix|HasSuffix|str_starts_with|str_ends_with"
+                  r"|str_contains|strpos|stripos|strstr|stristr|grepl")
+_NAME_CHECK_BEFORE = re.compile(
+    r"""\b(?:""" + _NAME_CHECK_FN + r""")\s*\(\s*(?:[^()"'`,]*,\s*)?[(\[]?\s*(?:(["'`])[^"'`]*\1\s*,\s*)*$""")
+_IN_AFTER = re.compile(r"""\s+(?:not\s+)?in\s+[A-Za-z_$]""")
+
+
+def is_name_check(line: str, start: int, end: int) -> bool:
+    if not _whole_quoted_token(line, start, end):
+        return False
+    if _NAME_CHECK_BEFORE.search(line[max(0, start - 1 - 160):start - 1]):
+        return True
+    return bool(_IN_AFTER.match(line, end + 1))
+
+
+def short_id_in_context(line: str, start: int, end: int, lang: str, prev: str, provider: str = "") -> bool:
     """Bare o1/o3-style ids count only in a model context, not in minified identifiers."""
     if _non_model_id_key(line[:start]):
         return False
     if _whole_quoted_token(line, start, end):
+        return True
+    if router_prefixed(line, start, end, provider):
         return True
     if _SHORT_KEY_BEFORE.search(line[:start]):
         return True
@@ -275,7 +407,7 @@ def iter_model_tokens(line: str, packs: PackSet, lang: str = "", prev: str = "")
     for pack in packs:
         for rx, quoted_only in pack.id_res:
             for m in rx.finditer(line):
-                if quoted_only and not short_id_in_context(line, m.start(1), m.end(1), lang, prev):
+                if quoted_only and not short_id_in_context(line, m.start(1), m.end(1), lang, prev, pack.provider):
                     continue
                 hits.append((m.start(1), m.end(1), m.group(1), pack))
     for s, e, tok, pack in sorted(hits, key=lambda h: (h[0], -(h[1] - h[0]))):
@@ -378,16 +510,29 @@ def assess(f: Finding, pack: Pack, sig: list[str], today: dt.date) -> None:
             f.notes.append(rule["message"] + tag)
             if rule["risk"] != "info":
                 f.risk = _bump(f.risk, rule["risk"])
+    if not m.map_automatically and m.replacement:
+        f.auto_swap = False
+        f.notes.append(f"Flag-only: `fix` and `swap` do not rewrite {f.model}. It shuts down "
+                       f"{m.shutdown or 'on a date not yet announced'}; switch it to {m.replacement} by hand"
+                       + (" (see the note above for what the switch needs)." if m.note else "."))
     if f.kind in ("doc", "comment"):
         if RISK_RANK[f.risk] > RISK_RANK["low"]:
             f.risk = "low"
         f.notes.append("Appears in documentation/comment only.")
+    elif f.kind == "name_check":
+        if RISK_RANK[f.risk] > RISK_RANK["low"]:
+            f.risk = "low"
+        f.notes.append("Model-name check (startsWith/includes/in), not a pinned model. "
+                       "Review the branch it guards; `fix` and `swap` leave it unchanged.")
 
 
-def count_model_tokens(text: str, packs: PackSet, lang: str) -> int:
+def count_model_tokens(text: str, packs: PackSet, lang: str, path: Path | str = "") -> int:
     lines = text.splitlines()
+    modes = line_modes(lines, path, lang)
     n = 0
     for i, line in enumerate(lines):
+        if modes[i] is None:
+            continue
         prev = lines[i - 1] if i else ""
         n += sum(1 for _ in iter_model_tokens(line, packs, lang, prev))
     return n
@@ -412,7 +557,7 @@ def scan(root: str | Path, include_docs: bool = True, packs: PackSet | None = No
         rel = path.relative_to(root).as_posix()
         reason = file_skip_reason(path, rel, text)
         if reason and not include_generated:
-            count = count_model_tokens(text, packs, lang)
+            count = count_model_tokens(text, packs, lang, path)
             if count:
                 skipped.append(SkippedFile(rel, count, reason))
             continue
@@ -423,16 +568,17 @@ def scan(root: str | Path, include_docs: bool = True, packs: PackSet | None = No
         if sdks:
             fsdk[rel] = sdks
         lines = text.splitlines()
-        literate = path.suffix.lower() in {".rmd", ".qmd"}
-        in_code = not literate
+        modes = line_modes(lines, path, lang)
         for i, line in enumerate(lines, 1):
+            this_in_code = modes[i - 1]
+            if this_in_code is None:
+                continue
             prev = lines[i - 2] if i > 1 else ""
-            fence = literate and line.strip().startswith("```")
-            this_in_code = False if fence else in_code
-            if fence:
-                in_code = not in_code
-            for s, _e, tok, pack in iter_model_tokens(line, packs, lang, prev):
-                f = Finding(rel, i, s + 1, tok, pack.provider, _kind(line, lang, prev, this_in_code), lang,
+            for s, e, tok, pack in iter_model_tokens(line, packs, lang, prev):
+                kind = _kind(line, lang, prev, this_in_code)
+                if kind not in ("doc", "comment") and is_name_check(line, s, e):
+                    kind = "name_check"
+                f = Finding(rel, i, s + 1, tok, pack.provider, kind, lang,
                             line.strip()[:200], "not_listed", None, None, "n/a", "info")
                 assess(f, pack, sig, today)
                 findings.append(f)
@@ -488,6 +634,8 @@ def to_markdown(res: ScanResult) -> str:
                 "|---|---|---|---|---|---|---|---|---|"]
         for f in items:
             sug = f"`{f.suggested}`" if f.suggested else "manual decision"
+            if f.suggested and not f.auto_swap:
+                sug += " (by hand; not auto-swapped)"
             conf = " (inferred)" if f.confidence == "inferred" and f.suggested else ""
             out.append(f"| `{f.file}` | {f.line} | {f.provider} | `{f.model}` | {sug}{conf} | {f.shutdown or '-'} | "
                        f"**{f.risk}** | {f.kind} | {'<br>'.join(_esc(n) for n in f.notes)} |")

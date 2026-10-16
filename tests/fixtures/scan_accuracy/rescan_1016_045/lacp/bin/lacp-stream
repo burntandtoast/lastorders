@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# -- Interactive model picker (if no --model and terminal is interactive) --
+
+if [[ -z "${MODEL}" && -t 0 && "${PRINT_MODE}" -eq 0 && "${DRY_RUN}" -eq 0 && "${#PROMPT_ARGS[@]}" -eq 0 ]]; then
+  # Show model options based on agent
+  case "${AGENT}" in
+    claude)
+      MODELS=("opus" "sonnet" "haiku")
+      DEFAULT_MODEL="sonnet"
+      ;;
+    codex)
+      MODELS=("o3" "o4-mini" "gpt-4.1")
+      DEFAULT_MODEL="o3"
+      ;;
+    gemini)
+      MODELS=("gemini-2.5-pro" "gemini-2.5-flash" "gemini-2.0-flash")
+      DEFAULT_MODEL="gemini-2.5-pro"
+      ;;
+    hermes)

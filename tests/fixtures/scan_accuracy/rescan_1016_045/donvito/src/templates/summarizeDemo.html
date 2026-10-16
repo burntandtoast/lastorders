@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Backends - Summarization Demo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    // (excerpt)
+  </script>
+</head>
+<body>
+  <!-- markup outside script blocks is not scanned -->
+  <option value="gpt-4.1-nano">gpt-4.1-nano</option>
+  <script>
+    // Dynamic model options fetched from backend (summarize capability)
+    let modelOptions = null;
+
+    // Fallback options if fetch fails or endpoint is unavailable
+    const fallbackModelOptions = {
+      ollama: [
+        { value: 'gemma3:4b', label: 'gemma3:4b (default)' }
+      ],
+      openai: [
+        { value: 'gpt-4o-mini', label: 'gpt-4o-mini' },
+        { value: 'gpt-4.1-nano', label: 'gpt-4.1-nano' },
+        { value: 'gpt-5-nano', label: 'gpt-5-nano' }
+      ],
+      openrouter: [
+        { value: 'openai/gpt-4o-mini', label: 'openai/gpt-4o-mini' }
+      ],
+    };
+  </script>
+</body>
+</html>

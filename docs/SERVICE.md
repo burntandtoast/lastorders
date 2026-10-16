@@ -77,7 +77,14 @@ Needs Python 3.10+, `pyyaml` and `jsonschema`. HTTP calls use the standard libra
 lastorders scan /path/to/client-repo --out out/
 ```
 
-Walks `.py .R .Rmd .qmd .js .mjs .cjs .jsx .ts .tsx .php .rs .cs .go .ejs`, `.env*`, YAML/JSON/TOML/INI and docs (skip with `--no-docs`).
+Walks `.py .R .Rmd .qmd .js .mjs .cjs .jsx .ts .tsx .mts .php .rs .cs .go .ejs .sh .bash .zsh .http .rest .html .htm`,
+extensionless scripts whose first line is a `python`, `node`, `deno`, `bun`, `bash`, `sh`, `zsh`, `dash` or `ksh`
+shebang, `.env*`, YAML/JSON/TOML/INI and docs (`.md .mdx .txt .rst`; skip with `--no-docs`). In `.html` only
+`<script>` blocks are scanned, not markup. In `.Rmd`, `.qmd` and `.mdx`, prose outside ` ``` ` fences is
+documentation (low) and code fences keep the normal severity. Router-prefixed short ids (`"openai/o1"`,
+`"openrouter/openai/o4-mini"`, `"azure/o3-mini"`) count as model ids. Model-name checks such as
+`m.startsWith("o1")`, `s.includes('o1')` or `"gpt-4" in name` are reported at low severity (kind `name_check`),
+and `swap` / `fix` never rewrite them.
 Roxygen and other `#` comments are reported at low severity. Generated and vendored files are not findings:
 `*.generated.*`, `*.gen.*`, `*_pb2.py`, `*.min.js`, a `@generated` / `DO NOT EDIT` / `auto-generated` header,
 and `vendor/`, `third_party/`, `node_modules/`, `.yarn/` and `dist/`. Each of those files that contains model
@@ -105,6 +112,8 @@ Exact-token replacement driven by the mapping YAML. With a licence it writes `mo
 `swap-summary.json` and **does not modify the repo** unless you pass `--apply`. Without a licence it
 prints a per-file model summary and writes nothing. Fine-tuned ids are skipped unless listed
 individually under `fine_tuned:`. Docs are skipped unless `include_docs: true` or `--include-docs` is set.
+`lastorders mapping` also prints a `flag_only:` list (for example `o1-pro`, whose substitute is `gpt-5.6-sol`
+with `reasoning.mode: pro`): these ids retire but are never swapped, and `scan` and `fix` say so on each finding.
 The swap changes model ids only. Code changes such as adding `reasoning_effort` are flagged in the scan,
 and we make them by hand.
 

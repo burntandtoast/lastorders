@@ -170,6 +170,14 @@ class Pack:
         return {m.id: m.replacement for m in self.exact.values()
                 if m.migration in mids and m.replacement and m.map_automatically}
 
+    def flag_only(self, migration_ids: list[str] | None = None) -> dict[str, dict]:
+        """Retiring ids in those migrations that are deliberately not swapped (map_automatically: false)."""
+        mids = set(migration_ids or [m["id"] for m in self.headline_migrations])
+        return {m.id: {"shutdown": m.shutdown, "replacement": m.replacement,
+                       "why": m.note or "Not a name-only change; switch it by hand."}
+                for m in self.exact.values()
+                if m.migration in mids and m.replacement and not m.map_automatically}
+
     def info(self) -> dict:
         return {"provider": self.provider, "name": self.data["name"], "version": self.version,
                 "status": self.data["status"], "source": self.source, "detail": self.source_detail}

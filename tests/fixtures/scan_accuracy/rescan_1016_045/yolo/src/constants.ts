@@ -1,0 +1,26 @@
+    id: 'openai/gpt-4o',
+    model: 'gpt-4o',
+    enable: false,
+  },
+  {
+    providerId: PROVIDER_PRESET_INFO.openai.defaultProviderId,
+    id: 'openai/gpt-4o-mini',
+    model: 'gpt-4o-mini',
+    enable: false,
+  },
+  {
+    providerId: PROVIDER_PRESET_INFO.openai.defaultProviderId,
+    id: 'openai/o4-mini',
+    model: 'o4-mini',
+    enable: false,
+    reasoningType: 'openai',
+  },
+  {
+    providerId: PROVIDER_PRESET_INFO.openai.defaultProviderId,
+    id: 'openai/o3',
+    model: 'o3',
+    enable: false,
+    reasoningType: 'openai',
+  },
+  {
+    providerId: PROVIDER_PRESET_INFO.gemini.defaultProviderId,

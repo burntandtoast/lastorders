@@ -240,6 +240,11 @@ def cmd_mapping(a) -> int:
     m = swapper.mapping_from_packs(_packs(a), a.migration or None)
     text = (f"# {m.source}\n" + yaml.safe_dump({"source": m.source, "mappings": m.replacements,
                                                 "fine_tuned": {}, "include_docs": False}, sort_keys=False))
+    if m.flag_only:
+        # Listed for information only: swap/fix ignore this key, and never rewrite these ids.
+        text += ("\n# Flag-only: retiring in these migrations but never swapped automatically.\n"
+                 "# `scan` and `fix` report them; switch them by hand.\n"
+                 + yaml.safe_dump({"flag_only": m.flag_only}, sort_keys=False, width=100))
     if a.out:
         Path(a.out).write_text(text)
         print(f"Wrote {a.out}")
