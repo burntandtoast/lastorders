@@ -17,9 +17,15 @@ import { Stripe, StripeError, verifyStripeSignature } from "./stripe.js";
 import { licenceEmail, makeMailer } from "./email.js";
 import { cancelPage, errorPage, pendingPage, successPage, termsPage } from "./pages.js";
 import { TERMS_VERSION, WAIVER_FIELD, submitMessage, tosAcceptanceMessage, waiverFromSession } from "./terms.js";
+import { PRODUCT_DESCRIPTION, TAX_BEHAVIOR, TAX_CODE, applyManagedPayments, checkoutApiVersion, licenceProductName } from "./managed-payments.js";
 
 const DAY = 86400;
 const CUSTOMER_PATHS = new Set(["/buy", "/terms", "/success", "/cancel"]);
+
+function paymentIntentId(obj) {
+  const pi = obj?.payment_intent;
+  return typeof pi === "string" ? pi : pi?.id || "";
+}
 
 function config(env) {
   return {
@@ -36,6 +42,8 @@ function config(env) {
     invoice: env.STRIPE_INVOICE_CREATION === "true",
     supportEmail: env.SUPPORT_EMAIL || "",
     tosConsent: env.STRIPE_TOS_CONSENT === "true",
+    // "1" sells through Link. Unset or anything else keeps a normal Stripe Checkout Session.
+    managedPayments: env.MANAGED_PAYMENTS === "1",
   };
 }
 
@@ -69,7 +77,14 @@ export function createApp(deps = {}) {
           price_data: {
             currency: cfg.currency,
             unit_amount: cfg.amount,
-            product_data: { name: `${cfg.productName} licence: one repository`, description: "Automatic fixes, verified patches and client reports for one repo (monorepos count as one)." },
+            // Inclusive: the buyer pays the unit amount (GBP 14900 = £149). Managed Payments
+            // otherwise adds tax on top. Allowed with Managed Payments; see managed-payments.js.
+            tax_behavior: TAX_BEHAVIOR,
+            product_data: {
+              name: licenceProductName(cfg.productName),
+              description: PRODUCT_DESCRIPTION,
+              tax_code: TAX_CODE,
+            },
           },
         };
     const params = {
@@ -90,9 +105,15 @@ export function createApp(deps = {}) {
     }
     if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && email.length <= 254) params.customer_email = email;
     if (cfg.allowPromo) params.allow_promotion_codes = true;
-    if (cfg.automaticTax) params.automatic_tax = { enabled: true };
-    if (cfg.invoice) params.invoice_creation = { enabled: true };
-    return c.stripe().createCheckoutSession(params);
+    // Managed Payments calculates tax and sends receipts itself. Those params are rejected.
+    if (!cfg.managedPayments && cfg.automaticTax) params.automatic_tax = { enabled: true };
+    if (!cfg.managedPayments && cfg.invoice) params.invoice_creation = { enabled: true };
+    let apiVersion;
+    if (cfg.managedPayments) {
+      applyManagedPayments(params);
+      apiVersion = checkoutApiVersion(c.env.STRIPE_API_VERSION);
+    }
+    return c.stripe().createCheckoutSession(params, apiVersion ? { apiVersion } : undefined);
   }
 
   // ---- Fulfilment (shared by webhook and success page; idempotent per Checkout Session) ---------
@@ -172,9 +193,20 @@ export function createApp(deps = {}) {
           break;
         case "charge.refunded": {
           // Full refunds revoke the licence; partial refunds (goodwill discounts) don't.
+          // Compare against this charge's own amount. Adaptive Pricing may charge in the
+          // buyer's currency, so this must not assume GBP or 14900.
           const fullyRefunded = obj.refunded === true || (obj.amount_refunded ?? 0) >= (obj.amount ?? Infinity);
-          const pi = typeof obj.payment_intent === "string" ? obj.payment_intent : obj.payment_intent?.id;
+          const pi = paymentIntentId(obj);
           if (fullyRefunded && pi) for (const row of await c.store.byPaymentIntent(pi)) await c.store.revoke(row.key, "refunded");
+          break;
+        }
+        case "charge.dispute.created": {
+          // Link can open or accept a dispute without us. Revoke so the key stops working,
+          // and record the dispute id on the licence (revoke_reason + licence_events).
+          const pi = paymentIntentId(obj);
+          const reason = obj.id ? `dispute ${obj.id}` : "dispute";
+          if (pi) for (const row of await c.store.byPaymentIntent(pi)) await c.store.revoke(row.key, reason);
+          else console.error(`[webhook] ${event.type} ${obj.id || ""} has no payment_intent; licence not revoked`);
           break;
         }
         default:
@@ -209,8 +241,8 @@ export function createApp(deps = {}) {
       try { await fulfil(c, { id: row.stripe_session_id, customer_details: { email: row.email } }, { sendEmail: true }); }
       catch (e) { console.error(`[success] licence email for session ${id} failed: ${e?.message}`); }
     }
-    if (row.status !== "active") return errorPage("This licence has been revoked (refunded).", 410);
-    return successPage({ key: row.key, email: row.email, productName: c.cfg.productName, cliName: c.cfg.cliName, baseUrl: c.siteUrl });
+    if (row.status !== "active") return errorPage("This licence has been revoked (refunded or disputed).", 410);
+    return successPage({ key: row.key, email: row.email, productName: c.cfg.productName, cliName: c.cfg.cliName, baseUrl: c.siteUrl, managedPayments: c.cfg.managedPayments });
   }
 
   // ---- Verify (the CLI's only licence call: sends key + repo identity, nothing else) -------------
@@ -296,7 +328,7 @@ export function createApp(deps = {}) {
         return Response.redirect(s.url, 303);
       }
       if (path === "/success" && request.method === "GET") return await success(c, url);
-      if (path === "/terms" && request.method === "GET") return termsPage({ productName: c.cfg.productName, cliName: c.cfg.cliName, amount: c.cfg.amount, currency: c.cfg.currency, baseUrl: c.siteUrl });
+      if (path === "/terms" && request.method === "GET") return termsPage({ productName: c.cfg.productName, cliName: c.cfg.cliName, amount: c.cfg.amount, currency: c.cfg.currency, baseUrl: c.siteUrl, managedPayments: c.cfg.managedPayments });
       if (path === "/cancel" && request.method === "GET") return cancelPage({ productName: c.cfg.productName, baseUrl: c.siteUrl });
       if (path.startsWith("/api/admin/")) return await admin(c, request, path);
       if (path.startsWith("/api/")) return json({ error: "not_found" }, 404);

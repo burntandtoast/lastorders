@@ -102,10 +102,10 @@ export function harness(env, net, { clock } = {}) {
 }
 
 let evN = 0;
-export function paidSessionEvent(id, { email = "buyer@example.com", type = "checkout.session.completed", payment_status = "paid", product = "lastorders-repo", pi = "pi_123" } = {}) {
+export function paidSessionEvent(id, { email = "buyer@example.com", type = "checkout.session.completed", payment_status = "paid", product = "lastorders-repo", pi = "pi_123", amount_total = 14900, currency = "gbp" } = {}) {
   return {
     id: `evt_${++evN}`, object: "event", type, livemode: false,
     data: { object: { id, object: "checkout.session", mode: "payment", status: "complete", payment_status, customer_details: { email },
-      payment_intent: pi, customer: "cus_1", amount_total: 14900, currency: "gbp", livemode: false, metadata: { product } } },
+      payment_intent: pi, customer: "cus_1", amount_total, currency, livemode: false, metadata: { product } } },
   };
 }

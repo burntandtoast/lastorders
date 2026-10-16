@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { fakeNetwork, harness, makeEnv, paidSessionEvent, WHSEC } from "./helpers.js";
 import { generateKey, KEY_RE, verifyToken } from "../src/keys.js";
 import { formEncode, signStripePayload, verifyStripeSignature } from "../src/stripe.js";
+import { applyManagedPayments } from "../src/managed-payments.js";
 import { normaliseRepo } from "../src/util.js";
 
 const KEY_IN = (s) => (s.match(/BTM-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}/) || [])[0];
@@ -62,6 +63,10 @@ test("checkout: £149 inline price by default, configurable amount, price id, re
   assert.equal(p.get("mode"), "payment");
   assert.equal(p.get("line_items[0][price_data][currency]"), "gbp");
   assert.equal(p.get("line_items[0][price_data][unit_amount]"), "14900");
+  assert.equal(p.get("line_items[0][price_data][tax_behavior]"), "inclusive");
+  assert.equal(p.get("line_items[0][price_data][product_data][tax_code]"), "txcd_10202003");
+  assert.equal(p.get("managed_payments[enabled]"), null);
+  assert.equal(net.calls[0].headers["stripe-version"], undefined);
   assert.equal(p.get("line_items[0][quantity]"), "1");
   assert.equal(p.get("success_url"), "https://licence.example.test/success?session_id={CHECKOUT_SESSION_ID}");
   assert.equal(p.get("cancel_url"), "https://licence.example.test/cancel");
@@ -85,6 +90,14 @@ test("checkout: £149 inline price by default, configurable amount, price id, re
   assert.equal(p3.get("line_items[0][price]"), "price_123");
   assert.equal(p3.has("line_items[0][price_data][unit_amount]"), false);
   assert.equal(p3.has("customer_email"), false);
+
+  const netOff = fakeNetwork();
+  await harness(await makeEnv({ STRIPE_AUTOMATIC_TAX: "true", STRIPE_INVOICE_CREATION: "true" }), netOff).call("/buy");
+  const off = new URLSearchParams(netOff.calls[0].body);
+  assert.equal(off.get("automatic_tax[enabled]"), "true");
+  assert.equal(off.get("invoice_creation[enabled]"), "true");
+  assert.equal(off.get("managed_payments[enabled]"), null);
+  assert.equal(netOff.calls[0].headers["stripe-version"], undefined);
 });
 
 test("webhook: bad signature rejected and nothing stored", async () => {
@@ -333,6 +346,156 @@ test("checkout: required waiver consent, policy message and waiver metadata; /te
   assert.equal(t.status, 200);
   const html = await t.text();
   for (const s of ["17334149", "England and Wales", "regulation 37", "hello@burntandtoast.com", "never been activated", "5 working days", "£149"]) assert.ok(html.includes(s), s);
+  assert.equal(html.includes("Sold through Link"), false);
+});
+
+test("applyManagedPayments strips the update-checkout disallow list and keeps the waiver", () => {
+  const params = {
+    mode: "payment",
+    automatic_tax: { enabled: true },
+    tax_id_collection: { enabled: true },
+    adaptive_pricing: { enabled: false },
+    excluded_payment_method_types: ["sepa_debit"],
+    payment_method_configuration: "pmc_1",
+    payment_method_types: ["card"],
+    customer_update: { name: "auto", address: "auto", shipping: "auto" },
+    shipping_address_collection: { allowed_countries: ["GB"] },
+    shipping_options: [{ shipping_rate: "shr_1" }],
+    invoice_creation: { enabled: true },
+    custom_fields: [{ key: "waiver" }],
+    custom_text: { submit: { message: "waiver" } },
+    consent_collection: { terms_of_service: "required" },
+    payment_intent_data: {
+      metadata: { product: "lastorders-repo" },
+      shipping: { name: "a" },
+      application_fee_amount: 1,
+      on_behalf_of: "acct_1",
+      transfer_data: { destination: "acct_1" },
+      transfer_group: "g",
+      statement_descriptor: "LASTORDERS",
+      statement_descriptor_suffix: "LICENCE",
+      receipt_email: "a@b.test",
+    },
+    subscription_data: {
+      default_tax_rates: ["txr_1"],
+      application_fee_percent: 10,
+      on_behalf_of: "acct_1",
+      transfer_data: { destination: "acct_1" },
+      invoice_settings: { issuer: { type: "self" } },
+    },
+  };
+  applyManagedPayments(params);
+  assert.deepEqual(params.managed_payments, { enabled: true });
+  assert.equal(params.automatic_tax, undefined);
+  assert.equal(params.tax_id_collection, undefined);
+  assert.equal(params.adaptive_pricing, undefined);
+  assert.equal(params.excluded_payment_method_types, undefined);
+  assert.equal(params.payment_method_configuration, undefined);
+  assert.equal(params.payment_method_types, undefined);
+  assert.deepEqual(params.customer_update, { shipping: "auto" });
+  assert.equal(params.shipping_address_collection, undefined);
+  assert.equal(params.shipping_options, undefined);
+  assert.equal(params.invoice_creation, undefined);
+  assert.equal(params.subscription_data, undefined);
+  assert.deepEqual(params.payment_intent_data, { metadata: { product: "lastorders-repo" } });
+  assert.equal(params.custom_fields[0].key, "waiver");
+  assert.equal(params.custom_text.submit.message, "waiver");
+  assert.equal(params.consent_collection.terms_of_service, "required");
+});
+
+test("managed payments: pinned Stripe version, tax code, waiver kept, disallowed params omitted", async () => {
+  const net = fakeNetwork();
+  const env = await makeEnv({ MANAGED_PAYMENTS: "1", STRIPE_AUTOMATIC_TAX: "true", STRIPE_INVOICE_CREATION: "true" });
+  const h = harness(env, net);
+  assert.equal((await h.call("/buy")).status, 303);
+  assert.equal(net.calls[0].headers["stripe-version"], "2025-03-31.basil");
+  const p = new URLSearchParams(net.calls[0].body);
+  assert.equal(p.get("managed_payments[enabled]"), "true");
+  assert.equal(p.get("line_items[0][price_data][tax_behavior]"), "inclusive");
+  assert.equal(p.get("line_items[0][price_data][product_data][tax_code]"), "txcd_10202003");
+  assert.equal(p.get("custom_fields[0][key]"), "waiver");
+  assert.equal(p.get("custom_text[submit][message]")?.includes("reg. 37"), true);
+  assert.equal(p.get("automatic_tax[enabled]"), null);
+  assert.equal(p.get("invoice_creation[enabled]"), null);
+  for (const key of [
+    "tax_id_collection[enabled]",
+    "adaptive_pricing[enabled]",
+    "excluded_payment_method_types[0]",
+    "payment_method_configuration",
+    "payment_method_types[0]",
+    "customer_update[name]",
+    "customer_update[address]",
+    "shipping_address_collection[allowed_countries][0]",
+    "shipping_options[0][shipping_rate]",
+    "payment_intent_data[shipping][address][line1]",
+    "payment_intent_data[application_fee_amount]",
+    "payment_intent_data[on_behalf_of]",
+    "payment_intent_data[transfer_data][destination]",
+    "payment_intent_data[transfer_group]",
+    "payment_intent_data[statement_descriptor]",
+    "payment_intent_data[statement_descriptor_suffix]",
+    "payment_intent_data[receipt_email]",
+    "subscription_data[default_tax_rates][0]",
+    "subscription_data[application_fee_percent]",
+    "subscription_data[on_behalf_of]",
+    "subscription_data[transfer_data][destination]",
+    "subscription_data[invoice_settings][issuer][type]",
+  ]) assert.equal(p.get(key), null, key);
+
+  const netLater = fakeNetwork();
+  await harness(await makeEnv({ MANAGED_PAYMENTS: "1", STRIPE_API_VERSION: "2026-04-22.dahlia" }), netLater).call("/buy");
+  assert.equal(netLater.calls[0].headers["stripe-version"], "2026-04-22.dahlia");
+  const netOld = fakeNetwork();
+  await harness(await makeEnv({ MANAGED_PAYMENTS: "1", STRIPE_API_VERSION: "2024-06-20.acacia" }), netOld).call("/buy");
+  assert.equal(netOld.calls[0].headers["stripe-version"], "2025-03-31.basil");
+
+  const terms = await (await h.call("/terms")).text();
+  for (const s of ["Sold through Link", "LINK.COM*", "payment support", "60 days", "48 hours", "never been activated", "5 working days"]) {
+    assert.ok(terms.includes(s), s);
+  }
+});
+
+test("fulfilment keeps the session amount and currency; a full refund or dispute revokes", async () => {
+  const net = fakeNetwork();
+  const env = await makeEnv();
+  const h = harness(env, net);
+  await h.webhook(paidSessionEvent("cs_test_eur", { pi: "pi_eur", amount_total: 17880, currency: "eur" }));
+  const issued = await env.DB.prepare("SELECT * FROM licences WHERE stripe_payment_intent = 'pi_eur'").first();
+  assert.equal(issued.status, "active");
+  assert.equal(issued.currency, "eur");
+  assert.equal(issued.amount, 17880);
+  await h.webhook({
+    id: "evt_eur_rf", type: "charge.refunded",
+    data: { object: { id: "ch_eur", payment_intent: "pi_eur", amount: 17880, amount_refunded: 17880, currency: "eur", refunded: true } },
+  });
+  const refunded = await env.DB.prepare("SELECT status, revoke_reason FROM licences WHERE stripe_payment_intent = 'pi_eur'").first();
+  assert.equal(refunded.status, "revoked");
+  assert.equal(refunded.revoke_reason, "refunded");
+
+  await h.webhook(paidSessionEvent("cs_test_dp", { pi: "pi_dp", amount_total: 20000, currency: "usd" }));
+  await h.webhook({
+    id: "evt_dp", type: "charge.dispute.created",
+    data: { object: { id: "dp_1", object: "dispute", payment_intent: { id: "pi_dp" }, amount: 20000, currency: "usd", reason: "product_unacceptable" } },
+  });
+  const disputed = await env.DB.prepare("SELECT * FROM licences WHERE stripe_payment_intent = 'pi_dp'").first();
+  assert.equal(disputed.status, "revoked");
+  assert.equal(disputed.revoke_reason, "dispute dp_1");
+  assert.equal((await h.postJson("/api/licence/verify", { key: disputed.key, repo: "a/b" })).status, 403);
+});
+
+test("success page names Link only when Managed Payments is on", async () => {
+  async function pageFor(overrides) {
+    const net = fakeNetwork();
+    const h = harness(await makeEnv(overrides), net);
+    const { id } = await (await h.postJson("/api/checkout", {})).json();
+    Object.assign(net.sessions.get(id), { status: "complete", payment_status: "paid", customer_details: { email: "s@example.com" }, payment_intent: "pi_s", amount_total: 17880, currency: "eur" });
+    return (await h.call(`/success?session_id=${id}`)).text();
+  }
+  assert.equal((await pageFor()).includes("Sold through Link"), false);
+  const on = await pageFor({ MANAGED_PAYMENTS: "1" });
+  assert.ok(on.includes("Sold through Link"));
+  assert.ok(on.includes("LINK.COM*"));
+  assert.ok(on.includes("payment support"));
 });
 
 test("customer pages live on PUBLIC_SITE_URL: Checkout URLs, email, terms; API host 301s old links", async () => {

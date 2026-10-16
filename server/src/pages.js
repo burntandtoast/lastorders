@@ -59,13 +59,18 @@ ${index ? "" : '<meta name="robots" content="noindex">'}<title>${escapeHtml(titl
 ${FOOTER}</body></html>`, { status, headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", "referrer-policy": "no-referrer" } });
 }
 
-export function successPage({ key, email, productName, cliName, baseUrl }) {
+export function successPage({ key, email, productName, cliName, baseUrl, managedPayments = false }) {
+  const termsUrl = `${baseUrl || LANDING_URL}/terms`;
+  const link = managedPayments
+    ? `<p>This purchase is <strong>Sold through Link</strong>. Your card or bank statement shows <code>LINK.COM*</code>. Link emails the receipt and handles payment support. For the licence itself, see the <a href="${escapeHtml(termsUrl)}">terms</a>.</p>`
+    : "";
   return page(`Your ${productName} licence`, `<h1>Thanks — you're licensed</h1>
 <p>Your licence key:</p><p class="key">${escapeHtml(key)}</p>
 <p>We're also emailing it to <strong>${escapeHtml(email)}</strong>. It covers one repository (a monorepo counts as one), bound the first time you use it.</p>
 <pre>export LASTORDERS_LICENCE=${escapeHtml(key)}
 ${escapeHtml(cliName)} fix . --verify --apply</pre>
 <p>In GitHub Actions, add it as a repository secret named <code>LASTORDERS_LICENCE</code>.</p>
+${link}
 <p class="muted">Keep this key private. <a href="${LANDING_URL}/">Back to ${escapeHtml(productName)}</a></p>`);
 }
 
@@ -83,13 +88,17 @@ export function errorPage(message, status = 400) {
   return page("Something went wrong", `<h1>Something went wrong</h1><p>${escapeHtml(message)}</p>`, status);
 }
 
-export function termsPage({ productName, cliName, amount, currency, baseUrl }) {
+export function termsPage({ productName, cliName, amount, currency, baseUrl, managedPayments = false }) {
   const price = currency === "gbp" ? `£${(amount / 100).toFixed(2).replace(/\.00$/, "")}` : `${(amount / 100).toFixed(2)} ${currency.toUpperCase()}`;
   const e = escapeHtml, mail = `<a href="mailto:${e(COMPANY.email)}">${e(COMPANY.email)}</a>`;
+  const linkSection = managedPayments ? `<h2>Who takes the payment</h2>
+<p>You pay through Link. The checkout is <strong>Sold through Link</strong>, and Link (Stripe) is the merchant of record. Your card or bank statement shows <code>LINK.COM*</code> followed by our statement descriptor. Link sends the receipt and handles payment support, including questions about the charge itself. Product support (the licence, the scan, and moving a repository) stays with us at ${mail}.</p>` : "";
+  const linkRefund = managedPayments ? `<p>Stripe, through Link, may also refund the payment in some cases without a separate request to us. Link support can refund within 60 days of the payment, and if we don't answer a Link support question within 48 hours Stripe may refund. That doesn't replace the refund policy above.</p>` : "";
   return page(`${productName}: licence terms and refund policy`, `<h1>${e(productName)}: licence terms and refund policy</h1>
 <p class="muted">Version ${e(TERMS_VERSION)}. These terms apply to ${e(productName)} licences bought at ${e(baseUrl || "")}/buy.</p>
 <h2>Who we are</h2>
 <p>${e(COMPANY.name)}, a company registered in England and Wales, company no. ${e(COMPANY.number)}. Registered office: ${e(COMPANY.address)}. ${e(COMPANY.vat)}. Contact: ${mail}.</p>
+${linkSection}
 <h2>What you get</h2>
 <ul><li>A licence key for one GitHub repository (a monorepo counts as one), for ${e(price)}, paid once.</li>
 <li>The repository is bound to the key the first time the key is used (activated) with the <code>${e(cliName)}</code> tool. We can move a licence to another repository on request, for example after a rename or transfer.</li>
@@ -99,6 +108,7 @@ export function termsPage({ productName, cliName, amount, currency, baseUrl }) {
 <ul><li><b>Never activated:</b> a full refund on request, as long as the licence key has never been activated (we record when it is first used).</li>
 <li><b>Activated:</b> a refund if the fix fails on your repository and we can't resolve it within 5 working days of you telling us.</li></ul>
 <p>To ask for a refund, email ${mail} with your licence key or the email address you paid with. Refunds go back to the original payment method. A refunded licence stops working.</p>
+${linkRefund}
 <h2>Your right to cancel (consumers)</h2>
 <p>If you buy as a consumer, you would normally have 14 days to cancel. Because the licence key is digital content supplied straight away, at checkout you expressly ask for immediate supply and acknowledge that you lose the 14-day right to cancel once the key is used (Consumer Contracts Regulations 2013, regulation 37). Until the key is used, you can cancel and get a full refund. The refund policy above still applies after that. Businesses have no statutory cooling-off right; the refund policy above applies to them too.</p>
 <p>Nothing in these terms affects your statutory rights, for example if the licence or the software isn't as described.</p>
