@@ -77,8 +77,12 @@ Needs Python 3.10+, `pyyaml` and `jsonschema`. HTTP calls use the standard libra
 lastorders scan /path/to/client-repo --out out/
 ```
 
-Walks `.py .js .mjs .cjs .jsx .ts .tsx`, `.env*`, YAML/JSON/TOML/INI and docs (skip with `--no-docs`),
-ignoring `node_modules`, `.venv`, `dist` and similar. Writes `out/scan.md` and `out/scan.json` with the file,
+Walks `.py .R .Rmd .qmd .js .mjs .cjs .jsx .ts .tsx`, `.env*`, YAML/JSON/TOML/INI and docs (skip with `--no-docs`).
+Roxygen and other `#` comments are reported at low severity. Generated and vendored files are not findings:
+`*.generated.*`, `*.gen.*`, `*_pb2.py`, `*.min.js`, a `@generated` / `DO NOT EDIT` / `auto-generated` header,
+and `vendor/`, `third_party/`, `node_modules/`, `.yarn/` and `dist/`. Each of those files that contains model
+IDs is one summary line, and it does not count toward `--fail-on-high`. `--include-generated` scans them.
+`.venv` and other tool caches are ignored entirely. Writes `out/scan.md` and `out/scan.json` with the file,
 line, current model, suggested replacement, shutdown date, risk and notes for each finding. It also:
 
 - puts **fine-tuned ids** (`ft:...`) in their own section, with no automatic replacement;

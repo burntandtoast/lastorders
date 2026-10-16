@@ -20,7 +20,7 @@ from .. import initevals
 from ..evaluator import (ADAPTERS, ENDPOINT_API, REQUEST_CONTENT_PARAMS, TOKEN_CAP_PARAM, TOKEN_LIMIT_PARAMS, TOOL_PARAMS,
                          MockProvider, OpenAIProvider, load_suite, run_suite)
 from ..packs import PackSet
-from ..scanner import SKIP_DIRS, is_output_dir, mark_output
+from ..scanner import SKIP_DIRS, VENDORED_DIRS, is_output_dir, mark_output
 from . import jsfix, pyfix
 from .engine import FixResult, plan_fixes
 
@@ -32,7 +32,7 @@ TOKEN_PARAMS = TOKEN_LIMIT_PARAMS
 
 def _copy(root: Path, dst: Path) -> None:
     def ignore(d, names):
-        return {n for n in names if n in SKIP_DIRS or is_output_dir(Path(d) / n)}
+        return {n for n in names if n in SKIP_DIRS or n in VENDORED_DIRS or is_output_dir(Path(d) / n)}
     shutil.copytree(root, dst, ignore=ignore, symlinks=True)
 
 
