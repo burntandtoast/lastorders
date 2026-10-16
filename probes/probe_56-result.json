@@ -1,0 +1,2036 @@
+[
+ {
+  "probe": "gpt-5.6-luna chat max_tokens=16 effort=none",
+  "status": 400,
+  "request_model": "gpt-5.6-luna",
+  "reasoning_effort": "none",
+  "sent": [
+   "max_tokens",
+   "reasoning_effort"
+  ],
+  "error": {
+   "message": "Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead.",
+   "type": "invalid_request_error",
+   "param": "max_tokens",
+   "code": "unsupported_parameter"
+  }
+ },
+ {
+  "probe": "gpt-5.6-luna chat max_completion_tokens=16 effort=none",
+  "status": 200,
+  "request_model": "gpt-5.6-luna",
+  "reasoning_effort": "none",
+  "sent": [
+   "max_completion_tokens",
+   "reasoning_effort"
+  ],
+  "resolved_model": "gpt-5.6-luna",
+  "usage": {
+   "prompt_tokens": 13,
+   "completion_tokens": 4,
+   "total_tokens": 17,
+   "prompt_tokens_details": {
+    "cached_tokens": 0,
+    "cache_write_tokens": 0,
+    "audio_tokens": 0
+   },
+   "completion_tokens_details": {
+    "reasoning_tokens": 0,
+    "audio_tokens": 0,
+    "accepted_prediction_tokens": 0,
+    "rejected_prediction_tokens": 0
+   }
+  },
+  "finish_reason": "stop",
+  "content": "OK",
+  "tool_calls": [],
+  "logprobs_returned": false
+ },
+ {
+  "probe": "gpt-5.6-luna chat temperature=1 effort=none",
+  "status": 200,
+  "request_model": "gpt-5.6-luna",
+  "reasoning_effort": "none",
+  "sent": [
+   "max_completion_tokens",
+   "reasoning_effort",
+   "temperature"
+  ],
+  "resolved_model": "gpt-5.6-luna",
+  "usage": {
+   "prompt_tokens": 13,
+   "completion_tokens": 4,
+   "total_tokens": 17,
+   "prompt_tokens_details": {
+    "cached_tokens": 0,
+    "cache_write_tokens": 0,
+    "audio_tokens": 0
+   },
+   "completion_tokens_details": {
+    "reasoning_tokens": 0,
+    "audio_tokens": 0,
+    "accepted_prediction_tokens": 0,
+    "rejected_prediction_tokens": 0
+   }
+  },
+  "finish_reason": "stop",
+  "content": "OK",
+  "tool_calls": [],
+  "logprobs_returned": false
+ },
+ {
+  "probe": "gpt-5.6-luna chat max_tokens=16 effort=default",
+  "status": 400,
+  "request_model": "gpt-5.6-luna",
+  "reasoning_effort": null,
+  "sent": [
+   "max_tokens"
+  ],
+  "error": {
+   "message": "Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead.",
+   "type": "invalid_request_error",
+   "param": "max_tokens",
+   "code": "unsupported_parameter"
+  }
+ },
+ {
+  "probe": "gpt-5.6-luna chat max_completion_tokens=16 effort=default",
+  "status": 200,
+  "request_model": "gpt-5.6-luna",
+  "reasoning_effort": null,
+  "sent": [
+   "max_completion_tokens"
+  ],
+  "resolved_model": "gpt-5.6-luna",
+  "usage": {
+   "prompt_tokens": 13,
+   "completion_tokens": 4,
+   "total_tokens": 17,
+   "prompt_tokens_details": {
+    "cached_tokens": 0,
+    "cache_write_tokens": 0,
+    "audio_tokens": 0
+   },
+   "completion_tokens_details": {
+    "reasoning_tokens": 0,
+    "audio_tokens": 0,
+    "accepted_prediction_tokens": 0,
+    "rejected_prediction_tokens": 0
+   }
+  },
+  "finish_reason": "stop",
+  "content": "OK",
+  "tool_calls": [],
+  "logprobs_returned": false
+ },
+ {
+  "probe": "gpt-5.6-luna chat temperature=1 effort=default",
+  "status": 200,
+  "request_model": "gpt-5.6-luna",
+  "reasoning_effort": null,
+  "sent": [
+   "max_completion_tokens",
+   "temperature"
+  ],
+  "resolved_model": "gpt-5.6-luna",
+  "usage": {
+   "prompt_tokens": 13,
+   "completion_tokens": 4,
+   "total_tokens": 17,
+   "prompt_tokens_details": {
+    "cached_tokens": 0,
+    "cache_write_tokens": 0,
+    "audio_tokens": 0
+   },
+   "completion_tokens_details": {
+    "reasoning_tokens": 0,
+    "audio_tokens": 0,
+    "accepted_prediction_tokens": 0,
+    "rejected_prediction_tokens": 0
+   }
+  },
+  "finish_reason": "stop",
+  "content": "OK",
+  "tool_calls": [],
+  "logprobs_returned": false
+ },
+ {
+  "probe": "gpt-5.6-luna chat reasoning_effort=none",
+  "status": 200,
+  "request_model": "gpt-5.6-luna",
+  "reasoning_effort": "none",
+  "sent": [
+   "max_completion_tokens",
+   "reasoning_effort"
+  ],
+  "resolved_model": "gpt-5.6-luna",
+  "usage": {
+   "prompt_tokens": 13,
+   "completion_tokens": 4,
+   "total_tokens": 17,
+   "prompt_tokens_details": {
+    "cached_tokens": 0,
+    "cache_write_tokens": 0,
+    "audio_tokens": 0
+   },
+   "completion_tokens_details": {
+    "reasoning_tokens": 0,
+    "audio_tokens": 0,
+    "accepted_prediction_tokens": 0,
+    "rejected_prediction_tokens": 0
+   }
+  },
+  "finish_reason": "stop",
+  "content": "OK",
+  "tool_calls": [],
+  "logprobs_returned": false
+ },
+ {
+  "probe": "gpt-5.6-luna chat temperature=0.2 effort=none",
+  "status": 200,
+  "request_model": "gpt-5.6-luna",
+  "reasoning_effort": "none",
+  "sent": [
+   "max_completion_tokens",
+   "reasoning_effort",
+   "temperature"
+  ],
+  "resolved_model": "gpt-5.6-luna",
+  "usage": {
+   "prompt_tokens": 13,
+   "completion_tokens": 4,
+   "total_tokens": 17,
+   "prompt_tokens_details": {
+    "cached_tokens": 0,
+    "cache_write_tokens": 0,
+    "audio_tokens": 0
+   },
+   "completion_tokens_details": {
+    "reasoning_tokens": 0,
+    "audio_tokens": 0,
+    "accepted_prediction_tokens": 0,
+    "rejected_prediction_tokens": 0
+   }
+  },
+  "finish_reason": "stop",
+  "content": "OK",
+  "tool_calls": [],
+  "logprobs_returned": false
+ },
+ {
+  "probe": "gpt-5.6-luna chat top_p=0.9 effort=none",
+  "status": 200,
+  "request_model": "gpt-5.6-luna",
+  "reasoning_effort": "none",
+  "sent": [
+   "max_completion_tokens",
+   "reasoning_effort",
+   "top_p"
+  ],
+  "resolved_model": "gpt-5.6-luna",
+  "usage": {
+   "prompt_tokens": 13,
+   "completion_tokens": 4,
+   "total_tokens": 17,
+   "prompt_tokens_details": {
+    "cached_tokens": 0,
+    "cache_write_tokens": 0,
+    "audio_tokens": 0
+   },
+   "completion_tokens_details": {
+    "reasoning_tokens": 0,
+    "audio_tokens": 0,
+    "accepted_prediction_tokens": 0,
+    "rejected_prediction_tokens": 0
+   }
+  },
+  "finish_reason": "stop",
+  "content": "OK",
+  "tool_calls": [],
+  "logprobs_returned": false
+ },
+ {
+  "probe": "gpt-5.6-luna chat logprobs effort=none",
+  "status": 200,
+  "request_model": "gpt-5.6-luna",
+  "reasoning_effort": "none",
+  "sent": [
+   "logprobs",
+   "max_completion_tokens",
+   "reasoning_effort",
+   "top_logprobs"
+  ],
+  "resolved_model": "gpt-5.6-luna",
+  "usage": {
+   "prompt_tokens": 13,
+   "completion_tokens": 4,
+   "total_tokens": 17,
+   "prompt_tokens_details": {
+    "cached_tokens": 0,
+    "cache_write_tokens": 0,
+    "audio_tokens": 0
+   },
+   "completion_tokens_details": {
+    "reasoning_tokens": 0,
+    "audio_tokens": 0,
+    "accepted_prediction_tokens": 0,
+    "rejected_prediction_tokens": 0
+   }
+  },
+  "finish_reason": "stop",
+  "content": "OK",
+  "tool_calls": [],
+  "logprobs_returned": true
+ },
+ {
+  "probe": "gpt-5.6-luna chat temperature=0.2 effort=low",
+  "status": 400,
+  "request_model": "gpt-5.6-luna",
+  "reasoning_effort": "low",
+  "sent": [
+   "max_completion_tokens",
+   "reasoning_effort",
+   "temperature"
+  ],
+  "error": {
+   "message": "Unsupported value: 'temperature' does not support 0.2 with this model. Only the default (1) value is supported.",
+   "type": "invalid_request_error",
+   "param": "temperature",
+   "code": "unsupported_value"
+  }
+ },
+ {
+  "probe": "gpt-5.6-luna chat top_p=0.9 effort=low",
+  "status": 400,
+  "request_model": "gpt-5.6-luna",
+  "reasoning_effort": "low",
+  "sent": [
+   "max_completion_tokens",
+   "reasoning_effort",
+   "top_p"
+  ],
+  "error": {
+   "message": "Unsupported parameter: 'top_p' is not supported with this model.",
+   "type": "invalid_request_error",
+   "param": "top_p",
+   "code": "unsupported_parameter"
+  }
+ },
+ {
+  "probe": "gpt-5.6-luna chat logprobs effort=low",
+  "status": 400,
+  "request_model": "gpt-5.6-luna",
+  "reasoning_effort": "low",
+  "sent": [
+   "logprobs",
+   "max_completion_tokens",
+   "reasoning_effort",
+   "top_logprobs"
+  ],
+  "error": {
+   "message": "Unsupported parameter: 'logprobs' is not supported with this model.",
+   "type": "invalid_request_error",
+   "param": "logprobs",
+   "code": "unsupported_parameter"
+  }
+ },
+ {
+  "probe": "gpt-5.6-luna chat temperature=0.2 effort=medium",
+  "status": 400,
+  "request_model": "gpt-5.6-luna",
+  "reasoning_effort": "medium",
+  "sent": [
+   "max_completion_tokens",
+   "reasoning_effort",
+   "temperature"
+  ],
+  "error": {
+   "message": "Unsupported value: 'temperature' does not support 0.2 with this model. Only the default (1) value is supported.",
+   "type": "invalid_request_error",
+   "param": "temperature",
+   "code": "unsupported_value"
+  }
+ },
+ {
+  "probe": "gpt-5.6-luna chat top_p=0.9 effort=medium",
+  "status": 400,
+  "request_model": "gpt-5.6-luna",
+  "reasoning_effort": "medium",
+  "sent": [
+   "max_completion_tokens",
+   "reasoning_effort",
+   "top_p"
+  ],
+  "error": {
+   "message": "Unsupported parameter: 'top_p' is not supported with this model.",
+   "type": "invalid_request_error",
+   "param": "top_p",
+   "code": "unsupported_parameter"
+  }
+ },
+ {
+  "probe": "gpt-5.6-luna chat logprobs effort=medium",
+  "status": 400,
+  "request_model": "gpt-5.6-luna",
+  "reasoning_effort": "medium",
+  "sent": [
+   "logprobs",
+   "max_completion_tokens",
+   "reasoning_effort",
+   "top_logprobs"
+  ],
+  "error": {
+   "message": "Unsupported parameter: 'logprobs' is not supported with this model.",
+   "type": "invalid_request_error",
+   "param": "logprobs",
+   "code": "unsupported_parameter"
+  }
+ },
+ {
+  "probe": "gpt-5.6-luna chat temperature=0.2 effort=high",
+  "status": 400,
+  "request_model": "gpt-5.6-luna",
+  "reasoning_effort": "high",
+  "sent": [
+   "max_completion_tokens",
+   "reasoning_effort",
+   "temperature"
+  ],
+  "error": {
+   "message": "Unsupported value: 'temperature' does not support 0.2 with this model. Only the default (1) value is supported.",
+   "type": "invalid_request_error",
+   "param": "temperature",
+   "code": "unsupported_value"
+  }
+ },
+ {
+  "probe": "gpt-5.6-luna chat top_p=0.9 effort=high",
+  "status": 400,
+  "request_model": "gpt-5.6-luna",
+  "reasoning_effort": "high",
+  "sent": [
+   "max_completion_tokens",
+   "reasoning_effort",
+   "top_p"
+  ],
+  "error": {
+   "message": "Unsupported parameter: 'top_p' is not supported with this model.",
+   "type": "invalid_request_error",
+   "param": "top_p",
+   "code": "unsupported_parameter"
+  }
+ },
+ {
+  "probe": "gpt-5.6-luna chat logprobs effort=high",
+  "status": 400,
+  "request_model": "gpt-5.6-luna",
+  "reasoning_effort": "high",
+  "sent": [
+   "logprobs",
+   "max_completion_tokens",
+   "reasoning_effort",
+   "top_logprobs"
+  ],
+  "error": {
+   "message": "Unsupported parameter: 'logprobs' is not supported with this model.",
+   "type": "invalid_request_error",
+   "param": "logprobs",
+   "code": "unsupported_parameter"
+  }
+ },
+ {
+  "probe": "gpt-5.6-luna chat temperature=0.2 effort=xhigh",
+  "status": 400,
+  "request_model": "gpt-5.6-luna",
+  "reasoning_effort": "xhigh",
+  "sent": [
+   "max_completion_tokens",
+   "reasoning_effort",
+   "temperature"
+  ],
+  "error": {
+   "message": "Unsupported value: 'temperature' does not support 0.2 with this model. Only the default (1) value is supported.",
+   "type": "invalid_request_error",
+   "param": "temperature",
+   "code": "unsupported_value"
+  }
+ },
+ {
+  "probe": "gpt-5.6-luna chat top_p=0.9 effort=xhigh",
+  "status": 400,
+  "request_model": "gpt-5.6-luna",
+  "reasoning_effort": "xhigh",
+  "sent": [
+   "max_completion_tokens",
+   "reasoning_effort",
+   "top_p"
+  ],
+  "error": {
+   "message": "Unsupported parameter: 'top_p' is not supported with this model.",
+   "type": "invalid_request_error",
+   "param": "top_p",
+   "code": "unsupported_parameter"
+  }
+ },
+ {
+  "probe": "gpt-5.6-luna chat logprobs effort=xhigh",
+  "status": 400,
+  "request_model": "gpt-5.6-luna",
+  "reasoning_effort": "xhigh",
+  "sent": [
+   "logprobs",
+   "max_completion_tokens",
+   "reasoning_effort",
+   "top_logprobs"
+  ],
+  "error": {
+   "message": "Unsupported parameter: 'logprobs' is not supported with this model.",
+   "type": "invalid_request_error",
+   "param": "logprobs",
+   "code": "unsupported_parameter"
+  }
+ },
+ {
+  "probe": "gpt-5.6-luna chat temperature=0.2 effort=max",
+  "status": 400,
+  "request_model": "gpt-5.6-luna",
+  "reasoning_effort": "max",
+  "sent": [
+   "max_completion_tokens",
+   "reasoning_effort",
+   "temperature"
+  ],
+  "error": {
+   "message": "Unsupported value: 'reasoning_effort' does not support 'max' with this model. Supported values are: 'none', 'low', 'medium', 'high', and 'xhigh'.",
+   "type": "invalid_request_error",
+   "param": "reasoning_effort",
+   "code": "unsupported_value"
+  }
+ },
+ {
+  "probe": "gpt-5.6-luna chat top_p=0.9 effort=max",
+  "status": 400,
+  "request_model": "gpt-5.6-luna",
+  "reasoning_effort": "max",
+  "sent": [
+   "max_completion_tokens",
+   "reasoning_effort",
+   "top_p"
+  ],
+  "error": {
+   "message": "Unsupported value: 'reasoning_effort' does not support 'max' with this model. Supported values are: 'none', 'low', 'medium', 'high', and 'xhigh'.",
+   "type": "invalid_request_error",
+   "param": "reasoning_effort",
+   "code": "unsupported_value"
+  }
+ },
+ {
+  "probe": "gpt-5.6-luna chat logprobs effort=max",
+  "status": 400,
+  "request_model": "gpt-5.6-luna",
+  "reasoning_effort": "max",
+  "sent": [
+   "logprobs",
+   "max_completion_tokens",
+   "reasoning_effort",
+   "top_logprobs"
+  ],
+  "error": {
+   "message": "Unsupported value: 'reasoning_effort' does not support 'max' with this model. Supported values are: 'none', 'low', 'medium', 'high', and 'xhigh'.",
+   "type": "invalid_request_error",
+   "param": "reasoning_effort",
+   "code": "unsupported_value"
+  }
+ },
+ {
+  "probe": "gpt-5.6-luna chat tools effort=default",
+  "status": 400,
+  "request_model": "gpt-5.6-luna",
+  "reasoning_effort": null,
+  "sent": [
+   "max_completion_tokens",
+   "tools"
+  ],
+  "error": {
+   "message": "Function tools with reasoning_effort are not supported for gpt-5.6-luna in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.",
+   "type": "invalid_request_error",
+   "param": "reasoning_effort",
+   "code": null
+  }
+ },
+ {
+  "probe": "gpt-5.6-luna chat tools effort=none",
+  "status": 200,
+  "request_model": "gpt-5.6-luna",
+  "reasoning_effort": "none",
+  "sent": [
+   "max_completion_tokens",
+   "reasoning_effort",
+   "tools"
+  ],
+  "resolved_model": "gpt-5.6-luna",
+  "usage": {
+   "prompt_tokens": 152,
+   "completion_tokens": 33,
+   "total_tokens": 185,
+   "prompt_tokens_details": {
+    "cached_tokens": 0,
+    "cache_write_tokens": 0,
+    "audio_tokens": 0
+   },
+   "completion_tokens_details": {
+    "reasoning_tokens": 0,
+    "audio_tokens": 0,
+    "accepted_prediction_tokens": 0,
+    "rejected_prediction_tokens": 0
+   }
+  },
+  "finish_reason": "tool_calls",
+  "content": "",
+  "tool_calls": [
+   "book_table"
+  ],
+  "logprobs_returned": false
+ },
+ {
+  "probe": "gpt-5.6-luna chat tools effort=low",
+  "status": 400,
+  "request_model": "gpt-5.6-luna",
+  "reasoning_effort": "low",
+  "sent": [
+   "max_completion_tokens",
+   "reasoning_effort",
+   "tools"
+  ],
+  "error": {
+   "message": "Function tools with reasoning_effort are not supported for gpt-5.6-luna in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.",
+   "type": "invalid_request_error",
+   "param": "reasoning_effort",
+   "code": null
+  }
+ },
+ {
+  "probe": "gpt-5.6-luna chat tools effort=medium",
+  "status": 400,
+  "request_model": "gpt-5.6-luna",
+  "reasoning_effort": "medium",
+  "sent": [
+   "max_completion_tokens",
+   "reasoning_effort",
+   "tools"
+  ],
+  "error": {
+   "message": "Function tools with reasoning_effort are not supported for gpt-5.6-luna in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.",
+   "type": "invalid_request_error",
+   "param": "reasoning_effort",
+   "code": null
+  }
+ },
+ {
+  "probe": "gpt-5.6-luna chat tools effort=high",
+  "status": 400,
+  "request_model": "gpt-5.6-luna",
+  "reasoning_effort": "high",
+  "sent": [
+   "max_completion_tokens",
+   "reasoning_effort",
+   "tools"
+  ],
+  "error": {
+   "message": "Function tools with reasoning_effort are not supported for gpt-5.6-luna in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.",
+   "type": "invalid_request_error",
+   "param": "reasoning_effort",
+   "code": null
+  }
+ },
+ {
+  "probe": "gpt-5.6-luna chat tools effort=xhigh",
+  "status": 400,
+  "request_model": "gpt-5.6-luna",
+  "reasoning_effort": "xhigh",
+  "sent": [
+   "max_completion_tokens",
+   "reasoning_effort",
+   "tools"
+  ],
+  "error": {
+   "message": "Function tools with reasoning_effort are not supported for gpt-5.6-luna in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.",
+   "type": "invalid_request_error",
+   "param": "reasoning_effort",
+   "code": null
+  }
+ },
+ {
+  "probe": "gpt-5.6-luna chat tools effort=max",
+  "status": 400,
+  "request_model": "gpt-5.6-luna",
+  "reasoning_effort": "max",
+  "sent": [
+   "max_completion_tokens",
+   "reasoning_effort",
+   "tools"
+  ],
+  "error": {
+   "message": "Unsupported value: 'reasoning_effort' does not support 'max' with this model. Supported values are: 'none', 'low', 'medium', 'high', and 'xhigh'.",
+   "type": "invalid_request_error",
+   "param": "reasoning_effort",
+   "code": "unsupported_value"
+  }
+ },
+ {
+  "probe": "gpt-5.6-sol chat max_tokens=16 effort=none",
+  "status": 400,
+  "request_model": "gpt-5.6-sol",
+  "reasoning_effort": "none",
+  "sent": [
+   "max_tokens",
+   "reasoning_effort"
+  ],
+  "error": {
+   "message": "Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead.",
+   "type": "invalid_request_error",
+   "param": "max_tokens",
+   "code": "unsupported_parameter"
+  }
+ },
+ {
+  "probe": "gpt-5.6-sol chat max_completion_tokens=16 effort=none",
+  "status": 200,
+  "request_model": "gpt-5.6-sol",
+  "reasoning_effort": "none",
+  "sent": [
+   "max_completion_tokens",
+   "reasoning_effort"
+  ],
+  "resolved_model": "gpt-5.6-sol",
+  "usage": {
+   "prompt_tokens": 13,
+   "completion_tokens": 4,
+   "total_tokens": 17,
+   "prompt_tokens_details": {
+    "cached_tokens": 0,
+    "cache_write_tokens": 0,
+    "audio_tokens": 0
+   },
+   "completion_tokens_details": {
+    "reasoning_tokens": 0,
+    "audio_tokens": 0,
+    "accepted_prediction_tokens": 0,
+    "rejected_prediction_tokens": 0
+   }
+  },
+  "finish_reason": "stop",
+  "content": "OK",
+  "tool_calls": [],
+  "logprobs_returned": false
+ },
+ {
+  "probe": "gpt-5.6-sol chat temperature=1 effort=none",
+  "status": 200,
+  "request_model": "gpt-5.6-sol",
+  "reasoning_effort": "none",
+  "sent": [
+   "max_completion_tokens",
+   "reasoning_effort",
+   "temperature"
+  ],
+  "resolved_model": "gpt-5.6-sol",
+  "usage": {
+   "prompt_tokens": 13,
+   "completion_tokens": 4,
+   "total_tokens": 17,
+   "prompt_tokens_details": {
+    "cached_tokens": 0,
+    "cache_write_tokens": 0,
+    "audio_tokens": 0
+   },
+   "completion_tokens_details": {
+    "reasoning_tokens": 0,
+    "audio_tokens": 0,
+    "accepted_prediction_tokens": 0,
+    "rejected_prediction_tokens": 0
+   }
+  },
+  "finish_reason": "stop",
+  "content": "OK",
+  "tool_calls": [],
+  "logprobs_returned": false
+ },
+ {
+  "probe": "gpt-5.6-sol chat max_tokens=16 effort=default",
+  "status": 400,
+  "request_model": "gpt-5.6-sol",
+  "reasoning_effort": null,
+  "sent": [
+   "max_tokens"
+  ],
+  "error": {
+   "message": "Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead.",
+   "type": "invalid_request_error",
+   "param": "max_tokens",
+   "code": "unsupported_parameter"
+  }
+ },
+ {
+  "probe": "gpt-5.6-sol chat max_completion_tokens=16 effort=default",
+  "status": 200,
+  "request_model": "gpt-5.6-sol",
+  "reasoning_effort": null,
+  "sent": [
+   "max_completion_tokens"
+  ],
+  "resolved_model": "gpt-5.6-sol",
+  "usage": {
+   "prompt_tokens": 13,
+   "completion_tokens": 4,
+   "total_tokens": 17,
+   "prompt_tokens_details": {
+    "cached_tokens": 0,
+    "cache_write_tokens": 0,
+    "audio_tokens": 0
+   },
+   "completion_tokens_details": {
+    "reasoning_tokens": 0,
+    "audio_tokens": 0,
+    "accepted_prediction_tokens": 0,
+    "rejected_prediction_tokens": 0
+   }
+  },
+  "finish_reason": "stop",
+  "content": "OK",
+  "tool_calls": [],
+  "logprobs_returned": false
+ },
+ {
+  "probe": "gpt-5.6-sol chat temperature=1 effort=default",
+  "status": 200,
+  "request_model": "gpt-5.6-sol",
+  "reasoning_effort": null,
+  "sent": [
+   "max_completion_tokens",
+   "temperature"
+  ],
+  "resolved_model": "gpt-5.6-sol",
+  "usage": {
+   "prompt_tokens": 13,
+   "completion_tokens": 4,
+   "total_tokens": 17,
+   "prompt_tokens_details": {
+    "cached_tokens": 0,
+    "cache_write_tokens": 0,
+    "audio_tokens": 0
+   },
+   "completion_tokens_details": {
+    "reasoning_tokens": 0,
+    "audio_tokens": 0,
+    "accepted_prediction_tokens": 0,
+    "rejected_prediction_tokens": 0
+   }
+  },
+  "finish_reason": "stop",
+  "content": "OK",
+  "tool_calls": [],
+  "logprobs_returned": false
+ },
+ {
+  "probe": "gpt-5.6-sol chat reasoning_effort=none",
+  "status": 200,
+  "request_model": "gpt-5.6-sol",
+  "reasoning_effort": "none",
+  "sent": [
+   "max_completion_tokens",
+   "reasoning_effort"
+  ],
+  "resolved_model": "gpt-5.6-sol",
+  "usage": {
+   "prompt_tokens": 13,
+   "completion_tokens": 4,
+   "total_tokens": 17,
+   "prompt_tokens_details": {
+    "cached_tokens": 0,
+    "cache_write_tokens": 0,
+    "audio_tokens": 0
+   },
+   "completion_tokens_details": {
+    "reasoning_tokens": 0,
+    "audio_tokens": 0,
+    "accepted_prediction_tokens": 0,
+    "rejected_prediction_tokens": 0
+   }
+  },
+  "finish_reason": "stop",
+  "content": "OK",
+  "tool_calls": [],
+  "logprobs_returned": false
+ },
+ {
+  "probe": "gpt-5.6-sol chat temperature=0.2 effort=none",
+  "status": 200,
+  "request_model": "gpt-5.6-sol",
+  "reasoning_effort": "none",
+  "sent": [
+   "max_completion_tokens",
+   "reasoning_effort",
+   "temperature"
+  ],
+  "resolved_model": "gpt-5.6-sol",
+  "usage": {
+   "prompt_tokens": 13,
+   "completion_tokens": 4,
+   "total_tokens": 17,
+   "prompt_tokens_details": {
+    "cached_tokens": 0,
+    "cache_write_tokens": 0,
+    "audio_tokens": 0
+   },
+   "completion_tokens_details": {
+    "reasoning_tokens": 0,
+    "audio_tokens": 0,
+    "accepted_prediction_tokens": 0,
+    "rejected_prediction_tokens": 0
+   }
+  },
+  "finish_reason": "stop",
+  "content": "OK",
+  "tool_calls": [],
+  "logprobs_returned": false
+ },
+ {
+  "probe": "gpt-5.6-sol chat top_p=0.9 effort=none",
+  "status": 200,
+  "request_model": "gpt-5.6-sol",
+  "reasoning_effort": "none",
+  "sent": [
+   "max_completion_tokens",
+   "reasoning_effort",
+   "top_p"
+  ],
+  "resolved_model": "gpt-5.6-sol",
+  "usage": {
+   "prompt_tokens": 13,
+   "completion_tokens": 4,
+   "total_tokens": 17,
+   "prompt_tokens_details": {
+    "cached_tokens": 0,
+    "cache_write_tokens": 0,
+    "audio_tokens": 0
+   },
+   "completion_tokens_details": {
+    "reasoning_tokens": 0,
+    "audio_tokens": 0,
+    "accepted_prediction_tokens": 0,
+    "rejected_prediction_tokens": 0
+   }
+  },
+  "finish_reason": "stop",
+  "content": "OK",
+  "tool_calls": [],
+  "logprobs_returned": false
+ },
+ {
+  "probe": "gpt-5.6-sol chat logprobs effort=none",
+  "status": 200,
+  "request_model": "gpt-5.6-sol",
+  "reasoning_effort": "none",
+  "sent": [
+   "logprobs",
+   "max_completion_tokens",
+   "reasoning_effort",
+   "top_logprobs"
+  ],
+  "resolved_model": "gpt-5.6-sol",
+  "usage": {
+   "prompt_tokens": 13,
+   "completion_tokens": 4,
+   "total_tokens": 17,
+   "prompt_tokens_details": {
+    "cached_tokens": 0,
+    "cache_write_tokens": 0,
+    "audio_tokens": 0
+   },
+   "completion_tokens_details": {
+    "reasoning_tokens": 0,
+    "audio_tokens": 0,
+    "accepted_prediction_tokens": 0,
+    "rejected_prediction_tokens": 0
+   }
+  },
+  "finish_reason": "stop",
+  "content": "OK",
+  "tool_calls": [],
+  "logprobs_returned": true
+ },
+ {
+  "probe": "gpt-5.6-sol chat temperature=0.2 effort=low",
+  "status": 400,
+  "request_model": "gpt-5.6-sol",
+  "reasoning_effort": "low",
+  "sent": [
+   "max_completion_tokens",
+   "reasoning_effort",
+   "temperature"
+  ],
+  "error": {
+   "message": "Unsupported value: 'temperature' does not support 0.2 with this model. Only the default (1) value is supported.",
+   "type": "invalid_request_error",
+   "param": "temperature",
+   "code": "unsupported_value"
+  }
+ },
+ {
+  "probe": "gpt-5.6-sol chat top_p=0.9 effort=low",
+  "status": 400,
+  "request_model": "gpt-5.6-sol",
+  "reasoning_effort": "low",
+  "sent": [
+   "max_completion_tokens",
+   "reasoning_effort",
+   "top_p"
+  ],
+  "error": {
+   "message": "Unsupported parameter: 'top_p' is not supported with this model.",
+   "type": "invalid_request_error",
+   "param": "top_p",
+   "code": "unsupported_parameter"
+  }
+ },
+ {
+  "probe": "gpt-5.6-sol chat logprobs effort=low",
+  "status": 400,
+  "request_model": "gpt-5.6-sol",
+  "reasoning_effort": "low",
+  "sent": [
+   "logprobs",
+   "max_completion_tokens",
+   "reasoning_effort",
+   "top_logprobs"
+  ],
+  "error": {
+   "message": "Unsupported parameter: 'logprobs' is not supported with this model.",
+   "type": "invalid_request_error",
+   "param": "logprobs",
+   "code": "unsupported_parameter"
+  }
+ },
+ {
+  "probe": "gpt-5.6-sol chat temperature=0.2 effort=medium",
+  "status": 400,
+  "request_model": "gpt-5.6-sol",
+  "reasoning_effort": "medium",
+  "sent": [
+   "max_completion_tokens",
+   "reasoning_effort",
+   "temperature"
+  ],
+  "error": {
+   "message": "Unsupported value: 'temperature' does not support 0.2 with this model. Only the default (1) value is supported.",
+   "type": "invalid_request_error",
+   "param": "temperature",
+   "code": "unsupported_value"
+  }
+ },
+ {
+  "probe": "gpt-5.6-sol chat top_p=0.9 effort=medium",
+  "status": 400,
+  "request_model": "gpt-5.6-sol",
+  "reasoning_effort": "medium",
+  "sent": [
+   "max_completion_tokens",
+   "reasoning_effort",
+   "top_p"
+  ],
+  "error": {
+   "message": "Unsupported parameter: 'top_p' is not supported with this model.",
+   "type": "invalid_request_error",
+   "param": "top_p",
+   "code": "unsupported_parameter"
+  }
+ },
+ {
+  "probe": "gpt-5.6-sol chat logprobs effort=medium",
+  "status": 400,
+  "request_model": "gpt-5.6-sol",
+  "reasoning_effort": "medium",
+  "sent": [
+   "logprobs",
+   "max_completion_tokens",
+   "reasoning_effort",
+   "top_logprobs"
+  ],
+  "error": {
+   "message": "Unsupported parameter: 'logprobs' is not supported with this model.",
+   "type": "invalid_request_error",
+   "param": "logprobs",
+   "code": "unsupported_parameter"
+  }
+ },
+ {
+  "probe": "gpt-5.6-sol chat temperature=0.2 effort=high",
+  "status": 400,
+  "request_model": "gpt-5.6-sol",
+  "reasoning_effort": "high",
+  "sent": [
+   "max_completion_tokens",
+   "reasoning_effort",
+   "temperature"
+  ],
+  "error": {
+   "message": "Unsupported value: 'temperature' does not support 0.2 with this model. Only the default (1) value is supported.",
+   "type": "invalid_request_error",
+   "param": "temperature",
+   "code": "unsupported_value"
+  }
+ },
+ {
+  "probe": "gpt-5.6-sol chat top_p=0.9 effort=high",
+  "status": 400,
+  "request_model": "gpt-5.6-sol",
+  "reasoning_effort": "high",
+  "sent": [
+   "max_completion_tokens",
+   "reasoning_effort",
+   "top_p"
+  ],
+  "error": {
+   "message": "Unsupported parameter: 'top_p' is not supported with this model.",
+   "type": "invalid_request_error",
+   "param": "top_p",
+   "code": "unsupported_parameter"
+  }
+ },
+ {
+  "probe": "gpt-5.6-sol chat logprobs effort=high",
+  "status": 400,
+  "request_model": "gpt-5.6-sol",
+  "reasoning_effort": "high",
+  "sent": [
+   "logprobs",
+   "max_completion_tokens",
+   "reasoning_effort",
+   "top_logprobs"
+  ],
+  "error": {
+   "message": "Unsupported parameter: 'logprobs' is not supported with this model.",
+   "type": "invalid_request_error",
+   "param": "logprobs",
+   "code": "unsupported_parameter"
+  }
+ },
+ {
+  "probe": "gpt-5.6-sol chat temperature=0.2 effort=xhigh",
+  "status": 400,
+  "request_model": "gpt-5.6-sol",
+  "reasoning_effort": "xhigh",
+  "sent": [
+   "max_completion_tokens",
+   "reasoning_effort",
+   "temperature"
+  ],
+  "error": {
+   "message": "Unsupported value: 'temperature' does not support 0.2 with this model. Only the default (1) value is supported.",
+   "type": "invalid_request_error",
+   "param": "temperature",
+   "code": "unsupported_value"
+  }
+ },
+ {
+  "probe": "gpt-5.6-sol chat top_p=0.9 effort=xhigh",
+  "status": 400,
+  "request_model": "gpt-5.6-sol",
+  "reasoning_effort": "xhigh",
+  "sent": [
+   "max_completion_tokens",
+   "reasoning_effort",
+   "top_p"
+  ],
+  "error": {
+   "message": "Unsupported parameter: 'top_p' is not supported with this model.",
+   "type": "invalid_request_error",
+   "param": "top_p",
+   "code": "unsupported_parameter"
+  }
+ },
+ {
+  "probe": "gpt-5.6-sol chat logprobs effort=xhigh",
+  "status": 400,
+  "request_model": "gpt-5.6-sol",
+  "reasoning_effort": "xhigh",
+  "sent": [
+   "logprobs",
+   "max_completion_tokens",
+   "reasoning_effort",
+   "top_logprobs"
+  ],
+  "error": {
+   "message": "Unsupported parameter: 'logprobs' is not supported with this model.",
+   "type": "invalid_request_error",
+   "param": "logprobs",
+   "code": "unsupported_parameter"
+  }
+ },
+ {
+  "probe": "gpt-5.6-sol chat temperature=0.2 effort=max",
+  "status": 400,
+  "request_model": "gpt-5.6-sol",
+  "reasoning_effort": "max",
+  "sent": [
+   "max_completion_tokens",
+   "reasoning_effort",
+   "temperature"
+  ],
+  "error": {
+   "message": "Unsupported value: 'reasoning_effort' does not support 'max' with this model. Supported values are: 'none', 'low', 'medium', 'high', and 'xhigh'.",
+   "type": "invalid_request_error",
+   "param": "reasoning_effort",
+   "code": "unsupported_value"
+  }
+ },
+ {
+  "probe": "gpt-5.6-sol chat top_p=0.9 effort=max",
+  "status": 400,
+  "request_model": "gpt-5.6-sol",
+  "reasoning_effort": "max",
+  "sent": [
+   "max_completion_tokens",
+   "reasoning_effort",
+   "top_p"
+  ],
+  "error": {
+   "message": "Unsupported value: 'reasoning_effort' does not support 'max' with this model. Supported values are: 'none', 'low', 'medium', 'high', and 'xhigh'.",
+   "type": "invalid_request_error",
+   "param": "reasoning_effort",
+   "code": "unsupported_value"
+  }
+ },
+ {
+  "probe": "gpt-5.6-sol chat logprobs effort=max",
+  "status": 400,
+  "request_model": "gpt-5.6-sol",
+  "reasoning_effort": "max",
+  "sent": [
+   "logprobs",
+   "max_completion_tokens",
+   "reasoning_effort",
+   "top_logprobs"
+  ],
+  "error": {
+   "message": "Unsupported value: 'reasoning_effort' does not support 'max' with this model. Supported values are: 'none', 'low', 'medium', 'high', and 'xhigh'.",
+   "type": "invalid_request_error",
+   "param": "reasoning_effort",
+   "code": "unsupported_value"
+  }
+ },
+ {
+  "probe": "gpt-5.6-sol chat tools effort=default",
+  "status": 400,
+  "request_model": "gpt-5.6-sol",
+  "reasoning_effort": null,
+  "sent": [
+   "max_completion_tokens",
+   "tools"
+  ],
+  "error": {
+   "message": "Function tools with reasoning_effort are not supported for gpt-5.6-sol in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.",
+   "type": "invalid_request_error",
+   "param": "reasoning_effort",
+   "code": null
+  }
+ },
+ {
+  "probe": "gpt-5.6-sol chat tools effort=none",
+  "status": 200,
+  "request_model": "gpt-5.6-sol",
+  "reasoning_effort": "none",
+  "sent": [
+   "max_completion_tokens",
+   "reasoning_effort",
+   "tools"
+  ],
+  "resolved_model": "gpt-5.6-sol",
+  "usage": {
+   "prompt_tokens": 152,
+   "completion_tokens": 33,
+   "total_tokens": 185,
+   "prompt_tokens_details": {
+    "cached_tokens": 0,
+    "cache_write_tokens": 0,
+    "audio_tokens": 0
+   },
+   "completion_tokens_details": {
+    "reasoning_tokens": 0,
+    "audio_tokens": 0,
+    "accepted_prediction_tokens": 0,
+    "rejected_prediction_tokens": 0
+   }
+  },
+  "finish_reason": "tool_calls",
+  "content": "",
+  "tool_calls": [
+   "book_table"
+  ],
+  "logprobs_returned": false
+ },
+ {
+  "probe": "gpt-5.6-sol chat tools effort=low",
+  "status": 400,
+  "request_model": "gpt-5.6-sol",
+  "reasoning_effort": "low",
+  "sent": [
+   "max_completion_tokens",
+   "reasoning_effort",
+   "tools"
+  ],
+  "error": {
+   "message": "Function tools with reasoning_effort are not supported for gpt-5.6-sol in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.",
+   "type": "invalid_request_error",
+   "param": "reasoning_effort",
+   "code": null
+  }
+ },
+ {
+  "probe": "gpt-5.6-sol chat tools effort=medium",
+  "status": 400,
+  "request_model": "gpt-5.6-sol",
+  "reasoning_effort": "medium",
+  "sent": [
+   "max_completion_tokens",
+   "reasoning_effort",
+   "tools"
+  ],
+  "error": {
+   "message": "Function tools with reasoning_effort are not supported for gpt-5.6-sol in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.",
+   "type": "invalid_request_error",
+   "param": "reasoning_effort",
+   "code": null
+  }
+ },
+ {
+  "probe": "gpt-5.6-sol chat tools effort=high",
+  "status": 400,
+  "request_model": "gpt-5.6-sol",
+  "reasoning_effort": "high",
+  "sent": [
+   "max_completion_tokens",
+   "reasoning_effort",
+   "tools"
+  ],
+  "error": {
+   "message": "Function tools with reasoning_effort are not supported for gpt-5.6-sol in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.",
+   "type": "invalid_request_error",
+   "param": "reasoning_effort",
+   "code": null
+  }
+ },
+ {
+  "probe": "gpt-5.6-sol chat tools effort=xhigh",
+  "status": 400,
+  "request_model": "gpt-5.6-sol",
+  "reasoning_effort": "xhigh",
+  "sent": [
+   "max_completion_tokens",
+   "reasoning_effort",
+   "tools"
+  ],
+  "error": {
+   "message": "Function tools with reasoning_effort are not supported for gpt-5.6-sol in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.",
+   "type": "invalid_request_error",
+   "param": "reasoning_effort",
+   "code": null
+  }
+ },
+ {
+  "probe": "gpt-5.6-sol chat tools effort=max",
+  "status": 400,
+  "request_model": "gpt-5.6-sol",
+  "reasoning_effort": "max",
+  "sent": [
+   "max_completion_tokens",
+   "reasoning_effort",
+   "tools"
+  ],
+  "error": {
+   "message": "Unsupported value: 'reasoning_effort' does not support 'max' with this model. Supported values are: 'none', 'low', 'medium', 'high', and 'xhigh'.",
+   "type": "invalid_request_error",
+   "param": "reasoning_effort",
+   "code": "unsupported_value"
+  }
+ },
+ {
+  "probe": "gpt-5.6-terra chat max_tokens=16 effort=none",
+  "status": 400,
+  "request_model": "gpt-5.6-terra",
+  "reasoning_effort": "none",
+  "sent": [
+   "max_tokens",
+   "reasoning_effort"
+  ],
+  "error": {
+   "message": "Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead.",
+   "type": "invalid_request_error",
+   "param": "max_tokens",
+   "code": "unsupported_parameter"
+  }
+ },
+ {
+  "probe": "gpt-5.6-terra chat max_completion_tokens=16 effort=none",
+  "status": 200,
+  "request_model": "gpt-5.6-terra",
+  "reasoning_effort": "none",
+  "sent": [
+   "max_completion_tokens",
+   "reasoning_effort"
+  ],
+  "resolved_model": "gpt-5.6-terra",
+  "usage": {
+   "prompt_tokens": 13,
+   "completion_tokens": 4,
+   "total_tokens": 17,
+   "prompt_tokens_details": {
+    "cached_tokens": 0,
+    "cache_write_tokens": 0,
+    "audio_tokens": 0
+   },
+   "completion_tokens_details": {
+    "reasoning_tokens": 0,
+    "audio_tokens": 0,
+    "accepted_prediction_tokens": 0,
+    "rejected_prediction_tokens": 0
+   }
+  },
+  "finish_reason": "stop",
+  "content": "OK",
+  "tool_calls": [],
+  "logprobs_returned": false
+ },
+ {
+  "probe": "gpt-5.6-terra chat temperature=1 effort=none",
+  "status": 200,
+  "request_model": "gpt-5.6-terra",
+  "reasoning_effort": "none",
+  "sent": [
+   "max_completion_tokens",
+   "reasoning_effort",
+   "temperature"
+  ],
+  "resolved_model": "gpt-5.6-terra",
+  "usage": {
+   "prompt_tokens": 13,
+   "completion_tokens": 4,
+   "total_tokens": 17,
+   "prompt_tokens_details": {
+    "cached_tokens": 0,
+    "cache_write_tokens": 0,
+    "audio_tokens": 0
+   },
+   "completion_tokens_details": {
+    "reasoning_tokens": 0,
+    "audio_tokens": 0,
+    "accepted_prediction_tokens": 0,
+    "rejected_prediction_tokens": 0
+   }
+  },
+  "finish_reason": "stop",
+  "content": "OK",
+  "tool_calls": [],
+  "logprobs_returned": false
+ },
+ {
+  "probe": "gpt-5.6-terra chat max_tokens=16 effort=default",
+  "status": 400,
+  "request_model": "gpt-5.6-terra",
+  "reasoning_effort": null,
+  "sent": [
+   "max_tokens"
+  ],
+  "error": {
+   "message": "Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead.",
+   "type": "invalid_request_error",
+   "param": "max_tokens",
+   "code": "unsupported_parameter"
+  }
+ },
+ {
+  "probe": "gpt-5.6-terra chat max_completion_tokens=16 effort=default",
+  "status": 200,
+  "request_model": "gpt-5.6-terra",
+  "reasoning_effort": null,
+  "sent": [
+   "max_completion_tokens"
+  ],
+  "resolved_model": "gpt-5.6-terra",
+  "usage": {
+   "prompt_tokens": 13,
+   "completion_tokens": 4,
+   "total_tokens": 17,
+   "prompt_tokens_details": {
+    "cached_tokens": 0,
+    "cache_write_tokens": 0,
+    "audio_tokens": 0
+   },
+   "completion_tokens_details": {
+    "reasoning_tokens": 0,
+    "audio_tokens": 0,
+    "accepted_prediction_tokens": 0,
+    "rejected_prediction_tokens": 0
+   }
+  },
+  "finish_reason": "stop",
+  "content": "OK",
+  "tool_calls": [],
+  "logprobs_returned": false
+ },
+ {
+  "probe": "gpt-5.6-terra chat temperature=1 effort=default",
+  "status": 200,
+  "request_model": "gpt-5.6-terra",
+  "reasoning_effort": null,
+  "sent": [
+   "max_completion_tokens",
+   "temperature"
+  ],
+  "resolved_model": "gpt-5.6-terra",
+  "usage": {
+   "prompt_tokens": 13,
+   "completion_tokens": 4,
+   "total_tokens": 17,
+   "prompt_tokens_details": {
+    "cached_tokens": 0,
+    "cache_write_tokens": 0,
+    "audio_tokens": 0
+   },
+   "completion_tokens_details": {
+    "reasoning_tokens": 0,
+    "audio_tokens": 0,
+    "accepted_prediction_tokens": 0,
+    "rejected_prediction_tokens": 0
+   }
+  },
+  "finish_reason": "stop",
+  "content": "OK",
+  "tool_calls": [],
+  "logprobs_returned": false
+ },
+ {
+  "probe": "gpt-5.6-terra chat reasoning_effort=none",
+  "status": 200,
+  "request_model": "gpt-5.6-terra",
+  "reasoning_effort": "none",
+  "sent": [
+   "max_completion_tokens",
+   "reasoning_effort"
+  ],
+  "resolved_model": "gpt-5.6-terra",
+  "usage": {
+   "prompt_tokens": 13,
+   "completion_tokens": 4,
+   "total_tokens": 17,
+   "prompt_tokens_details": {
+    "cached_tokens": 0,
+    "cache_write_tokens": 0,
+    "audio_tokens": 0
+   },
+   "completion_tokens_details": {
+    "reasoning_tokens": 0,
+    "audio_tokens": 0,
+    "accepted_prediction_tokens": 0,
+    "rejected_prediction_tokens": 0
+   }
+  },
+  "finish_reason": "stop",
+  "content": "OK",
+  "tool_calls": [],
+  "logprobs_returned": false
+ },
+ {
+  "probe": "gpt-5.6-terra chat temperature=0.2 effort=none",
+  "status": 200,
+  "request_model": "gpt-5.6-terra",
+  "reasoning_effort": "none",
+  "sent": [
+   "max_completion_tokens",
+   "reasoning_effort",
+   "temperature"
+  ],
+  "resolved_model": "gpt-5.6-terra",
+  "usage": {
+   "prompt_tokens": 13,
+   "completion_tokens": 4,
+   "total_tokens": 17,
+   "prompt_tokens_details": {
+    "cached_tokens": 0,
+    "cache_write_tokens": 0,
+    "audio_tokens": 0
+   },
+   "completion_tokens_details": {
+    "reasoning_tokens": 0,
+    "audio_tokens": 0,
+    "accepted_prediction_tokens": 0,
+    "rejected_prediction_tokens": 0
+   }
+  },
+  "finish_reason": "stop",
+  "content": "OK",
+  "tool_calls": [],
+  "logprobs_returned": false
+ },
+ {
+  "probe": "gpt-5.6-terra chat top_p=0.9 effort=none",
+  "status": 200,
+  "request_model": "gpt-5.6-terra",
+  "reasoning_effort": "none",
+  "sent": [
+   "max_completion_tokens",
+   "reasoning_effort",
+   "top_p"
+  ],
+  "resolved_model": "gpt-5.6-terra",
+  "usage": {
+   "prompt_tokens": 13,
+   "completion_tokens": 4,
+   "total_tokens": 17,
+   "prompt_tokens_details": {
+    "cached_tokens": 0,
+    "cache_write_tokens": 0,
+    "audio_tokens": 0
+   },
+   "completion_tokens_details": {
+    "reasoning_tokens": 0,
+    "audio_tokens": 0,
+    "accepted_prediction_tokens": 0,
+    "rejected_prediction_tokens": 0
+   }
+  },
+  "finish_reason": "stop",
+  "content": "OK",
+  "tool_calls": [],
+  "logprobs_returned": false
+ },
+ {
+  "probe": "gpt-5.6-terra chat logprobs effort=none",
+  "status": 200,
+  "request_model": "gpt-5.6-terra",
+  "reasoning_effort": "none",
+  "sent": [
+   "logprobs",
+   "max_completion_tokens",
+   "reasoning_effort",
+   "top_logprobs"
+  ],
+  "resolved_model": "gpt-5.6-terra",
+  "usage": {
+   "prompt_tokens": 13,
+   "completion_tokens": 4,
+   "total_tokens": 17,
+   "prompt_tokens_details": {
+    "cached_tokens": 0,
+    "cache_write_tokens": 0,
+    "audio_tokens": 0
+   },
+   "completion_tokens_details": {
+    "reasoning_tokens": 0,
+    "audio_tokens": 0,
+    "accepted_prediction_tokens": 0,
+    "rejected_prediction_tokens": 0
+   }
+  },
+  "finish_reason": "stop",
+  "content": "OK",
+  "tool_calls": [],
+  "logprobs_returned": true
+ },
+ {
+  "probe": "gpt-5.6-terra chat temperature=0.2 effort=low",
+  "status": 400,
+  "request_model": "gpt-5.6-terra",
+  "reasoning_effort": "low",
+  "sent": [
+   "max_completion_tokens",
+   "reasoning_effort",
+   "temperature"
+  ],
+  "error": {
+   "message": "Unsupported value: 'temperature' does not support 0.2 with this model. Only the default (1) value is supported.",
+   "type": "invalid_request_error",
+   "param": "temperature",
+   "code": "unsupported_value"
+  }
+ },
+ {
+  "probe": "gpt-5.6-terra chat top_p=0.9 effort=low",
+  "status": 400,
+  "request_model": "gpt-5.6-terra",
+  "reasoning_effort": "low",
+  "sent": [
+   "max_completion_tokens",
+   "reasoning_effort",
+   "top_p"
+  ],
+  "error": {
+   "message": "Unsupported parameter: 'top_p' is not supported with this model.",
+   "type": "invalid_request_error",
+   "param": "top_p",
+   "code": "unsupported_parameter"
+  }
+ },
+ {
+  "probe": "gpt-5.6-terra chat logprobs effort=low",
+  "status": 400,
+  "request_model": "gpt-5.6-terra",
+  "reasoning_effort": "low",
+  "sent": [
+   "logprobs",
+   "max_completion_tokens",
+   "reasoning_effort",
+   "top_logprobs"
+  ],
+  "error": {
+   "message": "Unsupported parameter: 'logprobs' is not supported with this model.",
+   "type": "invalid_request_error",
+   "param": "logprobs",
+   "code": "unsupported_parameter"
+  }
+ },
+ {
+  "probe": "gpt-5.6-terra chat temperature=0.2 effort=medium",
+  "status": 400,
+  "request_model": "gpt-5.6-terra",
+  "reasoning_effort": "medium",
+  "sent": [
+   "max_completion_tokens",
+   "reasoning_effort",
+   "temperature"
+  ],
+  "error": {
+   "message": "Unsupported value: 'temperature' does not support 0.2 with this model. Only the default (1) value is supported.",
+   "type": "invalid_request_error",
+   "param": "temperature",
+   "code": "unsupported_value"
+  }
+ },
+ {
+  "probe": "gpt-5.6-terra chat top_p=0.9 effort=medium",
+  "status": 400,
+  "request_model": "gpt-5.6-terra",
+  "reasoning_effort": "medium",
+  "sent": [
+   "max_completion_tokens",
+   "reasoning_effort",
+   "top_p"
+  ],
+  "error": {
+   "message": "Unsupported parameter: 'top_p' is not supported with this model.",
+   "type": "invalid_request_error",
+   "param": "top_p",
+   "code": "unsupported_parameter"
+  }
+ },
+ {
+  "probe": "gpt-5.6-terra chat logprobs effort=medium",
+  "status": 400,
+  "request_model": "gpt-5.6-terra",
+  "reasoning_effort": "medium",
+  "sent": [
+   "logprobs",
+   "max_completion_tokens",
+   "reasoning_effort",
+   "top_logprobs"
+  ],
+  "error": {
+   "message": "Unsupported parameter: 'logprobs' is not supported with this model.",
+   "type": "invalid_request_error",
+   "param": "logprobs",
+   "code": "unsupported_parameter"
+  }
+ },
+ {
+  "probe": "gpt-5.6-terra chat temperature=0.2 effort=high",
+  "status": 400,
+  "request_model": "gpt-5.6-terra",
+  "reasoning_effort": "high",
+  "sent": [
+   "max_completion_tokens",
+   "reasoning_effort",
+   "temperature"
+  ],
+  "error": {
+   "message": "Unsupported value: 'temperature' does not support 0.2 with this model. Only the default (1) value is supported.",
+   "type": "invalid_request_error",
+   "param": "temperature",
+   "code": "unsupported_value"
+  }
+ },
+ {
+  "probe": "gpt-5.6-terra chat top_p=0.9 effort=high",
+  "status": 400,
+  "request_model": "gpt-5.6-terra",
+  "reasoning_effort": "high",
+  "sent": [
+   "max_completion_tokens",
+   "reasoning_effort",
+   "top_p"
+  ],
+  "error": {
+   "message": "Unsupported parameter: 'top_p' is not supported with this model.",
+   "type": "invalid_request_error",
+   "param": "top_p",
+   "code": "unsupported_parameter"
+  }
+ },
+ {
+  "probe": "gpt-5.6-terra chat logprobs effort=high",
+  "status": 400,
+  "request_model": "gpt-5.6-terra",
+  "reasoning_effort": "high",
+  "sent": [
+   "logprobs",
+   "max_completion_tokens",
+   "reasoning_effort",
+   "top_logprobs"
+  ],
+  "error": {
+   "message": "Unsupported parameter: 'logprobs' is not supported with this model.",
+   "type": "invalid_request_error",
+   "param": "logprobs",
+   "code": "unsupported_parameter"
+  }
+ },
+ {
+  "probe": "gpt-5.6-terra chat temperature=0.2 effort=xhigh",
+  "status": 400,
+  "request_model": "gpt-5.6-terra",
+  "reasoning_effort": "xhigh",
+  "sent": [
+   "max_completion_tokens",
+   "reasoning_effort",
+   "temperature"
+  ],
+  "error": {
+   "message": "Unsupported value: 'temperature' does not support 0.2 with this model. Only the default (1) value is supported.",
+   "type": "invalid_request_error",
+   "param": "temperature",
+   "code": "unsupported_value"
+  }
+ },
+ {
+  "probe": "gpt-5.6-terra chat top_p=0.9 effort=xhigh",
+  "status": 400,
+  "request_model": "gpt-5.6-terra",
+  "reasoning_effort": "xhigh",
+  "sent": [
+   "max_completion_tokens",
+   "reasoning_effort",
+   "top_p"
+  ],
+  "error": {
+   "message": "Unsupported parameter: 'top_p' is not supported with this model.",
+   "type": "invalid_request_error",
+   "param": "top_p",
+   "code": "unsupported_parameter"
+  }
+ },
+ {
+  "probe": "gpt-5.6-terra chat logprobs effort=xhigh",
+  "status": 400,
+  "request_model": "gpt-5.6-terra",
+  "reasoning_effort": "xhigh",
+  "sent": [
+   "logprobs",
+   "max_completion_tokens",
+   "reasoning_effort",
+   "top_logprobs"
+  ],
+  "error": {
+   "message": "Unsupported parameter: 'logprobs' is not supported with this model.",
+   "type": "invalid_request_error",
+   "param": "logprobs",
+   "code": "unsupported_parameter"
+  }
+ },
+ {
+  "probe": "gpt-5.6-terra chat temperature=0.2 effort=max",
+  "status": 400,
+  "request_model": "gpt-5.6-terra",
+  "reasoning_effort": "max",
+  "sent": [
+   "max_completion_tokens",
+   "reasoning_effort",
+   "temperature"
+  ],
+  "error": {
+   "message": "Unsupported value: 'reasoning_effort' does not support 'max' with this model. Supported values are: 'none', 'low', 'medium', 'high', and 'xhigh'.",
+   "type": "invalid_request_error",
+   "param": "reasoning_effort",
+   "code": "unsupported_value"
+  }
+ },
+ {
+  "probe": "gpt-5.6-terra chat top_p=0.9 effort=max",
+  "status": 400,
+  "request_model": "gpt-5.6-terra",
+  "reasoning_effort": "max",
+  "sent": [
+   "max_completion_tokens",
+   "reasoning_effort",
+   "top_p"
+  ],
+  "error": {
+   "message": "Unsupported value: 'reasoning_effort' does not support 'max' with this model. Supported values are: 'none', 'low', 'medium', 'high', and 'xhigh'.",
+   "type": "invalid_request_error",
+   "param": "reasoning_effort",
+   "code": "unsupported_value"
+  }
+ },
+ {
+  "probe": "gpt-5.6-terra chat logprobs effort=max",
+  "status": 400,
+  "request_model": "gpt-5.6-terra",
+  "reasoning_effort": "max",
+  "sent": [
+   "logprobs",
+   "max_completion_tokens",
+   "reasoning_effort",
+   "top_logprobs"
+  ],
+  "error": {
+   "message": "Unsupported value: 'reasoning_effort' does not support 'max' with this model. Supported values are: 'none', 'low', 'medium', 'high', and 'xhigh'.",
+   "type": "invalid_request_error",
+   "param": "reasoning_effort",
+   "code": "unsupported_value"
+  }
+ },
+ {
+  "probe": "gpt-5.6-terra chat tools effort=default",
+  "status": 400,
+  "request_model": "gpt-5.6-terra",
+  "reasoning_effort": null,
+  "sent": [
+   "max_completion_tokens",
+   "tools"
+  ],
+  "error": {
+   "message": "Function tools with reasoning_effort are not supported for gpt-5.6-terra in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.",
+   "type": "invalid_request_error",
+   "param": "reasoning_effort",
+   "code": null
+  }
+ },
+ {
+  "probe": "gpt-5.6-terra chat tools effort=none",
+  "status": 200,
+  "request_model": "gpt-5.6-terra",
+  "reasoning_effort": "none",
+  "sent": [
+   "max_completion_tokens",
+   "reasoning_effort",
+   "tools"
+  ],
+  "resolved_model": "gpt-5.6-terra",
+  "usage": {
+   "prompt_tokens": 152,
+   "completion_tokens": 33,
+   "total_tokens": 185,
+   "prompt_tokens_details": {
+    "cached_tokens": 0,
+    "cache_write_tokens": 0,
+    "audio_tokens": 0
+   },
+   "completion_tokens_details": {
+    "reasoning_tokens": 0,
+    "audio_tokens": 0,
+    "accepted_prediction_tokens": 0,
+    "rejected_prediction_tokens": 0
+   }
+  },
+  "finish_reason": "tool_calls",
+  "content": "",
+  "tool_calls": [
+   "book_table"
+  ],
+  "logprobs_returned": false
+ },
+ {
+  "probe": "gpt-5.6-terra chat tools effort=low",
+  "status": 400,
+  "request_model": "gpt-5.6-terra",
+  "reasoning_effort": "low",
+  "sent": [
+   "max_completion_tokens",
+   "reasoning_effort",
+   "tools"
+  ],
+  "error": {
+   "message": "Function tools with reasoning_effort are not supported for gpt-5.6-terra in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.",
+   "type": "invalid_request_error",
+   "param": "reasoning_effort",
+   "code": null
+  }
+ },
+ {
+  "probe": "gpt-5.6-terra chat tools effort=medium",
+  "status": 400,
+  "request_model": "gpt-5.6-terra",
+  "reasoning_effort": "medium",
+  "sent": [
+   "max_completion_tokens",
+   "reasoning_effort",
+   "tools"
+  ],
+  "error": {
+   "message": "Function tools with reasoning_effort are not supported for gpt-5.6-terra in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.",
+   "type": "invalid_request_error",
+   "param": "reasoning_effort",
+   "code": null
+  }
+ },
+ {
+  "probe": "gpt-5.6-terra chat tools effort=high",
+  "status": 400,
+  "request_model": "gpt-5.6-terra",
+  "reasoning_effort": "high",
+  "sent": [
+   "max_completion_tokens",
+   "reasoning_effort",
+   "tools"
+  ],
+  "error": {
+   "message": "Function tools with reasoning_effort are not supported for gpt-5.6-terra in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.",
+   "type": "invalid_request_error",
+   "param": "reasoning_effort",
+   "code": null
+  }
+ },
+ {
+  "probe": "gpt-5.6-terra chat tools effort=xhigh",
+  "status": 400,
+  "request_model": "gpt-5.6-terra",
+  "reasoning_effort": "xhigh",
+  "sent": [
+   "max_completion_tokens",
+   "reasoning_effort",
+   "tools"
+  ],
+  "error": {
+   "message": "Function tools with reasoning_effort are not supported for gpt-5.6-terra in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.",
+   "type": "invalid_request_error",
+   "param": "reasoning_effort",
+   "code": null
+  }
+ },
+ {
+  "probe": "gpt-5.6-terra chat tools effort=max",
+  "status": 400,
+  "request_model": "gpt-5.6-terra",
+  "reasoning_effort": "max",
+  "sent": [
+   "max_completion_tokens",
+   "reasoning_effort",
+   "tools"
+  ],
+  "error": {
+   "message": "Unsupported value: 'reasoning_effort' does not support 'max' with this model. Supported values are: 'none', 'low', 'medium', 'high', and 'xhigh'.",
+   "type": "invalid_request_error",
+   "param": "reasoning_effort",
+   "code": "unsupported_value"
+  }
+ }
+]

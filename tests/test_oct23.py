@@ -1,4 +1,4 @@
-"""23 Oct 2026 mapping, unverified parameter flags, and pack gaps."""
+"""23 Oct 2026 mapping, live-tested Chat Completions rewrites, and pack gaps."""
 import datetime as dt
 import json
 import os
@@ -124,7 +124,7 @@ def test_vertex_live_audio_and_flash_image(tmp_path):
     assert load_packs().get("google").default_mapping(None) == {}
 
 
-def test_fixer_swaps_ids_and_flags_unverified_parameters(tmp_path):
+def test_fixer_rewrites_verified_chat_parameters_with_the_model_switch(tmp_path):
     repo = tmp_path / "repo"
     repo.mkdir()
     (repo / "app.py").write_text(
@@ -144,38 +144,87 @@ def test_fixer_swaps_ids_and_flags_unverified_parameters(tmp_path):
     )
     res = plan_fixes(repo, load_packs(offline=True))
     text = res.new_contents["app.py"]
-    assert 'model="gpt-5.6-sol", messages=[], max_tokens=32, temperature=0.2, top_p=0.9' in text
-    assert 'model="gpt-5.6-luna"' in text and "reasoning_effort" not in text
-    assert 'model="gpt-5.6-terra", input="hi", max_tokens=20, temperature=0.4' in text
-    assert 'model="gpt-5.6-terra", messages=[]' in text
-    assert "max_completion_tokens" in text  # the o1 call already used it; the fixer must not invent one
+    lines = text.splitlines()
+    assert 'model="gpt-5.6-sol"' in lines[2]
+    assert "max_completion_tokens=32" in lines[2] and 'reasoning_effort="none"' in lines[2]
+    assert "max_tokens=32" not in lines[2]
+    assert 'model="gpt-5.6-luna"' in lines[3] and 'reasoning_effort="none"' in lines[3]
+    # Responses was not probed, so the id swaps and the parameters stay.
+    assert lines[4] == 'c.responses.create(model="gpt-5.6-terra", input="hi", max_tokens=20, temperature=0.4)'
+    assert lines[5] == 'c.chat.completions.create(model="gpt-5.6-terra", messages=[])'
+    assert "reasoning_effort" not in lines[6]
+    assert 'model="gpt-5.6-sol"' in lines[6] and "max_completion_tokens=16" in lines[6]
     assert 'model="gpt-4", name="n"' in text
     assert 'model="gpt-4-0613", prompt="hi", max_tokens=50' in text
     assert 'model="gpt-4o-2024-05-13", training_file="file-x"' in text
-    assert 'model="o1-pro"' in text and 'model="gpt-image-1"' in text
+    assert 'model="o1-pro", messages=[], max_tokens=16' in text
+    assert 'model="gpt-image-1"' in text
     assert "ft:gpt-3.5-turbo-0125:acme::abc123" in text
     assert "max_output_tokens" not in text
 
     items = {(i.line, i.rule): i for i in res.items}
-    assert items[(3, "gpt56-max-tokens")].status == "manual"
-    assert items[(3, "gpt56-sampling")].status == "manual"
-    assert "Left `max_tokens`" in items[(3, "gpt56-max-tokens")].change
-    assert items[(4, "gpt56-chat-tools")].status == "manual"
+    assert items[(3, "gpt56-max-tokens")].status == "fixed"
+    assert "max_completion_tokens" in items[(3, "gpt56-max-tokens")].change
+    assert items[(3, "gpt56-sampling")].status == "fixed"
+    assert 'reasoning_effort' in items[(3, "gpt56-sampling")].change
+    assert items[(4, "gpt56-chat-tools")].status == "fixed"
     assert items[(5, "gpt56-max-tokens")].status == "manual"
+    assert "responses_api" in items[(5, "gpt56-max-tokens")].change
     assert items[(5, "gpt56-sampling")].status == "manual"
+    assert "responses_api" in items[(5, "gpt56-sampling")].change
     assert (6, "gpt56-max-tokens") not in items and (6, "gpt56-sampling") not in items
     assert items[(8, "gpt56-assistants")].status == "manual"
     assert "kept on `gpt-4`" in items[(8, "gpt56-assistants")].change
     assert items[(9, "gpt56-legacy-completions")].status == "manual"
     assert "kept on `gpt-4-0613`" in items[(9, "gpt56-legacy-completions")].change
+    assert items[(9, "gpt56-max-tokens")].status == "manual"
     assert items[(10, "gpt56-fine-tuning-jobs")].status == "manual"
     assert any(i.rule == "fine-tune" and i.status == "manual" for i in res.items)
-    # o1-pro is not swapped; max_tokens on that call is still only flagged
+    # o1-pro is not swapped, so max_tokens stays and is only suggested with the switch
     assert items[(11, "gpt56-max-tokens")].status == "manual"
-    assert 'model="o1-pro", messages=[], max_tokens=16' in text
+    assert "only together with switching" in items[(11, "gpt56-max-tokens")].change
+    rules = {r["id"]: r for r in load_packs(offline=True).get("openai").data["rules"]}
+    for rid in ("gpt56-max-tokens", "gpt56-sampling", "gpt56-chat-tools"):
+        assert rules[rid]["confidence"] == "live-tested"
+        assert rules[rid]["fix"]["requires_new_model"] is True
+        assert "probe_56-result.json" in rules[rid]["evidence"]
+
+
+def test_fixer_leaves_temperature_one_and_flags_effort_max(tmp_path):
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    (repo / "app.py").write_text(
+        "from openai import OpenAI\n"
+        "c = OpenAI()\n"
+        "c.chat.completions.create(model=\"gpt-4\", messages=[], temperature=1, max_tokens=8)\n"
+        "c.chat.completions.create(model=\"o3-mini\", messages=[], temperature=0.2, reasoning_effort=\"none\", max_tokens=8)\n"
+        "c.chat.completions.create(model=\"gpt-4-turbo\", messages=[], reasoning_effort=\"max\")\n"
+        "c.chat.completions.create(model=\"gpt-5.6-sol\", messages=[], max_tokens=4, tools=[{\"type\": \"function\", \"function\": {\"name\": \"ping\"}}])\n"
+    )
+    res = plan_fixes(repo, load_packs(offline=True))
+    lines = res.new_contents["app.py"].splitlines()
+    assert "max_completion_tokens=8" in lines[2] and "temperature=1" in lines[2]
+    assert "reasoning_effort" not in lines[2]
+    assert 'reasoning_effort="none"' in lines[3] and "max_completion_tokens=8" in lines[3]
+    assert lines[3].count("reasoning_effort") == 1
+    assert 'model="gpt-5.6-sol"' in lines[4] and 'reasoning_effort="max"' in lines[4]
+    assert "max_completion_tokens=4" in lines[5] and 'reasoning_effort="none"' in lines[5]
+    items = {(i.line, i.rule): i for i in res.items}
+    assert (3, "gpt56-sampling") not in items
+    assert (4, "gpt56-sampling") not in items
+    assert items[(5, "gpt56-effort-max")].status == "manual"
+    assert "max" in items[(5, "gpt56-effort-max")].change
+    assert items[(6, "gpt56-max-tokens")].status == "fixed"
+    assert items[(6, "gpt56-chat-tools")].status == "fixed"
+    facts = load_packs(offline=True).get("openai").data["replacement_facts"]
+    for mid in ("gpt-5.6-luna", "gpt-5.6-sol", "gpt-5.6-terra"):
+        assert facts[mid]["reasoning_effort"] == ["none", "low", "medium", "high", "xhigh"]
+        assert facts[mid]["eval"]["model_params"] == {"reasoning_effort": "none"}
 
 
 def test_probe_56_refuses_without_a_key(tmp_path):
+    result = ROOT / "probes" / "probe_56-result.json"
+    before = result.read_bytes()
     env = {k: v for k, v in os.environ.items() if k != "OPENAI_API_KEY"}
     proc = subprocess.run(
         [sys.executable, str(ROOT / "probes" / "probe_56.py")],
@@ -184,7 +233,36 @@ def test_probe_56_refuses_without_a_key(tmp_path):
     assert proc.returncode == 2
     assert "OPENAI_API_KEY" in proc.stderr
     assert proc.stdout == ""
-    assert not (ROOT / "probes" / "probe_56-result.json").exists()
+    assert result.read_bytes() == before
+
+
+def test_probe_56_result_matches_gpt6_luna_on_chat():
+    rows = json.loads((ROOT / "probes" / "probe_56-result.json").read_text())
+    by = {}
+    for row in rows:
+        kind = row["probe"].split(" chat ", 1)[1]
+        by[(row["request_model"], kind)] = row
+    for model in ("gpt-5.6-luna", "gpt-5.6-sol", "gpt-5.6-terra"):
+        for effort in ("none", "default"):
+            rejected = by[(model, f"max_tokens=16 effort={effort}")]
+            assert rejected["status"] == 400
+            assert "max_completion_tokens" in rejected["error"]["message"]
+            assert by[(model, f"max_completion_tokens=16 effort={effort}")]["status"] == 200
+            assert by[(model, f"temperature=1 effort={effort}")]["status"] == 200
+        assert by[(model, "temperature=0.2 effort=none")]["status"] == 200
+        assert by[(model, "top_p=0.9 effort=none")]["status"] == 200
+        assert by[(model, "logprobs effort=none")]["status"] == 200
+        assert by[(model, "tools effort=none")]["status"] == 200
+        assert by[(model, "tools effort=default")]["status"] == 400
+        assert "reasoning_effort" in by[(model, "tools effort=default")]["error"]["message"]
+        for effort in ("low", "medium", "high", "xhigh"):
+            assert by[(model, f"temperature=0.2 effort={effort}")]["status"] == 400
+            assert by[(model, f"top_p=0.9 effort={effort}")]["status"] == 400
+            assert by[(model, f"logprobs effort={effort}")]["status"] == 400
+            assert by[(model, f"tools effort={effort}")]["status"] == 400
+        rejected_max = by[(model, "temperature=0.2 effort=max")]
+        assert rejected_max["status"] == 400
+        assert "does not support 'max'" in rejected_max["error"]["message"]
 
 
 def test_bundled_site_packs_match():
