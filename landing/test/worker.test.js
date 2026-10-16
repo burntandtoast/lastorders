@@ -11,10 +11,9 @@ function env(overrides = {}) {
   };
 }
 
-test("pricing button points at the sign-up box while payments are closed", () => {
+test("pricing button points at checkout now payments are open", () => {
   const html = readFileSync(new URL("../public/index.html", import.meta.url), "utf8");
-  assert.match(html, /href="#remind">Paid fix opens soon · get notified</);
-  assert.equal(html.includes('href="/buy"'), false);
+  assert.match(html, /href="\/buy">Buy a licence · £179</);
 });
 
 test("/buy redirects to #remind until BUY_OPEN=1", async () => {
