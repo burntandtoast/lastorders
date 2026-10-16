@@ -12,11 +12,15 @@ from pathlib import Path
 from . import brand
 from .packs import Pack, PackSet, load_packs
 
-SKIP_DIRS = {".git", "node_modules", ".venv", "venv", "env", "__pycache__", "dist", "build",
+SKIP_DIRS = {".git", ".venv", "venv", "env", "__pycache__", "build",
              ".next", ".nuxt", ".cache", "coverage", ".tox", ".mypy_cache", ".pytest_cache",
-             "site-packages", ".idea", ".vscode", "vendor"}
+             "site-packages", ".idea", ".vscode"}
+# Collapsed to one summary line unless --include-generated. Not findings, so they
+# do not count toward --fail-on-high.
+VENDORED_DIRS = {"vendor", "third_party", "node_modules", ".yarn", "dist"}
 CODE_EXT = {".py": "python", ".js": "javascript", ".mjs": "javascript", ".cjs": "javascript",
-            ".jsx": "javascript", ".ts": "typescript", ".tsx": "typescript", ".mts": "typescript"}
+            ".jsx": "javascript", ".ts": "typescript", ".tsx": "typescript", ".mts": "typescript",
+            ".r": "r", ".rmd": "r", ".qmd": "r"}
 CONFIG_EXT = {".yaml": "yaml", ".yml": "yaml", ".json": "json", ".toml": "toml", ".ini": "ini",
               ".cfg": "ini", ".conf": "ini"}
 DOC_EXT = {".md": "markdown", ".txt": "text", ".rst": "text"}
@@ -27,6 +31,11 @@ MAX_BYTES = 2_000_000
 RISK_RANK = {"info": 0, "low": 1, "medium": 2, "high": 3}
 
 MODEL_KEY_RE = re.compile(r"""(?:\bmodel(?:_name|_id|Name|Id)?\b|\bdeployment\b|\bengine\b)\s*["']?\s*[:=]""", re.I)
+# The key must sit immediately before a short id (`model = "o1"`, `engine: o3`).
+# A bare `=o1(` in minified code is not this.
+_SHORT_KEY_BEFORE = re.compile(
+    r"""(?:\bmodel(?:_name|_id|Name|Id)?\b|\bdeployment\b|\bengine\b)\s*["']?\s*[:=]\s*["']?\s*$""", re.I)
+GENERATED_HEADER = re.compile(r"@generated|DO NOT EDIT|auto-generated", re.I)
 ENV_REF_RE = re.compile(
     r"""(?:os\.environ\.get|os\.getenv|os\.environ\[|process\.env\.|process\.env\[|import\.meta\.env\.)\(?\s*["']?([A-Z][A-Z0-9_]*MODEL[A-Z0-9_]*)""")
 
@@ -60,6 +69,19 @@ class EnvRef:
 
 
 @dataclass
+class SkippedFile:
+    """A generated, minified or vendored file collapsed to one line."""
+    file: str
+    count: int
+    reason: str          # generated | vendored | minified
+
+    def line(self) -> str:
+        noun = "model ID" if self.count == 1 else "model IDs"
+        kind = {"generated": "a generated file", "vendored": "a vendored file", "minified": "a minified file"}[self.reason]
+        return f"{self.file}: {self.count} {noun} in {kind}, skipped; use --include-generated to scan it"
+
+
+@dataclass
 class ScanResult:
     root: str
     files_scanned: int
@@ -69,6 +91,7 @@ class ScanResult:
     file_sdks: dict[str, list[str]]
     packs: list[dict]
     scanned_on: str
+    skipped: list[SkippedFile] = field(default_factory=list)
 
     def to_dict(self) -> dict:
         return {
@@ -78,6 +101,7 @@ class ScanResult:
             "findings": [asdict(f) for f in self.findings],
             "env_refs": [asdict(e) for e in self.env_refs],
             "file_signals": self.file_signals, "file_sdks": self.file_sdks,
+            "skipped_generated": [asdict(s) for s in self.skipped],
         }
 
 
@@ -104,11 +128,42 @@ def is_output_dir(path: Path) -> bool:
     return (path / OUTPUT_MARKER).exists()
 
 
-def iter_files(root: Path, include_docs: bool = True):
+def _name_skip_reason(name: str) -> str | None:
+    if ".generated." in name or ".gen." in name or name.endswith("_pb2.py"):
+        return "generated"
+    if name.endswith(".min.js"):
+        return "minified"
+    return None
+
+
+def _peek_head(path: Path, n: int = 5) -> str:
+    try:
+        with path.open(encoding="utf-8", errors="replace") as fh:
+            return "".join(next(fh, "") for _ in range(n))
+    except OSError:
+        return ""
+
+
+def file_skip_reason(path: Path, rel: str, text: str | None = None) -> str | None:
+    """Why this file is generated, minified or vendored, or None to scan it."""
+    if set(Path(rel).parts) & VENDORED_DIRS:
+        return "vendored"
+    named = _name_skip_reason(path.name)
+    if named:
+        return named
+    head = "\n".join(text.splitlines()[:5]) if text is not None else _peek_head(path)
+    if GENERATED_HEADER.search(head):
+        return "generated"
+    return None
+
+
+def iter_files(root: Path, include_docs: bool = True, include_generated: bool = False):
+    blocked = set(SKIP_DIRS) if include_generated else SKIP_DIRS | VENDORED_DIRS
     for dirpath, dirnames, filenames in os.walk(root):
-        dirnames[:] = sorted(d for d in dirnames if d not in SKIP_DIRS and not is_output_dir(Path(dirpath) / d))
+        dirnames[:] = sorted(d for d in dirnames if d not in blocked and not is_output_dir(Path(dirpath) / d))
+        base = Path(dirpath)
         for fn in sorted(filenames):
-            p = Path(dirpath) / fn
+            p = base / fn
             lang = _language(p)
             if lang is None or (not include_docs and lang in DOC_LANGS):
                 continue
@@ -117,20 +172,27 @@ def iter_files(root: Path, include_docs: bool = True):
                     continue
             except OSError:
                 continue
+            if not include_generated:
+                rel = p.relative_to(root).as_posix()
+                if file_skip_reason(p, rel) is not None:
+                    continue
             yield p, lang
 
 
 def _is_comment(line: str, lang: str) -> bool:
     s = line.strip()
-    if lang in ("python", "yaml", "toml", "ini", "env"):
+    # Roxygen (`#'`) and Quarto/R Markdown chunk comments are `#` comments.
+    if lang in ("python", "r", "yaml", "toml", "ini", "env"):
         return s.startswith("#")
     if lang in ("javascript", "typescript"):
         return s.startswith(("//", "/*", "*"))
     return False
 
 
-def _kind(line: str, lang: str, prev: str) -> str:
-    if lang in DOC_LANGS:
+def _kind(line: str, lang: str, prev: str, in_code: bool = True) -> str:
+    # R Markdown / Quarto prose sits outside ``` fences. That is documentation.
+    # Code chunks are source; `#` inside a chunk is still a comment.
+    if lang in DOC_LANGS or not in_code:
         return "doc"
     if _is_comment(line, lang):
         return "comment"
@@ -143,19 +205,41 @@ def _kind(line: str, lang: str, prev: str) -> str:
     return "string_literal"
 
 
-def quoted_or_assigned(line: str, start: int, end: int) -> bool:
-    before = line[:start].rstrip()
-    return before[-1:] in ("\"", "'", "`", "=", ":") or line[end:end + 1] in ("\"", "'", "`")
+def _whole_quoted_token(line: str, start: int, end: int) -> bool:
+    """The match is the entire quoted string: `"o1"`, `'o3-mini'`, not `=o1(` or `"use o1"`."""
+    if start < 1 or end >= len(line):
+        return False
+    left, right = line[start - 1], line[end]
+    return left == right and left in "\"'`"
 
 
-def iter_model_tokens(line: str, packs: PackSet):
+def _config_value(line: str, start: int, end: int) -> bool:
+    """The token is the whole value after `:` or `=`, or a YAML list item."""
+    tail = line[end:].lstrip()
+    if tail and tail[0] not in "#,}]":
+        return False
+    return bool(re.search(r"(?:[:=]\s*|-\s+)$", line[:start]))
+
+
+def short_id_in_context(line: str, start: int, end: int, lang: str, prev: str) -> bool:
+    """Bare o1/o3-style ids count only in a model context, not in minified identifiers."""
+    if _whole_quoted_token(line, start, end):
+        return True
+    if _SHORT_KEY_BEFORE.search(line[:start]):
+        return True
+    if not line[:start].strip() and _SHORT_KEY_BEFORE.search(prev.rstrip()):
+        return True
+    return lang in CONFIG_LANGS and _config_value(line, start, end)
+
+
+def iter_model_tokens(line: str, packs: PackSet, lang: str = "", prev: str = ""):
     """Yield (start, end, token, pack) for every model-id token on a line, longest match first per span."""
     seen: list[tuple[int, int]] = []
     hits = []
     for pack in packs:
         for rx, quoted_only in pack.id_res:
             for m in rx.finditer(line):
-                if quoted_only and not quoted_or_assigned(line, m.start(1), m.end(1)):
+                if quoted_only and not short_id_in_context(line, m.start(1), m.end(1), lang, prev):
                     continue
                 hits.append((m.start(1), m.end(1), m.group(1), pack))
     for s, e, tok, pack in sorted(hits, key=lambda h: (h[0], -(h[1] - h[0]))):
@@ -264,8 +348,17 @@ def assess(f: Finding, pack: Pack, sig: list[str], today: dt.date) -> None:
         f.notes.append("Appears in documentation/comment only.")
 
 
+def count_model_tokens(text: str, packs: PackSet, lang: str) -> int:
+    lines = text.splitlines()
+    n = 0
+    for i, line in enumerate(lines):
+        prev = lines[i - 1] if i else ""
+        n += sum(1 for _ in iter_model_tokens(line, packs, lang, prev))
+    return n
+
+
 def scan(root: str | Path, include_docs: bool = True, packs: PackSet | None = None,
-         today: dt.date | None = None) -> ScanResult:
+         today: dt.date | None = None, include_generated: bool = False) -> ScanResult:
     root = Path(root).resolve()
     packs = packs or load_packs()
     today = today or dt.date.today()
@@ -274,29 +367,42 @@ def scan(root: str | Path, include_docs: bool = True, packs: PackSet | None = No
     fsig: dict[str, list[str]] = {}
     fsdk: dict[str, list[str]] = {}
     n = 0
-    for path, lang in iter_files(root, include_docs):
+    skipped: list[SkippedFile] = []
+    for path, lang in iter_files(root, include_docs, include_generated=True):
         try:
             text = path.read_text(encoding="utf-8")
         except (UnicodeDecodeError, OSError):
             continue
-        n += 1
         rel = path.relative_to(root).as_posix()
+        reason = file_skip_reason(path, rel, text)
+        if reason and not include_generated:
+            count = count_model_tokens(text, packs, lang)
+            if count:
+                skipped.append(SkippedFile(rel, count, reason))
+            continue
+        n += 1
         sig, sdks = file_signals(text, lang, packs)
         if sig:
             fsig[rel] = sig
         if sdks:
             fsdk[rel] = sdks
         lines = text.splitlines()
+        literate = path.suffix.lower() in {".rmd", ".qmd"}
+        in_code = not literate
         for i, line in enumerate(lines, 1):
             prev = lines[i - 2] if i > 1 else ""
-            for s, _e, tok, pack in iter_model_tokens(line, packs):
-                f = Finding(rel, i, s + 1, tok, pack.provider, _kind(line, lang, prev), lang,
+            fence = literate and line.strip().startswith("```")
+            this_in_code = False if fence else in_code
+            if fence:
+                in_code = not in_code
+            for s, _e, tok, pack in iter_model_tokens(line, packs, lang, prev):
+                f = Finding(rel, i, s + 1, tok, pack.provider, _kind(line, lang, prev, this_in_code), lang,
                             line.strip()[:200], "not_listed", None, None, "n/a", "info")
                 assess(f, pack, sig, today)
                 findings.append(f)
             for m in ENV_REF_RE.finditer(line):
                 env_refs.append(EnvRef(rel, i, m.group(1), line.strip()[:200]))
-    return ScanResult(str(root), n, findings, env_refs, fsig, fsdk, packs.info(), today.isoformat())
+    return ScanResult(str(root), n, findings, env_refs, fsig, fsdk, packs.info(), today.isoformat(), skipped)
 
 
 def summarise(res: ScanResult) -> dict:
@@ -355,6 +461,12 @@ def to_markdown(res: ScanResult) -> str:
                 "These are set outside the repo (hosting dashboard, CI secrets, .env on servers). Check their deployed values too.", "",
                 "| File | Line | Variable |", "|---|---|---|"]
         out += [f"| `{e.file}` | {e.line} | `{e.variable}` |" for e in res.env_refs]
+        out.append("")
+    if res.skipped:
+        out += ["## Generated and vendored files", "",
+                "Not counted as findings, and not toward `--fail-on-high`. "
+                "Pass `--include-generated` to scan them.", ""]
+        out += [f"- {s.line()}" for s in res.skipped]
         out.append("")
     return "\n".join(out)
 

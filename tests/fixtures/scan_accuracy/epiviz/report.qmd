@@ -1,0 +1,9 @@
+---
+title: "Report"
+---
+
+```{r}
+# roxygen-style note inside a cell
+#' provider default is gpt-4.1-nano
+model <- "claude-sonnet-4-20250514"
+```

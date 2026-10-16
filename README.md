@@ -29,7 +29,7 @@ lastorders scan . --offline    # no network at all (uses the bundled migration p
 
 You get `scan.md`, a readable report, and `scan.json`, the same data for tools. They go in `lastorders-out/`, or wherever `--out` points. Each finding includes:
 
-- **File, line and model ID**, from code (Python, JS, TS), `.env` files, YAML, JSON, TOML and docs
+- **File, line and model ID**, from code (Python, R, R Markdown, Quarto, JS, TS), `.env` files, YAML, JSON, TOML and docs
 - **Shutdown date and recommended replacement**, from the provider's published deprecations
 - **Risk level**. High means the date is close or has passed, or the new model needs a code change your
   code doesn't have yet, such as `max_tokens` becoming `max_completion_tokens`, `reasoning_effort` for tools
@@ -45,6 +45,7 @@ Useful flags:
 | Flag | What it does |
 |---|---|
 | `--fail-on-high` | exit code 2 if anything is high risk (for CI) |
+| `--include-generated` | also scan generated, minified and vendored files (one summary line each by default; they do not fail CI) |
 | `--no-docs` | skip `.md` / `.txt` files |
 | `--pack openai` | only use some providers' packs (default: all) |
 | `--offline` | use the bundled pack only; makes no network calls |

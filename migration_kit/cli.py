@@ -40,7 +40,8 @@ def cmd_licence(a) -> int:
 
 def cmd_scan(a) -> int:
     packs = _packs(a)
-    res = scanner.scan(a.repo, include_docs=not a.no_docs, packs=packs)
+    res = scanner.scan(a.repo, include_docs=not a.no_docs, packs=packs,
+                        include_generated=a.include_generated)
     j, m = scanner.write_reports(res, a.out)
     s = scanner.summarise(res)
     if a.summary_file:
@@ -57,6 +58,8 @@ def cmd_scan(a) -> int:
                             + (f"; {p['detail']}" if p["detail"] else "") + ")" for p in res.packs)
         print(f"Scanned {res.files_scanned} files: {s['total_findings']} model references {s['by_risk']}. "
               f"Fine-tunes: {len(s['fine_tuned_models'])}.\n  packs: {packs_s}\n  {m}\n  {j}")
+        for sk in res.skipped:
+            print(sk.line())
     return 2 if a.fail_on_high and s["by_risk"].get("high") else 0
 
 
@@ -291,6 +294,8 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--out", default=f"{brand.CLI_NAME}-out")
     s.add_argument("--no-docs", action="store_true", help="skip .md/.txt files")
     s.add_argument("--fail-on-high", action="store_true", help="exit 2 if any high-risk finding (for CI)")
+    s.add_argument("--include-generated", action="store_true",
+                   help="scan generated, minified and vendored files (off by default; they are one summary line each and do not fail CI)")
     s.add_argument("--summary-file", help="append a compact markdown summary (e.g. $GITHUB_STEP_SUMMARY)")
     s.add_argument("--annotations", action="store_true", help="print GitHub Actions annotations")
     s.add_argument("--format", choices=["text", "json"], default="text", help="stdout format")

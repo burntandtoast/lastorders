@@ -1,0 +1,4 @@
+deployment: o3
+models:
+  - o1
+  - "o3-mini"

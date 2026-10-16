@@ -115,8 +115,9 @@ def plan(root: str | Path, mapping: Mapping, packs: PackSet | None = None) -> Sw
         old_lines = text.splitlines(keepends=True)
         new_lines = []
         for i, line in enumerate(old_lines, 1):
+            prev = old_lines[i - 2] if i > 1 else ""
             pieces, last = [], 0
-            for s, e, model, pack in iter_model_tokens(line, packs):
+            for s, e, model, pack in iter_model_tokens(line, packs, lang, prev):
                 if pack.fine_tune_base(model) is not None and model not in mapping.fine_tuned:
                     skipped.append((rel, i, model))
                     continue
