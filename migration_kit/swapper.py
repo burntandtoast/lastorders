@@ -11,7 +11,7 @@ import yaml
 
 from .scanner import mark_output as _mark
 from .packs import PackSet, load_packs
-from .scanner import is_name_check, iter_files, iter_model_tokens, line_modes
+from .scanner import classify, iter_files, iter_model_tokens, iter_rows
 
 
 @dataclass
@@ -93,6 +93,8 @@ class SwapResult:
     diff: str
     new_contents: dict[str, str]
     skipped_name_checks: list[tuple[str, int, str]] = field(default_factory=list)
+    # Retiring ids left alone because renaming them isn't safe: (file, line, model, reason).
+    skipped_unsafe: list[tuple[str, int, str, str]] = field(default_factory=list)
 
     def summary(self) -> dict:
         return {
@@ -100,6 +102,8 @@ class SwapResult:
             "replacements": len(self.changes),
             "skipped_fine_tunes": [{"file": f, "line": l, "model": m} for f, l, m in self.skipped_fine_tunes],
             "skipped_name_checks": [{"file": f, "line": l, "model": m} for f, l, m in self.skipped_name_checks],
+            "skipped_not_swappable": [{"file": f, "line": l, "model": m, "reason": r}
+                                      for f, l, m, r in self.skipped_unsafe],
             "changes": [c.__dict__ for c in self.changes],
         }
 
@@ -110,6 +114,7 @@ def plan(root: str | Path, mapping: Mapping, packs: PackSet | None = None) -> Sw
     changes: list[Change] = []
     skipped: list[tuple[str, int, str]] = []
     name_checks: list[tuple[str, int, str]] = []
+    unsafe: list[tuple[str, int, str, str]] = []
     diffs: list[str] = []
     new_contents: dict[str, str] = {}
     table = {**mapping.replacements, **mapping.fine_tuned}
@@ -120,33 +125,68 @@ def plan(root: str | Path, mapping: Mapping, packs: PackSet | None = None) -> Sw
             continue
         rel = path.relative_to(root).as_posix()
         old_lines = text.splitlines(keepends=True)
-        modes = line_modes(old_lines, path, lang)
-        new_lines = []
-        for i, line in enumerate(old_lines, 1):
-            if modes[i - 1] is None:          # HTML outside <script>: not scanned, not rewritten
-                new_lines.append(line)
+        new_lines = list(old_lines)
+        rows, _ = iter_rows(text, path, lang)
+        for row in rows:
+            if row.mode is None:
                 continue
-            prev = old_lines[i - 2] if i > 1 else ""
-            pieces, last = [], 0
-            for s, e, model, pack in iter_model_tokens(line, packs, lang, prev):
+            i, text_line = row.index + 1, row.text
+            reps: list[tuple[int, int, str, str]] = []
+            for s, e, model, pack in iter_model_tokens(text_line, packs, row.lang, row.prev, row.mode):
                 if pack.fine_tune_base(model) is not None and model not in mapping.fine_tuned:
                     skipped.append((rel, i, model))
                     continue
-                if model in table and is_name_check(line, s, e):
+                if model not in table:
+                    continue
+                kind, block = classify(text_line, s, e, row.lang, row.prev, row.mode, rel)
+                if block == "name_check":
                     # `startsWith("o1")` is a family check; renaming it changes the logic.
                     name_checks.append((rel, i, model))
                     continue
-                if model in table:
-                    pieces.append(line[last:s])
-                    pieces.append(table[model])
-                    last = e
-                    changes.append(Change(rel, i, model, table[model]))
-            pieces.append(line[last:])
-            new_lines.append("".join(pieces))
+                if block:
+                    unsafe.append((rel, i, model, block))
+                    continue
+                if kind == "doc" and lang in ("html", "ipynb") and not mapping.include_docs:
+                    continue                  # an HTML code sample or a notebook markdown cell: docs
+                reps.append((s, e, model, table[model]))
+            if not reps:
+                continue
+            new = _splice(old_lines[row.index], text_line, reps, lang == "ipynb")
+            if new is None:
+                unsafe.extend((rel, i, m, "notebook") for _, _, m, _ in reps)
+                continue
+            new_lines[row.index] = new
+            changes.extend(Change(rel, i, m, n) for _, _, m, n in reps)
         if new_lines != old_lines:
             new_contents[rel] = "".join(new_lines)
             diffs.append(_unified(old_lines, new_lines, rel))
-    return SwapResult(changes, skipped, "".join(diffs), new_contents, name_checks)
+    return SwapResult(changes, skipped, "".join(diffs), new_contents, name_checks, unsafe)
+
+
+def _splice(raw: str, text: str, reps: list[tuple[int, int, str, str]], notebook: bool) -> str | None:
+    """Apply replacements found in `text` to the raw line. For a notebook, `text` is the
+    decoded JSON string: each id is replaced at its n-th occurrence in the raw line (ids
+    have no characters JSON escapes), or None if the occurrences don't line up."""
+    if not notebook:
+        pieces, last = [], 0
+        for s, e, _, new in reps:
+            pieces += [raw[last:s], new]
+            last = e
+        return "".join(pieces) + raw[last:]
+    out, cuts = raw, []
+    for s, e, old, new in reps:
+        nth = text.count(old, 0, s)
+        if text.count(old) != raw.count(old):
+            return None
+        pos = -1
+        for _ in range(nth + 1):
+            pos = raw.find(old, pos + 1)
+        if pos < 0:
+            return None
+        cuts.append((pos, pos + len(old), new))
+    for a, b, new in sorted(cuts, reverse=True):
+        out = out[:a] + new + out[b:]
+    return out
 
 
 def _unified(old_lines: list[str], new_lines: list[str], rel: str) -> str:

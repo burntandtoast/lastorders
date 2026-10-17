@@ -34,20 +34,20 @@ def _swap(root):
 
 # Gap 1: .html <script> blocks, .mdx code fences, .sh, .http and shebang scripts.
 
-def test_html_scans_script_blocks_only():
+def test_html_scans_script_blocks_and_quoted_markup_values():
     res = _scan("donvito")
     html = [f for f in res.findings if f.file == "src/templates/summarizeDemo.html"]
     nano = [f for f in html if f.model == "gpt-4.1-nano"]
-    assert [f.line for f in nano] == [26, 26]                    # value + label inside <script>
+    assert [f.line for f in nano] == [14, 26, 26]                # <option value> (0.4.7) + value/label in <script>
     assert all(f.language == "html" and f.risk == "high" for f in nano)
-    assert not [f for f in html if f.line == 14]                 # <option> markup is not scanned
+    assert [f.column for f in html if f.line == 14] == [18]      # the attribute value, not the unquoted label
     assert any(f.model == "gpt-4o-mini" and f.line == 30 for f in html)   # openai/gpt-4o-mini
 
 
-def test_html_swap_leaves_markup_alone():
+def test_html_swap_rewrites_option_value_not_label():
     res = _swap(FIX / "donvito")
     new = res.new_contents["src/templates/summarizeDemo.html"].splitlines()
-    assert new[13] == '  <option value="gpt-4.1-nano">gpt-4.1-nano</option>'
+    assert new[13] == '  <option value="gpt-5.6-luna">gpt-4.1-nano</option>'
     assert "gpt-5.6-luna" in new[25]
 
 

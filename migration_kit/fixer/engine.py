@@ -418,9 +418,10 @@ def _file_level_items(root: Path, packs: PackSet, items: list[FixItem], parsed: 
     seen = set()
     for f in res.findings:
         pack = packs.get(f.provider)
-        if not f.auto_swap and f.kind not in ("comment", "name_check") and (f.file, f.model) not in have_flag and pack:
+        if (not f.auto_swap and f.kind not in ("comment", "name_check", "prose") and f.no_swap_reason == "flag_only"
+                and (f.file, f.model) not in have_flag and pack):
             lm = pack.lookup(f.model)
-            if lm:
+            if lm and not lm.map_automatically:  # flag-only models; not prose/regex/changelog skips
                 have_flag.add((f.file, f.model))
                 items.append(_flag_only_item(f.file, f.line, f.provider, f.model, lm))
         if f.category == "fine_tune" and (f.file, f.model) not in have_ft:

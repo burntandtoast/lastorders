@@ -1,0 +1,7 @@
+                        <div class="field-group">
+                            <label for="model_name">Model</label>
+                            <select id="model_name" name="model_name">
+                                <option value="gpt-4.1-mini" {% if model_name == 'gpt-4.1-mini' %}selected{% endif %}>GPT 4.1 Mini (+speed, -accuracy)</option>
+                                <option value="gpt-4.1" {% if model_name == 'gpt-4.1' %}selected{% endif %}>GPT 4.1 (+accuracy, -speed)</option>
+                            </select>
+                        </div>

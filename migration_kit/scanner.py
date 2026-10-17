@@ -10,7 +10,7 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
 from . import brand
-from .packs import Pack, PackSet, load_packs
+from .packs import Pack, PackSet, colon_prefixes, load_packs
 
 SKIP_DIRS = {".git", ".venv", "venv", "env", "__pycache__", "build",
              ".next", ".nuxt", ".cache", "coverage", ".tox", ".mypy_cache", ".pytest_cache",
@@ -23,10 +23,14 @@ CODE_EXT = {".py": "python", ".js": "javascript", ".mjs": "javascript", ".cjs": 
             ".r": "r", ".rmd": "r", ".qmd": "r",
             ".php": "php", ".rs": "rust", ".cs": "csharp", ".go": "go", ".ejs": "ejs",
             ".sh": "shell", ".bash": "shell", ".zsh": "shell", ".http": "http", ".rest": "http",
-            ".html": "html", ".htm": "html", ".mdx": "mdx"}
+            ".html": "html", ".htm": "html", ".mdx": "mdx", ".mdc": "mdx", ".mk": "make",
+            ".ipynb": "ipynb"}
 CONFIG_EXT = {".yaml": "yaml", ".yml": "yaml", ".json": "json", ".toml": "toml", ".ini": "ini",
               ".cfg": "ini", ".conf": "ini"}
-DOC_EXT = {".md": "markdown", ".txt": "text", ".rst": "text"}
+DOC_EXT = {".md": "markdown", ".txt": "text", ".rst": "text", ".rd": "text"}
+# Config templates are scanned as the file they stand for: `livereview.toml.example` is TOML.
+TEMPLATE_EXT = {".example", ".sample"}
+MAKEFILE_NAMES = {"makefile", "gnumakefile"}
 CODE_LANGS = set(CODE_EXT.values())
 CONFIG_LANGS = set(CONFIG_EXT.values()) | {"env"}
 DOC_LANGS = {"markdown", "text"}
@@ -34,7 +38,7 @@ DOC_LANGS = {"markdown", "text"}
 # even though its code fences are scanned at normal severity.
 DOCS_SKIP_LANGS = DOC_LANGS | {"mdx"}
 # Prose outside ``` fences is documentation; code chunks are source.
-LITERATE_EXT = {".rmd", ".qmd", ".mdx"}
+LITERATE_EXT = {".rmd", ".qmd", ".mdx", ".mdc"}
 # Extensionless scripts: only a text file whose first line is a shebang for one of these.
 SHEBANG_RE = re.compile(rb"^#![ \t]*(?:\S*/)?(?:env[ \t]+(?:-\S+[ \t]+)*)?(?:\S*/)?([A-Za-z][A-Za-z-]*)")
 SHEBANG_LANG = {"python": "python", "node": "javascript", "nodejs": "javascript", "bun": "javascript",
@@ -80,7 +84,9 @@ class Finding:
     migration: str | None = None
     rules: list[str] = field(default_factory=list)
     notes: list[str] = field(default_factory=list)
-    auto_swap: bool = True   # False for flag-only models (fix/swap never rewrite them)
+    auto_swap: bool = True   # False when fix/swap never rewrite it; no_swap_reason says why
+    # flag_only | fine_tune | name_check | prose | regex | object_key | changelog (None when auto_swap)
+    no_swap_reason: str | None = None
 
 
 @dataclass
@@ -144,11 +150,24 @@ def _shebang_language(path: Path) -> str | None:
     return SHEBANG_LANG.get(name) or SHEBANG_LANG.get(name.rstrip("-"))
 
 
+def _effective_suffix(path: Path | str) -> str:
+    """`.toml` for `livereview.toml.example`; otherwise the file's own suffix."""
+    p = Path(path)
+    ext = p.suffix.lower()
+    if ext in TEMPLATE_EXT:
+        inner = Path(p.stem).suffix.lower()
+        if inner:
+            return inner
+    return ext
+
+
 def _language(path: Path) -> str | None:
     name = path.name
     if name.startswith(".env") or name.endswith(".env"):
         return "env"
-    ext = path.suffix.lower()
+    if name.lower() in MAKEFILE_NAMES:
+        return "make"
+    ext = _effective_suffix(path)
     lang = CODE_EXT.get(ext) or CONFIG_EXT.get(ext) or DOC_EXT.get(ext)
     if lang is None and not ext and not name.startswith(".") and path.is_file() and not path.is_symlink():
         return _shebang_language(path)
@@ -160,13 +179,19 @@ _SCRIPT_CLOSE = re.compile(r"</script\s*>", re.I)
 _HTML_COMMENT = re.compile(r"<!--.*?-->")
 
 
-def line_modes(lines: list[str], path: Path | str, lang: str) -> list[bool | None]:
-    """Per line: True = code, False = prose (documentation), None = not scanned.
+MARKUP = "markup"
 
-    R Markdown / Quarto / MDX: prose outside ``` fences is documentation (the fence
-    line itself too). HTML: only lines inside <script> blocks are scanned; markup is not.
+
+def line_modes(lines: list[str], path: Path | str, lang: str) -> list[bool | str | None]:
+    """Per line: True = code, False = prose (documentation), MARKUP = HTML markup,
+    None = not scanned.
+
+    R Markdown / Quarto / MDX / Cursor .mdc: prose outside ``` fences is documentation
+    (the fence line itself too). HTML: lines inside <script> blocks are code; markup
+    lines are MARKUP, where only quoted values count (`<option value="<id>">`,
+    Django/Jinja `{% if m == '<id>' %}`, a `"model": "<id>"` code sample).
     Everything else: every line is code."""
-    suffix = Path(path).suffix.lower()
+    suffix = _effective_suffix(path)
     if suffix in LITERATE_EXT:
         out: list[bool | None] = []
         in_code = False
@@ -194,7 +219,7 @@ def line_modes(lines: list[str], path: Path | str, lang: str) -> list[bool | Non
                     if not m:
                         break
                     in_script, pos, touched = True, m.end(), True
-            out.append(True if touched else None)
+            out.append(True if touched else MARKUP)
         return out
     return [True] * len(lines)
 
@@ -278,7 +303,7 @@ def iter_files(root: Path, include_docs: bool = True, include_generated: bool = 
 def _is_comment(line: str, lang: str) -> bool:
     s = line.strip()
     # Roxygen (`#'`) and Quarto/R Markdown chunk comments are `#` comments.
-    if lang in ("python", "r", "yaml", "toml", "ini", "env", "shell"):
+    if lang in ("python", "r", "yaml", "toml", "ini", "env", "shell", "make"):
         return s.startswith("#")
     if lang in ("javascript", "typescript", "rust", "csharp", "go"):
         return s.startswith(("//", "/*", "*"))
@@ -299,7 +324,7 @@ def _is_comment(line: str, lang: str) -> bool:
 def _kind(line: str, lang: str, prev: str, in_code: bool = True) -> str:
     # R Markdown / Quarto prose sits outside ``` fences. That is documentation.
     # Code chunks are source; `#` inside a chunk is still a comment.
-    if lang in DOC_LANGS or not in_code:
+    if lang in DOC_LANGS or in_code is False:
         return "doc"
     if _is_comment(line, lang):
         return "comment"
@@ -353,9 +378,27 @@ def _router_prefix_re(provider: str) -> re.Pattern:
     return rx
 
 
+_COLON_PREFIX_RES: dict[str, re.Pattern] = {}
+
+
+def _colon_prefix_re(provider: str) -> re.Pattern:
+    rx = _COLON_PREFIX_RES.get(provider)
+    if rx is None:
+        alts = "|".join(re.escape(p) for p in colon_prefixes(provider))
+        rx = re.compile(r"""(["'`])(?:[A-Za-z0-9_.-]+/)*(?:""" + alts + r"""):$""", re.I)
+        _COLON_PREFIX_RES[provider] = rx
+    return rx
+
+
 def router_prefixed(line: str, start: int, end: int, provider: str) -> bool:
-    """`"<provider>/o1"` (closing quote matches) or `model: <provider>/o1` (end of the value)."""
-    if not provider or start < 1 or line[start - 1] != "/":
+    """`"<provider>/o1"` (closing quote matches) or `model: <provider>/o1` (end of the value).
+    Also `"<provider>:o3-mini"` (provider:model form, closing quote matches)."""
+    if not provider or start < 1:
+        return False
+    if line[start - 1] == ":":
+        m = _colon_prefix_re(provider).search(line[max(0, start - 120):start])
+        return bool(m) and end < len(line) and line[end] == m.group(1)
+    if line[start - 1] != "/":
         return False
     m = _router_prefix_re(provider).search(line[max(0, start - 120):start])
     if not m:
@@ -371,10 +414,28 @@ def router_prefixed(line: str, start: int, end: int, provider: str) -> bool:
 # `"o1" in model`. The token is the whole quoted argument.
 _NAME_CHECK_FN = (r"startsWith|endsWith|includes|indexOf|lastIndexOf|startswith|endswith|starts_with|ends_with"
                   r"|contains|Contains|StartsWith|EndsWith|HasPrefix|HasSuffix|str_starts_with|str_ends_with"
-                  r"|str_contains|strpos|stripos|strstr|stristr|grepl")
+                  r"|str_contains|strpos|stripos|strstr|stristr|grepl|in_array")
 _NAME_CHECK_BEFORE = re.compile(
     r"""\b(?:""" + _NAME_CHECK_FN + r""")\s*\(\s*(?:[^()"'`,]*,\s*)?[(\[]?\s*(?:(["'`])[^"'`]*\1\s*,\s*)*$""")
 _IN_AFTER = re.compile(r"""\s+(?:not\s+)?in\s+[A-Za-z_$]""")
+
+
+# Array membership: `['o1', 'o1-mini', 'o3-mini'].includes(model)`, `[...].indexOf(m)`,
+# `new Set(['o1']).has(m)`, Python `m in ("o1", "o3-mini")`. Not `for m in ["o1", ...]`,
+# which iterates over models that are then called.
+_ARRAY_MEMBER_AFTER = re.compile(
+    r"""\s*(?:,\s*(["'`])[^"'`]*\1\s*)*,?\s*[\])}]\s*\)?\s*\.\s*(?:includes|indexOf|has|contains|some)\s*\(""")
+_IN_ARRAY_BEFORE = re.compile(r"""\b(?:not\s+)?in\s*[\[({]\s*(?:(["'])[^"']*\1\s*,\s*)*$""")
+_FOR_IN_BEFORE = re.compile(r"""\bfor\b[^:]*\bin\s*[\[({]\s*(?:(["'])[^"']*\1\s*,\s*)*$""")
+
+
+def is_array_membership(line: str, start: int, end: int) -> bool:
+    if not _whole_quoted_token(line, start, end):
+        return False
+    if _ARRAY_MEMBER_AFTER.match(line, end + 1):
+        return True
+    before = line[max(0, start - 1 - 200):start - 1]
+    return bool(_IN_ARRAY_BEFORE.search(before)) and not _FOR_IN_BEFORE.search(before)
 
 
 def is_name_check(line: str, start: int, end: int) -> bool:
@@ -382,7 +443,39 @@ def is_name_check(line: str, start: int, end: int) -> bool:
         return False
     if _NAME_CHECK_BEFORE.search(line[max(0, start - 1 - 160):start - 1]):
         return True
-    return bool(_IN_AFTER.match(line, end + 1))
+    if _IN_AFTER.match(line, end + 1):
+        return True
+    return is_array_membership(line, start, end)
+
+
+# An unquoted JS/TS object key holding a table entry: `o1: { input: 15, output: 60 },`.
+_OBJECT_KEY_LANGS = {"javascript", "typescript", "html", "mdx"}
+_OBJECT_KEY_BEFORE = re.compile(r"""(?:^|[{,])\s*$""")
+_OBJECT_KEY_AFTER = re.compile(r"""\s*\??:\s*\{""")
+
+
+def is_object_key(line: str, start: int, end: int, lang: str) -> bool:
+    return (lang in _OBJECT_KEY_LANGS and bool(_OBJECT_KEY_BEFORE.search(line[:start]))
+            and bool(_OBJECT_KEY_AFTER.match(line, end)) and line[end:end + 2] != "::")
+
+
+# A regex held in a pattern key: `"matchPattern": "(?i)^(<provider>\/)?(o1)$"`.
+_REGEX_KEY_BEFORE = re.compile(r"""(?:[Pp]attern|[Rr]egexp?|REGEX|PATTERN|[Mm]atcher)["']?\s*(?:=>|[:=])\s*[rR]?["'`/]""")
+_REGEX_CHARS = set("()^$|?*+[]\\")
+
+
+def is_regex_pattern(line: str, start: int, end: int) -> bool:
+    m = None
+    for m in _REGEX_KEY_BEFORE.finditer(line[:start]):
+        pass
+    if m is None:
+        return False
+    body = line[m.end():start]
+    if any(q in body for q in "\"'`"):
+        return False
+    left = line[start - 1] if start else ""
+    right = line[end] if end < len(line) else ""
+    return left in _REGEX_CHARS or right in _REGEX_CHARS
 
 
 def short_id_in_context(line: str, start: int, end: int, lang: str, prev: str, provider: str = "") -> bool:
@@ -390,6 +483,10 @@ def short_id_in_context(line: str, start: int, end: int, lang: str, prev: str, p
     if _non_model_id_key(line[:start]):
         return False
     if _whole_quoted_token(line, start, end):
+        return True
+    if is_object_key(line, start, end, lang):
+        return True
+    if is_regex_pattern(line, start, end):
         return True
     if router_prefixed(line, start, end, provider):
         return True
@@ -400,14 +497,60 @@ def short_id_in_context(line: str, start: int, end: int, lang: str, prev: str, p
     return lang in CONFIG_LANGS and _config_value(line, start, end)
 
 
-def iter_model_tokens(line: str, packs: PackSet, lang: str = "", prev: str = ""):
-    """Yield (start, end, token, pack) for every model-id token on a line, longest match first per span."""
+_URL_RE = re.compile(r"""https?://([^/\s"'`<>)\]]+)[^\s"'`<>)\]]*""")
+# URLs that can carry a model id in a real request: API hosts, local servers, templated hosts.
+_API_HOST_RE = re.compile(r"""^(?:api\.|.*\.googleapis\.com|.*\.azure\.com|.*\.azure-api\.net|.*amazonaws\.com"""
+                          r"""|localhost|127\.0\.0\.1|0\.0\.0\.0|.*[{$<])""", re.I)
+
+
+def _non_api_url_spans(line: str) -> list[tuple[int, int]]:
+    """Spans of web-page links (`https://<vendor>.com/<id>`), where an id is a page name, not a call."""
+    if "://" not in line:
+        return []
+    return [(m.start(), m.end()) for m in _URL_RE.finditer(line) if not _API_HOST_RE.match(m.group(1))]
+
+
+_MARKUP_QUOTES = ("&quot;", "&#34;", "&#39;", "&apos;")
+
+
+def markup_quoted(line: str, start: int, end: int) -> bool:
+    """In HTML markup only a quoted value counts: an attribute value, a quoted string in a
+    template tag, or a quoted id in a code sample (`"gpt-4"` or `&quot;gpt-4&quot;`)."""
+    if _whole_quoted_token(line, start, end):
+        return True
+    for q in _MARKUP_QUOTES:
+        if line[max(0, start - len(q)):start] == q and line[end:end + len(q)] == q:
+            return True
+    return False
+
+
+def markup_value(line: str, start: int) -> bool:
+    """An attribute value (`value="<id>"`) or a string inside `{% %}` / `{{ }}` (template logic)."""
+    before = line[:start]
+    if re.search(r"""[\w:.@-]+\s*=\s*["']$""", before):
+        return True
+    o = max(before.rfind("{%"), before.rfind("{{"))
+    return o >= 0 and max(before.rfind("%}"), before.rfind("}}")) < o
+
+
+def iter_model_tokens(line: str, packs: PackSet, lang: str = "", prev: str = "", mode=True):
+    """Yield (start, end, token, pack) for every model-id token on a line, longest match first per span.
+
+    Ids inside a web-page link are skipped. With mode=MARKUP (HTML outside <script>),
+    only quoted values count and `<!-- -->` comments are ignored."""
     seen: list[tuple[int, int]] = []
     hits = []
+    if mode == MARKUP:
+        line = _HTML_COMMENT.sub(lambda m: " " * len(m.group(0)), line)
+    urls = _non_api_url_spans(line)
     for pack in packs:
         for rx, quoted_only in pack.id_res:
             for m in rx.finditer(line):
                 if quoted_only and not short_id_in_context(line, m.start(1), m.end(1), lang, prev, pack.provider):
+                    continue
+                if mode == MARKUP and not markup_quoted(line, m.start(1), m.end(1)):
+                    continue
+                if urls and any(us <= m.start(1) and m.end(1) <= ue for us, ue in urls):
                     continue
                 hits.append((m.start(1), m.end(1), m.group(1), pack))
     for s, e, tok, pack in sorted(hits, key=lambda h: (h[0], -(h[1] - h[0]))):
@@ -415,6 +558,207 @@ def iter_model_tokens(line: str, packs: PackSet, lang: str = "", prev: str = "")
             continue
         seen.append((s, e))
         yield s, e, tok, pack
+
+
+# ------------------------------------------------------------------ swap safety
+# An id in running text (an LLM prompt, a heredoc, a help or log message) is an example,
+# not the model the code calls; renaming it can corrupt a prompt. "Prose" means: not a
+# whole quoted string, not right after `=` / `=>` / a model key / a CLI flag, bordered
+# like a word, and at least PROSE_MIN_WORDS plain words elsewhere on the line (a trailing
+# `#` or `//` comment doesn't count, so `model: <id>  # long comment` stays code).
+PROSE_MIN_WORDS = 8
+# A plain word in running text: space-separated, so quoted list items (`["summarize", ...]`)
+# and identifiers don't count.
+_PROSE_WORD = re.compile(r"""(?:(?<=\s)|(?<=\()|^)[A-Za-z][a-z]+(?=[\s,.;:!?)]|$)""")
+_ASSIGN_BEFORE = re.compile(r"""(?:=>|->|[=])\s*["'`]?\s*(?:[A-Za-z0-9_.-]+[/:])*$""")
+_MODEL_KEY_BEFORE = re.compile(
+    r"""(?:\bmodel(?:_name|_id|Name|Id|s)?\b|\bdeployment\b|\bengine\b)\s*["']?\s*(?:=>|[:=])?\s*["'`]?\s*(?:[A-Za-z0-9_.-]+[/:])*$""", re.I)
+_FLAG_BEFORE = re.compile(r"""(?:^|\s)-{1,2}[A-Za-z][\w-]*(?:\s+|=)["']?(?:[A-Za-z0-9_.-]+[/:])*$""")
+_QUOTED_PATH_BEFORE = re.compile(r"""(["'`])(?:[A-Za-z0-9_.@-]+[/:])+$""")
+_TRAILING_COMMENT = re.compile(r"""\s(?:#|//)\s.*$""")
+
+
+def is_prose(line: str, start: int, end: int) -> bool:
+    # Escaped quotes (`\"model\":\"<id>\"` in a recorded request) count as quotes.
+    line = line.replace('\\"', '""').replace("\\'", "''")
+    if _whole_quoted_token(line, start, end):
+        return False
+    left, right = line[:start], line[end:]
+    if _ASSIGN_BEFORE.search(left) or _MODEL_KEY_BEFORE.search(left) or _FLAG_BEFORE.search(left):
+        return False
+    q = _QUOTED_PATH_BEFORE.search(left)
+    if q and right[:1] == q.group(1):          # "<router>/<provider>/<id>": a whole id string
+        return False
+    lc = left[-1:] or " "
+    rc = right[:1] or " "
+    if not (lc.isspace() or lc in "(/:,\"'`*_") or not (rc.isspace() or rc in ",.;:)!?\"'`*_\\"):
+        return False
+    right = _TRAILING_COMMENT.sub("", right)
+    return len(_PROSE_WORD.findall(left)) + len(_PROSE_WORD.findall(right)) >= PROSE_MIN_WORDS
+
+
+# Historical changelogs and release notes: what a past release did, not code to migrate.
+_CHANGELOG_NAME = re.compile(
+    r"^(?:change[-_ ]?log|changes|history|news|release[-_ ]?notes?|releases?|whats[-_]?new)(?:[-_.][\w.-]*)?$", re.I)
+_CHANGELOG_DIRS = {"release-notes", "release_notes", "releasenotes", "releases", "changelog", "changelogs", "changes"}
+_VERSION_DOC = re.compile(r"^v?\d+(?:\.\d+)+(?:-?(?:alpha|beta|rc|pre|dev)[\w.]*)?$", re.I)
+_DOC_LIKE_EXT = {"", ".md", ".mdx", ".markdown", ".rst", ".txt", ".adoc"}
+
+
+def is_changelog(rel: str) -> bool:
+    parts = Path(rel).parts
+    if not parts:
+        return False
+    p = Path(parts[-1])
+    if p.suffix.lower() not in _DOC_LIKE_EXT:
+        return False
+    if _CHANGELOG_NAME.match(p.name) or _CHANGELOG_NAME.match(p.stem):
+        return True
+    dirs = {d.lower() for d in parts[:-1]}
+    return bool(dirs & _CHANGELOG_DIRS) or bool(_VERSION_DOC.match(p.stem) and dirs & {"docs", "doc", "news"})
+
+
+def classify(line: str, start: int, end: int, lang: str, prev: str, mode, rel: str = "") -> tuple[str, str | None]:
+    """The finding kind for this token, and why `swap` / `fix` must not rewrite it (None = they may).
+
+    Reasons: name_check (a family check, renaming changes logic), prose (an example in
+    running text), regex (inside a pattern string), object_key (an unquoted `o1: {` key;
+    the replacement needs quotes), changelog (historical release notes)."""
+    if mode == MARKUP:
+        if markup_value(line, start):
+            kind = "sdk_call" if MODEL_KEY_RE.search(line[:start]) else "string_literal"
+        else:
+            kind = "doc"                       # a quoted id in a code sample or text
+    else:
+        kind = _kind(line, lang, prev, mode)
+    block = None
+    if kind not in ("doc", "comment"):
+        if is_name_check(line, start, end):
+            kind, block = "name_check", "name_check"
+        elif is_regex_pattern(line, start, end):
+            block = "regex"
+        elif is_object_key(line, start, end, lang):
+            block = "object_key"
+        elif is_prose(line, start, end):
+            kind, block = "prose", "prose"
+    if rel and is_changelog(rel):
+        block = block or "changelog"
+    return kind, block
+
+
+BLOCK_NOTES = {
+    "prose": ("Appears in running text (a prompt, heredoc, help or log message), not as a model argument; "
+              "`fix` and `swap` leave it unchanged. Check whether the text should still name it."),
+    "regex": ("Inside a regex pattern; `fix` and `swap` leave it unchanged. "
+              "Update the pattern by hand together with the model name it matches."),
+    "object_key": ("Unquoted object key; `fix` and `swap` leave it unchanged because the replacement id "
+                   "needs quotes. Rename the key by hand (and its lookups)."),
+    "changelog": "Historical changelog or release notes; `fix` and `swap` leave it unchanged.",
+}
+BLOCK_RISK_CAP = {"prose": "low", "regex": "low", "changelog": "info", "name_check": "low"}
+
+
+def apply_block(f: "Finding", block: str | None) -> None:
+    if not block:
+        return
+    f.auto_swap = False
+    if f.no_swap_reason in (None, "flag_only"):
+        f.no_swap_reason = block
+    cap = BLOCK_RISK_CAP.get(block)
+    if cap and RISK_RANK[f.risk] > RISK_RANK[cap]:
+        f.risk = cap
+    if block in BLOCK_NOTES:
+        f.notes.append(BLOCK_NOTES[block])
+
+
+# In shell scripts and Makefiles a provider-prefixed word with no digit is a command,
+# package or file name (`<vendor>-hooks`, `<vendor>-mem`, `<vendor>-cli`), not a model id.
+SHELL_LANGS = {"shell", "make"}
+
+
+def shell_noise(tok: str, lang: str, pack: Pack) -> bool:
+    return (lang in SHELL_LANGS and not any(c.isdigit() for c in tok)
+            and pack.lookup(tok) is None and pack.fine_tune_base(tok) is None)
+
+
+# ------------------------------------------------------------------ rows
+@dataclass
+class Row:
+    index: int            # 0-based raw line index in the file
+    text: str             # text scanned (the decoded source line for a notebook)
+    mode: object          # True code | False prose | MARKUP | None (not scanned)
+    lang: str
+    prev: str
+    note: str = ""
+
+
+_NB_SOURCE = re.compile(r"""^\s*"source"\s*:\s*\[\s*$""")
+
+
+def _notebook_lang(nb: dict) -> str:
+    md = nb.get("metadata") or {}
+    name = str((md.get("kernelspec") or {}).get("language") or (md.get("language_info") or {}).get("name") or "python").lower()
+    return {"python": "python", "python3": "python", "r": "r", "javascript": "javascript",
+            "typescript": "typescript", "bash": "shell"}.get(name, "python")
+
+
+def notebook_rows(text: str) -> tuple[list[Row], str] | None:
+    """Rows for a Jupyter notebook: each source line of each cell, at its raw JSON line number.
+
+    Code cells use the kernel language; markdown cells are documentation; outputs are not
+    scanned. Assumes nbformat's usual layout (one source line per JSON line); a cell that
+    isn't laid out that way is skipped."""
+    try:
+        nb = json.loads(text)
+    except ValueError:
+        return None
+    cells = nb.get("cells") if isinstance(nb, dict) else None
+    if not isinstance(cells, list):
+        return None
+    lang = _notebook_lang(nb)
+    raw = text.splitlines()
+    rows: list[Row] = []
+    ptr = 0
+    for ci, cell in enumerate(cells, 1):
+        src = cell.get("source") if isinstance(cell, dict) else None
+        if not isinstance(src, list) or not src:
+            continue
+        j = next((k for k in range(ptr, len(raw)) if _NB_SOURCE.match(raw[k])), None)
+        if j is None:
+            break
+        ptr = j + 1
+        ok = j + len(src) < len(raw)
+        decoded = []
+        for k, piece in enumerate(src):
+            if not ok:
+                break
+            r = raw[j + 1 + k].strip()
+            try:
+                ok = json.loads(r[:-1] if r.endswith(",") else r) == piece
+            except ValueError:
+                ok = False
+            decoded.append(str(piece).rstrip("\r\n"))
+        if not ok:
+            continue
+        ptr = j + 1 + len(src)
+        ctype = cell.get("cell_type")
+        mode = True if ctype == "code" else (False if ctype == "markdown" else None)
+        for k, d in enumerate(decoded):
+            rows.append(Row(j + 1 + k, d, mode, lang if mode else "markdown",
+                            decoded[k - 1] if k else "", f"Notebook cell {ci}, line {k + 1}."))
+    return rows, lang
+
+
+def iter_rows(text: str, path: Path | str, lang: str) -> tuple[list[Row], str]:
+    """The lines to scan and the language for file signals."""
+    if lang == "ipynb":
+        nb = notebook_rows(text)
+        if nb is not None:
+            return nb
+        return [], "json"
+    lines = text.splitlines()
+    modes = line_modes(lines, path, lang)
+    return [Row(i, line, modes[i], lang, lines[i - 1] if i else "") for i, line in enumerate(lines)], lang
 
 
 def file_signals(text: str, lang: str, packs: PackSet) -> tuple[list[str], list[str]]:
@@ -454,6 +798,7 @@ def assess(f: Finding, pack: Pack, sig: list[str], today: dt.date) -> None:
     base = pack.fine_tune_base(f.model)
     if base is not None:
         f.category = "fine_tune"
+        f.auto_swap, f.no_swap_reason = False, "fine_tune"   # a fine-tune can't be renamed to another model
         ft = pack.data.get("fine_tune") or {}
         f.risk = ft.get("risk", "high")
         fb = pack.fine_tune_override(base)
@@ -511,7 +856,7 @@ def assess(f: Finding, pack: Pack, sig: list[str], today: dt.date) -> None:
             if rule["risk"] != "info":
                 f.risk = _bump(f.risk, rule["risk"])
     if not m.map_automatically and m.replacement:
-        f.auto_swap = False
+        f.auto_swap, f.no_swap_reason = False, "flag_only"
         f.notes.append(f"Flag-only: `fix` and `swap` do not rewrite {f.model}. It shuts down "
                        f"{m.shutdown or 'on a date not yet announced'}; switch it to {m.replacement} by hand"
                        + (" (see the note above for what the switch needs)." if m.note else "."))
@@ -522,19 +867,18 @@ def assess(f: Finding, pack: Pack, sig: list[str], today: dt.date) -> None:
     elif f.kind == "name_check":
         if RISK_RANK[f.risk] > RISK_RANK["low"]:
             f.risk = "low"
-        f.notes.append("Model-name check (startsWith/includes/in), not a pinned model. "
+        f.auto_swap, f.no_swap_reason = False, "name_check"
+        f.notes.append("Model-name check (startsWith/includes/in or a list membership test), not a pinned model. "
                        "Review the branch it guards; `fix` and `swap` leave it unchanged.")
 
 
 def count_model_tokens(text: str, packs: PackSet, lang: str, path: Path | str = "") -> int:
-    lines = text.splitlines()
-    modes = line_modes(lines, path, lang)
+    rows, _ = iter_rows(text, path, lang)
     n = 0
-    for i, line in enumerate(lines):
-        if modes[i] is None:
+    for r in rows:
+        if r.mode is None:
             continue
-        prev = lines[i - 1] if i else ""
-        n += sum(1 for _ in iter_model_tokens(line, packs, lang, prev))
+        n += sum(1 for _ in iter_model_tokens(r.text, packs, r.lang, r.prev, r.mode))
     return n
 
 
@@ -562,25 +906,27 @@ def scan(root: str | Path, include_docs: bool = True, packs: PackSet | None = No
                 skipped.append(SkippedFile(rel, count, reason))
             continue
         n += 1
-        sig, sdks = file_signals(text, lang, packs)
+        rows, sig_lang = iter_rows(text, path, lang)
+        sig_text = text if sig_lang == lang else "\n".join(r.text for r in rows if r.mode is True)
+        sig, sdks = file_signals(sig_text, sig_lang, packs)
         if sig:
             fsig[rel] = sig
         if sdks:
             fsdk[rel] = sdks
-        lines = text.splitlines()
-        modes = line_modes(lines, path, lang)
-        for i, line in enumerate(lines, 1):
-            this_in_code = modes[i - 1]
-            if this_in_code is None:
+        for r in rows:
+            if r.mode is None:
                 continue
-            prev = lines[i - 2] if i > 1 else ""
-            for s, e, tok, pack in iter_model_tokens(line, packs, lang, prev):
-                kind = _kind(line, lang, prev, this_in_code)
-                if kind not in ("doc", "comment") and is_name_check(line, s, e):
-                    kind = "name_check"
-                f = Finding(rel, i, s + 1, tok, pack.provider, kind, lang,
+            line, i = r.text, r.index + 1
+            for s, e, tok, pack in iter_model_tokens(line, packs, r.lang, r.prev, r.mode):
+                if shell_noise(tok, r.lang, pack):
+                    continue
+                kind, block = classify(line, s, e, r.lang, r.prev, r.mode, rel)
+                f = Finding(rel, i, s + 1, tok, pack.provider, kind, r.lang,
                             line.strip()[:200], "not_listed", None, None, "n/a", "info")
                 assess(f, pack, sig, today)
+                apply_block(f, block)
+                if r.note:
+                    f.notes.append(r.note)
                 findings.append(f)
             for m in ENV_REF_RE.finditer(line):
                 env_refs.append(EnvRef(rel, i, m.group(1), line.strip()[:200]))

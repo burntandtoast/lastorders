@@ -4,6 +4,24 @@
 - The licence price is now £179 including VAT.
 - Refund policy (terms version 2026-10-16.2): an unactivated licence key is fully refundable if you ask within 14 days of purchase. After activation, a refund only if the fix fails on your repo and we can't resolve it within 5 working days. Wording updated on the website, `/terms`, Checkout and the licence key email.
 
+## 0.4.7
+- **Swap safety: rows that shouldn't be renamed are reported but not auto-swapped.** Each scan finding now carries `no_swap_reason` (`name_check`, `prose`, `regex`, `object_key`, `changelog`, `fine_tune` or `flag_only`) whenever `auto_swap` is false, and `swap` lists such rows under `skipped_not_swappable` in `swap-summary.json` (name checks stay under `skipped_name_checks`).
+  - **Name checks** (`startsWith`, `includes`, `in`, PHP `in_array`) always have `auto_swap: false`, including in JSON output.
+  - **List membership tests** (`model in ["o1", "o3-mini"]`, `["o1"].includes(m)`, `in_array($m, [...])`) are `name_check` at low severity and are not rewritten. A plain `for x in [...]` loop is not a membership test.
+  - **Prose in strings.** A model ID inside a quoted sentence of eight or more plain words (prompts, help text, test names, descriptions) is low and not swapped. Values right after `=`, `=>`, `->`, a model key or a CLI flag, and quoted router paths such as `"openai/o1"`, are still treated as code.
+  - **IDs inside web-page URLs are skipped** (doc links such as `https://platform.openai.com/docs/models/gpt-4o`). API, cloud, `localhost` and templated hosts are still scanned.
+  - **Changelogs and release notes** (`CHANGELOG`, `CHANGES`, `HISTORY`, `NEWS`, `RELEASE_NOTES`, `whats-new`, files under `release-notes/`, `releases/`, `changelog/`, and version-named docs such as `docs/v1.2.0.md`) are info and never swapped.
+  - **Regex strings** under a `matchPattern` / `pattern` / `regex` key with regex syntax next to the ID are low and flag-only.
+  - **Fine-tunes** (`ft:...`) are flagged with `auto_swap: false`. No new mapping entries.
+- **Coverage.**
+  - Colon-prefixed IDs (`openai:gpt-4o`, `openrouter:...`, including short IDs such as `openai:o1`) are found and swapped.
+  - A full stop straight after an ID (`... use gpt-4o.`) no longer hides it.
+  - Unquoted object keys such as `o1: {` in JS, TS, HTML and MDX count as model context.
+  - **HTML markup and Django templates.** Quoted attribute values (`<option value="gpt-4o">`), `&quot;`-quoted code samples and values inside `{% %}` / `{{ }}` are scanned and `swap` rewrites them. Visible text outside quotes is documentation and is left alone. This replaces the 0.4.6 rule that skipped all markup outside `<script>`.
+  - **New file types:** Cursor rules (`.mdc`, handled like `.mdx`), Jupyter notebooks (`.ipynb`: code cells use the kernel language, markdown cells are docs, outputs are skipped, and findings say "Notebook cell N, line M"; `swap` edits the notebook JSON in place), `Makefile` / `GNUmakefile` / `.mk`, R documentation `.Rd`, and config templates (`*.example`, `*.sample`, scanned by their inner extension, e.g. `config.toml.example`).
+  - In shell files and Makefiles, unlisted `claude-*` words with no digit (`claude-code`, `claude-desktop`) are no longer reported.
+- `fix` only adds `flag-only` items for genuinely flag-only models, not for prose or regex rows.
+
 ## 0.4.6
 - **HTML, MDX, shell, HTTP request files and shebang scripts are scanned** (found in the 38-repo rerun on 0.4.5). In `.html` / `.htm`, only `<script>` blocks are scanned (JavaScript rules; `//`, `/* */` and `<!-- -->` comments are low); markup outside them, including `<option value="...">`, is skipped, and `swap` doesn't rewrite it. `.mdx` is handled like `.Rmd`: prose is documentation (low) and code fences keep the normal severity; it counts as docs for `--no-docs`, so `swap` and `fix` skip it unless docs are included. `.sh`, `.bash`, `.zsh`, `.http` and `.rest` files are scanned, with `#` (and `//` in `.http`) comments at low. Extensionless files are scanned only when the first line is a `python`, `node`, `deno`, `bun`, `bash`, `sh`, `zsh`, `dash` or `ksh` shebang and the head has no NUL bytes (for example `coz` and `bin/lacp-stream`); other extensionless files are not opened. Vendored and generated skipping is unchanged.
 - **Router-prefixed short ids count.** `id: 'openai/o4-mini'` and `id: 'openai/o1'` were missed while `openai/gpt-4.1-nano` was found. A bare `o1` / `o3` / `o4-mini` style id now also counts when it's the end of a quoted string or config value that starts with the provider prefix, optionally behind router segments (`openrouter/openai/o1`, `litellm/openai/o4-mini`) or an Azure prefix (`azure/o3-mini`, `azure_ai/...`). `swap` renames these like long ids (`openai/o4-mini` → `openai/gpt-5.6-terra`). Paths such as `"assets/o1"` and `"openai/o1/extra"` are still not hits.
