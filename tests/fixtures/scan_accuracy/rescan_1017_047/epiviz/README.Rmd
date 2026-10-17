@@ -1,0 +1,6 @@
+```r
+# In your .Renviron file or before calling the function:
+Sys.setenv(LLM_PROVIDER = "openai")  # Choose from: "openai", "gemini", "anthropic"
+Sys.setenv(LLM_API_KEY = "your-api-key-here")
+Sys.setenv(LLM_MODEL = "gpt-4.1-nano")  # Use an appropriate model for your chosen provider
+```

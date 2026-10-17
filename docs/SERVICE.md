@@ -82,22 +82,34 @@ Walks `.py .R .Rmd .qmd .js .mjs .cjs .jsx .ts .tsx .mts .php .rs .cs .go .ejs .
 `node`, `deno`, `bun`, `bash`, `sh`, `zsh`, `dash` or `ksh` shebang, `.env*`, YAML/JSON/TOML/INI, config templates
 (`*.example`, `*.sample`, scanned as the file they stand for) and docs (`.md .mdx .mdc .txt .rst .Rd`; skip with
 `--no-docs`). In `.html`, `<script>` blocks are code; in markup only quoted values count (`<option value="...">`,
-Django/Jinja `{% if m == '...' %}`, and quoted ids in code samples, which are documentation). In `.Rmd`, `.qmd`,
+Django/Jinja `{% if m == '...' %}`, and quoted ids in code samples, which are documentation), plus visible text
+that lists two or more ids (`Models: <id>, <id>`, doc, info). In `.Rmd`, `.qmd`,
 `.mdx` and `.mdc`, prose outside ` ``` ` fences is documentation (low) and code fences keep the normal severity.
 Notebook findings use the raw JSON line number plus a "Notebook cell N, line M" note; outputs are not scanned.
 Router-prefixed short ids (`"openai/o1"`, `"openrouter/openai/o4-mini"`, `"azure/o3-mini"`) and provider:model
 ids (`"openai:gpt-4o"`) count as model ids; ids inside web-page links (`https://openai.com/gpt-4`) don't.
-Model-name checks such as `m.startsWith("o1")`, `s.includes('o1')`, `"gpt-4" in name` or
-`['o1', 'o3-mini'].includes(m)` are reported at low severity (kind `name_check`).
+Model-name checks such as `m.startsWith("o1")`, `m.startsWith("o1-")`, `s.includes('o1')` or `"gpt-4" in name`
+are reported at low severity (kind `name_check`). Exact-match allow-lists such as `m in {"gpt-4.1", "gpt-4.1-mini"}`,
+`['o1', 'o3-mini'].includes(m)`, `new Set([...]).has(m)` or `in_array($m, [...])` are kind `allow_list` (low).
+When `swap` renames one of their ids elsewhere in the repo, it adds the replacement id to the list (the old ids
+stay), so the swapped values still pass the check. A name check on an id that `swap` renames elsewhere, or an
+allow-list it can't extend (split over lines, or holding more than quoted ids), gets
+`no_swap_reason: must_update_together`; `swap` lists those under `must_update_together` in `swap-summary.json` and
+prints them as warnings, together with `collapsed_targets`: lists, objects and `<select>` dropdowns where different
+ids become the same id (for example two options that both become one model).
 
 Each finding has `auto_swap` and, when it is false, `no_swap_reason`. `swap` / `fix` never rewrite:
 `flag_only` models, `fine_tune` ids, `name_check`s, `prose` (an id in running text such as an LLM prompt,
-heredoc, help or log message; low), `regex` (inside a `matchPattern`-style pattern string; low), `object_key`
+heredoc, help or log message, or an `echo` / `printf` message in a shell script or Makefile; low), `regex` (inside a `matchPattern`-style pattern string; low), `object_key`
 (an unquoted `o1: {...}` key, which would need quotes) and `changelog` (CHANGELOG / release-notes files; info).
-In shell scripts and Makefiles, unlisted provider-prefixed words with no digit (`claude-hooks`) are not findings.
+In shell scripts and Makefiles, unlisted provider-prefixed words with no digit (`claude-hooks`) are not findings;
+in every language, neither is such a word right before a full stop (`adopted from claude-mem.`).
 Roxygen and other `#` comments are reported at low severity. Generated and vendored files are not findings:
 `*.generated.*`, `*.gen.*`, `*_pb2.py`, `*.min.js`, a `@generated` / `DO NOT EDIT` / `auto-generated` header,
-and `vendor/`, `third_party/`, `node_modules/`, `.yarn/` and `dist/`. Each of those files that contains model
+`vendor/`, `third_party/`, `node_modules/`, `.yarn/` and `dist/`, rendered HTML (an `.html` / `.htm` next to
+a same-stem `.Rmd`, `.qmd`, `.md` or `.ipynb` source, such as `README.html` beside `README.Rmd`) and HTML
+code-coverage reports (covr, coverage.py `htmlcov/`, Istanbul, lcov; detected from markers or a
+`coverage*.html` name). Each of those files that contains model
 IDs is one summary line, and it does not count toward `--fail-on-high`. `--include-generated` scans them.
 `.venv` and other tool caches are ignored entirely. Writes `out/scan.md` and `out/scan.json` with the file,
 line, current model, suggested replacement, shutdown date, risk and notes for each finding. It also:

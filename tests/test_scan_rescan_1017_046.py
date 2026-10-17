@@ -58,12 +58,15 @@ def test_name_checks_are_not_auto_swap_in_json(tmp_path):
 
 
 def test_array_membership_is_a_name_check():
+    # 0.4.8: an exact-match list is an `allow_list`. o3-mini is swapped in constants.ts, so swap adds
+    # its replacement to the list (old ids stay); o1 is only an unquoted object key there, so it isn't.
     res = _scan("yolo")
     row = _at(res, "src/settings/schema/migrations/5_to_6.ts", 9)
     assert [(f.model, f.kind, f.risk, f.auto_swap) for f in row] == [
-        ("o1", "name_check", "low", False), ("o1-mini", "name_check", "info", False), ("o3-mini", "name_check", "low", False)]
+        ("o1", "allow_list", "low", False), ("o1-mini", "allow_list", "info", False), ("o3-mini", "allow_list", "low", True)]
     sw = _swap(FIX / "yolo")
-    assert "src/settings/schema/migrations/5_to_6.ts" not in sw.new_contents
+    new = sw.new_contents["src/settings/schema/migrations/5_to_6.ts"].splitlines()[8]
+    assert "['o1', 'o1-mini', 'o3-mini', 'gpt-5.6-sol'].includes(" in new, new
     assert ("src/settings/schema/migrations/5_to_6.ts", 9, "o1") in sw.skipped_name_checks
 
 
@@ -73,12 +76,12 @@ def test_array_membership_forms(tmp_path):
            'for m in ["gpt-4o", "o1"]:\n    client.chat(model=m)\n')
     res = _scan_text(tmp_path, "a.py", src)
     kinds = {(f.line, f.model): f.kind for f in res.findings}
-    assert kinds[(1, "o1")] == kinds[(1, "o3-mini")] == kinds[(3, "gpt-4")] == "name_check"
-    assert kinds[(5, "gpt-4o")] != "name_check" and kinds[(5, "o1")] != "name_check"   # a loop over models, not a check
+    assert kinds[(1, "o1")] == kinds[(1, "o3-mini")] == kinds[(3, "gpt-4")] == "allow_list"
+    assert kinds[(5, "gpt-4o")] not in ("name_check", "allow_list") and kinds[(5, "o1")] not in ("name_check", "allow_list")
     res = _scan_text(tmp_path, "b.php", "<?php\nif (in_array($m, ['o1', 'gpt-4'])) {}\n")
-    assert {f.kind for f in res.findings if f.file == "b.php"} == {"name_check"}
+    assert {f.kind for f in res.findings if f.file == "b.php"} == {"allow_list"}
     res = _scan_text(tmp_path, "c.ts", "const fam = new Set(['o1', 'o3-mini']).has(model)\n")
-    assert {f.kind for f in res.findings if f.file == "c.ts"} == {"name_check"}
+    assert {f.kind for f in res.findings if f.file == "c.ts"} == {"allow_list"}
 
 
 def test_prompt_prose_is_low_and_not_swapped():
@@ -223,7 +226,8 @@ def test_html_option_values_and_code_samples():
     assert plan == [(5, "gpt-4o-mini", "string_literal"), (6, "gpt-4o", "string_literal"),
                     (7, "gpt-4-turbo", "string_literal"), (8, "gpt-3.5-turbo", "string_literal")]   # not the <!-- --> one
     landing = [(f.line, f.model, f.kind, f.risk) for f in res.findings if f.file == "src/templates/landing.html"]
-    assert landing == [(4, "gpt-4", "doc", "low")]          # the quoted sample; "Models: gpt-4, ..." text is skipped
+    # The quoted sample (low), and since 0.4.8 the visible "Models: gpt-4, gpt-3.5-turbo" list (doc, info).
+    assert landing == [(4, "gpt-4", "doc", "low"), (6, "gpt-4", "doc", "info"), (6, "gpt-3.5-turbo", "doc", "info")]
     sw = _swap(FIX / "donvito")
     new = sw.new_contents["src/templates/projectPlannerDemo.html"].splitlines()
     assert new[6].strip() == '<option value="gpt-5.6-sol">GPT-4 Turbo</option>'

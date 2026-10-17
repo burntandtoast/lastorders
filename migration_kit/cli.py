@@ -101,12 +101,23 @@ def cmd_swap(a) -> int:
         _print_preview([(c.file, c.old, c.new) for c in res.changes])
         if res.skipped_fine_tunes:
             print(f"{len(res.skipped_fine_tunes)} fine-tuned references left alone.")
+        if res.must_update_together or res.collapsed:
+            print(f"Warnings: {len(res.must_update_together)} check(s) must be updated together with the swap; "
+                  f"{len(res.collapsed)} list(s) where different ids become the same id.")
         _preview_footer()
         return 0
     p, s = swapper.write(res, a.out)
     print(f"{len(res.changes)} replacements in {len(res.new_contents)} files; "
           f"{len(res.skipped_fine_tunes)} fine-tuned references left alone. Mapping: {mapping.source or a.mapping}")
     print(f"  patch:   {p}\n  summary: {s}")
+    warns = res.warnings()
+    if warns:
+        print(f"WARNING: {len(res.must_update_together)} check(s) must be updated together with this swap, "
+              f"{len(res.collapsed)} list(s) collapse to one id (also in swap-summary.json):")
+        for w in warns[:25]:
+            print(f"  {w}")
+        if len(warns) > 25:
+            print(f"  ... {len(warns) - 25} more in {s}")
     if a.apply:
         n = swapper.apply_in_place(a.repo, res)
         print(f"Applied in place to {n} files (--apply).")
