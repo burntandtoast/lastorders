@@ -115,7 +115,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: burntandtoast/lastorders@v0.4.8
+      - uses: burntandtoast/lastorders@v0.4.9
         with:
           fail-on-high: "true"
 ```
