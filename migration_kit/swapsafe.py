@@ -2,7 +2,9 @@
 """Swap safety: where a model-id rename is unsafe even though the id itself is swappable.
 
 Used by `swap` (and so by `fix`) to skip renames, and by `scan` so that a finding's
-`auto_swap` says what `swap` really does.
+`auto_swap` says what `swap` really does. One exception: a reference whose id is kept only
+because a rename elsewhere was skipped as a duplicate key / id (0.4.10 kept definitions) is
+known to `swap` alone, so `scan` can still show it as `auto_swap`.
 
 - File level: schema/settings migrations (historical data) and price / model catalogues.
 - Token level: Azure deployment names, tokeniser arguments, comments, docstrings,

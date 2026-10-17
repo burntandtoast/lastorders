@@ -4,6 +4,16 @@
 - The licence price is now £179 including VAT.
 - Refund policy (terms version 2026-10-16.2): an unactivated licence key is fully refundable if you ask within 14 days of purchase. After activation, a refund only if the fix fails on your repo and we can't resolve it within 5 working days. Wording updated on the website, `/terms`, Checkout and the licence key email.
 
+## 0.4.10
+- **A kept definition keeps every reference to its id** (found in the swap test of 0.4.9 on six real repos, 17 Oct 2026: in 4 of 6, a default, a recommended list or a lookup was renamed to an id that the kept definition no longer matched, so the app looked up a model it doesn't have).
+  - When any definition or option of an old id is kept (a skipped duplicate key or id, a `<select>` option, a dict or object key, a migration or catalogue file, an Azure deployment name, a tokeniser argument, a recorded fixture or an unquoted object key), `swap` renames no other reference to that id anywhere in the repo.
+  - Each reference it leaves is listed under `must_update_together` with `"kind": "kept_definition"` and `kept_at`, and `swap-summary.json` has a new `kept_definitions` list that groups the kept definitions and the references per id. The CLI prints `KEPT <id>` followed by one `MUST UPDATE TOGETHER file:line` line per reference, and `fix` adds a `kept-definition` manual item for each one (listed once, not also as a `must-update-together` item).
+  - Allow-lists and equality checks are no longer extended with the new id of a kept id, because nothing is renamed to it.
+  - Only code counts as a kept definition in a migration or catalogue file; a comment that mentions an id there doesn't block it.
+  - Scan findings that `swap` now leaves because of a held file or value have `auto_swap: false`, `no_swap_reason: kept_definition`. Kept definitions from skipped duplicate keys / ids are only known to `swap` (they need the rewritten text), so `scan` can still show `auto_swap: true` for those references; `swap` and `fix` list them.
+  - When nothing is left to rename, the patch is empty and the CLI says so instead of suggesting `git apply`.
+  - Replacement counts drop further: an id that has one kept definition is now not renamed anywhere.
+
 ## 0.4.9
 - **Swap never creates duplicate keys or duplicate ids** (found in the swap test of 0.4.8 on six real repos, 17 Oct 2026). 0.4.8 reported `collapsed_targets` but still applied them, so price tables and capability maps got duplicate TypeScript keys (TS1117), JSON and Python dicts silently lost entries, and lists of models (`id:`, `name=`, `value`, `<option value>`) ended up with the same id twice.
   - A rename that would give an object, dict, JSON or YAML mapping a key it already has (from another rename or an existing key) is skipped. It is listed under `skipped_duplicate_key` in `swap-summary.json`, printed as a warning, and `fix` adds a `duplicate-key` manual item.

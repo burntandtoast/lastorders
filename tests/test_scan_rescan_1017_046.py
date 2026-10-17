@@ -18,6 +18,7 @@ Snippets are excerpts from public repos (shallow clones, 16 Oct 2026):
 - 0xNyk/lacp scripts/ci/test-claude-hooks.sh:9,80 (plus a synthetic MODEL= line)
 """
 import json
+from pathlib import Path
 
 from conftest import ROOT, TODAY
 from migration_kit import swapper
@@ -251,7 +252,18 @@ def test_notebooks_cell_and_line():
                                                                    (37, "gpt-4.1", "sdk_call", "python")]
     assert "Notebook cell 2, line 11." in nb[1].notes
     assert nb[1].risk == "high" and nb[1].snippet == 'model="gpt-4.1",'
+    # 0.4.10: the settings dropdown keeps gpt-4.1 (both options would become gpt-6-luna), so the notebook
+    # reference is not renamed either; it is listed under must_update_together with the kept option.
     sw = _swap(FIX / "pfd")
+    assert "tutorials/getting_started.ipynb" not in sw.new_contents
+    assert ("tutorials/getting_started.ipynb", 37, "gpt-4.1") in {
+        (m["file"], m["line"], m["model"]) for m in sw.must_update_together if m["kind"] == "kept_definition"}
+    # Without the dropdown the notebook cell is rewritten in place.
+    import shutil
+    import tempfile
+    with tempfile.TemporaryDirectory() as tmp:
+        shutil.copytree(FIX / "pfd" / "tutorials", Path(tmp) / "tutorials")
+        sw = _swap(Path(tmp))
     text = sw.new_contents["tutorials/getting_started.ipynb"]
     data = json.loads(text)                                   # still valid JSON
     code = [c for c in data["cells"] if c["cell_type"] == "code"][0]

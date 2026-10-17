@@ -1,0 +1,5 @@
+<!-- excerpt: Sam-Osian/PFD-toolkit django_workbench/workbench/templates/workbench/settings.html, lines 32-35 -->
+<select id="model_name" name="model_name">
+    <option value="gpt-4.1-mini" {% if model_name == 'gpt-4.1-mini' %}selected{% endif %}>GPT 4.1 Mini (+speed, -accuracy)</option>
+    <option value="gpt-4.1" {% if model_name == 'gpt-4.1' %}selected{% endif %}>GPT 4.1 (+accuracy, -speed)</option>
+</select>

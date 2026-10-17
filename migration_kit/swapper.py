@@ -117,6 +117,11 @@ class SwapResult:
     skipped_catalog: list[dict] = field(default_factory=list)
     # Exact-match allow-lists that get one new id for several renamed ids (applied once).
     allow_list_merges: list[dict] = field(default_factory=list)
+    # Old ids that still have a kept definition somewhere (a skipped duplicate key/id or dropdown
+    # option, a migration or catalogue file, a deployment / tokeniser / fixture / unquoted-key hold).
+    # Swap renames no other reference to them; each reference it left is in must_update_together
+    # (kind "kept_definition"). {"model", "target", "kept": [{"file", "line", "reason"}], "references": [...]}.
+    kept_definitions: list[dict] = field(default_factory=list)
 
     def summary(self) -> dict:
         return {
@@ -133,6 +138,7 @@ class SwapResult:
             "skipped_not_swappable": [{"file": f, "line": l, "model": m, "reason": r}
                                       for f, l, m, r in self.skipped_unsafe],
             "allow_list_merges": self.allow_list_merges,
+            "kept_definitions": self.kept_definitions,
             "changes": [c.__dict__ for c in self.changes],
         }
 
@@ -146,13 +152,26 @@ class SwapResult:
         for f, l, m, r in self.skipped_unsafe:
             if r in MANUAL_HOLDS:
                 out.append({"file": f, "line": l, "model": m, "kind": r.replace("_", "-"), "message": HOLD_NOTES[r]})
+        for w in self.must_update_together:
+            if w.get("kind") == "kept_definition":
+                out.append({**_pick(w), "kind": "kept-definition", "message": w["reason"]})
         return out
 
     def warnings(self) -> list[str]:
         """Human-readable lines for the swap output (empty when there is nothing to check)."""
         out = []
         for w in self.must_update_together:
-            out.append(f"MUST UPDATE TOGETHER {w['file']}:{w['line']} {w['model']}: {w['reason']}")
+            if w.get("kind") != "kept_definition":
+                out.append(f"MUST UPDATE TOGETHER {w['file']}:{w['line']} {w['model']}: {w['reason']}")
+        for g in self.kept_definitions:
+            if not g["references"]:
+                continue
+            kept = ", ".join(f"{k['file']}:{k['line']} ({k['reason']})" for k in g["kept"][:5])
+            more = f" and {len(g['kept']) - 5} more" if len(g["kept"]) > 5 else ""
+            out.append(f"KEPT {g['model']} (not renamed to {g['target']} anywhere): still defined at {kept}{more}; "
+                       f"{len(g['references'])} other reference(s) left on {g['model']}:")
+            for ref in g["references"]:
+                out.append(f"  MUST UPDATE TOGETHER {ref['file']}:{ref['line']} {g['model']}")
         for c in self.collapsed:
             out.append(f"COLLAPSED {c['file']}:{c['line']} ({c['container']}): {', '.join(c['old'])} would all become "
                        f"{c['target']}; not applied (it would create duplicate entries or keys)")
@@ -186,11 +205,20 @@ _REASONS = {
 }
 _DUP_KEY = ("renaming {old} to {new} here would give this object two `{key}` keys ({how}); in JS/TS that is a "
             "compile error (TS1117) and in JSON/Python/YAML the last one silently wins. Not renamed: decide by hand "
-            "which entry the new id should get. Other references to {old} may still be renamed, so check lookups "
-            "by this key.")
+            "which entry the new id should get. Swap leaves every other reference to {old} unchanged too (listed "
+            "under must_update_together), so rename them together when you decide.")
 _DUP_ID = ("renaming {old} to {new} here would give two items of this list the same {field} `{value}` ({how}). "
-           "Not renamed (nor the rest of this entry): decide by hand which entry the new id should get. Other "
-           "references to {old} may still be renamed, so check references to this id.")
+           "Not renamed (nor the rest of this entry): decide by hand which entry the new id should get. Swap leaves "
+           "every other reference to {old} unchanged too (listed under must_update_together), so rename them "
+           "together when you decide.")
+_KEPT = ("{model} is still defined or offered at {kept} (left unchanged: {why}), so swap does not rename this "
+         "reference to {target}: renaming it would point at an id that isn't defined there. Update it together with "
+         "the kept definition(s).")
+# Holds that keep a definition / value of an old id in place.
+KEPT_HOLDS = {"deployment_name", "tokeniser", "fixture", "object_key"}
+_KEPT_WHY = {"duplicate_key": "duplicate key", "duplicate_id": "duplicate id", "migration": "migration file",
+             "catalog": "price list / catalogue", "deployment_name": "Azure deployment name",
+             "tokeniser": "tokeniser argument", "fixture": "recorded fixture", "object_key": "unquoted object key"}
 
 
 @dataclass
@@ -231,11 +259,16 @@ def plan(root: str | Path, mapping: Mapping, packs: PackSet | None = None) -> Sw
                 continue
             i, text_line = row.index + 1, row.text
             if fhold:
-                for _, _, model, _ in iter_model_tokens(text_line, packs, row.lang, row.prev, row.mode):
+                for s, e, model, _ in iter_model_tokens(text_line, packs, row.lang, row.prev, row.mode):
                     if model in table and (row.mode is not MARKUP or mapping.include_docs):
-                        info = held_files.setdefault(rel, {"reason": fhold, "count": 0, "models": set()})
+                        info = held_files.setdefault(rel, {"reason": fhold, "count": 0, "models": set(), "lines": {}})
                         info["count"] += 1
                         info["models"].add(model)
+                        # a kept definition is code, not a comment or docstring in the held file
+                        kind, _ = classify(text_line, s, e, row.lang, row.prev, row.mode, rel)
+                        if (row.mode is True and kind not in ("doc", "comment") and blocks.get(row.index) is None
+                                and not _is_comment(text_line, row.lang)):
+                            info["lines"].setdefault(model, i)
                 continue
             if row.mode is True and not _is_comment(text_line, row.lang):
                 family.extend((rel, i, model) for _, _, model, _ in iter_prefix_checks(text_line, packs))
@@ -279,15 +312,55 @@ def plan(root: str | Path, mapping: Mapping, packs: PackSet | None = None) -> Sw
     dup_key: list[dict] = []
     dup_id: list[dict] = []
     collapsed: list[dict] = []
+    must_kept: list[dict] = []
     for rel, lang, old_lines, todo, rows in files:
         if any(r.reps for r in todo.values()):
             _dedupe(rel, lang, rows, todo, dup_key, dup_id, collapsed)
+    # Kept definitions: an old id that stays somewhere it is defined or offered is not renamed anywhere else.
+    kept: dict[str, list[dict]] = {}
+    for d in dup_key + dup_id:
+        kept.setdefault(d["model"], []).append({"file": d["file"], "line": d["line"],
+                                                "reason": "duplicate_key" if d in dup_key else "duplicate_id"})
+    for rel, info in held_files.items():
+        for model, line in info["lines"].items():
+            kept.setdefault(model, []).append({"file": rel, "line": line, "reason": info["reason"]})
+    for rel, i, model, why in unsafe:
+        if why in KEPT_HOLDS and model in table:
+            kept.setdefault(model, []).append({"file": rel, "line": i, "reason": why})
+    blocked: dict[str, list[tuple[str, int]]] = {}
+    for rel, lang, old_lines, todo, rows in files:
+        for idx, r in todo.items():
+            keep = []
+            for rp in r.reps:
+                if rp[2] in kept:
+                    refs = blocked.setdefault(rp[2], [])
+                    if (rel, r.line) not in refs:
+                        refs.append((rel, r.line))
+                else:
+                    keep.append(rp)
+            r.reps = keep
+    kept_groups: list[dict] = []
+    for model in sorted(kept):
+        defs = sorted({(k["file"], k["line"], k["reason"]) for k in kept[model]})
+        defs = [{"file": f, "line": l, "reason": w} for f, l, w in defs]
+        # _dedupe already took the skipped tokens out of reps, so every blocked rep is another reference
+        # (it can share a line with a kept definition: `{"old": {...}, "x": "old"}`).
+        refs = sorted(blocked.get(model, []))
+        kept_groups.append({"model": model, "target": table[model], "kept": defs,
+                            "references": [{"file": f, "line": l} for f, l in refs]})
+        shown = ", ".join(f"{k['file']}:{k['line']}" for k in defs[:3]) + (
+            f" and {len(defs) - 3} more" if len(defs) > 3 else "")
+        why = ", ".join(sorted({_KEPT_WHY[k["reason"]] for k in defs}))
+        for f, l in refs:
+            must_kept.append({"file": f, "line": l, "model": model, "related": [model], "kind": "kept_definition",
+                              "kept_at": [f"{k['file']}:{k['line']}" for k in defs],
+                              "reason": _KEPT.format(model=model, kept=shown, why=why, target=table[model])})
     renamed: set[str] = {m for _, _, _, todo, _ in files for r in todo.values()
                          for _, _, m, _, kind in r.reps if kind not in ("doc", "comment")}
     # Pass 2: apply, adding new ids to allow-lists (and `==` checks) whose ids are renamed elsewhere.
     changes: list[Change] = []
     name_checks: list[tuple[str, int, str]] = []
-    must: list[dict] = []
+    must: list[dict] = list(must_kept)
     merges: list[dict] = []
     diffs: list[str] = []
     new_contents: dict[str, str] = {}
@@ -382,7 +455,7 @@ def plan(root: str | Path, mapping: Mapping, packs: PackSet | None = None) -> Sw
     dup_key.sort(key=lambda d: (d["file"], d["line"]))
     dup_id.sort(key=lambda d: (d["file"], d["line"]))
     return SwapResult(changes, skipped, "".join(diffs), new_contents, name_checks, unsafe, must, collapsed,
-                      dup_key, dup_id, held_mig, held_cat, merges)
+                      dup_key, dup_id, held_mig, held_cat, merges, kept_groups)
 
 
 # ------------------------------------------------------------------ duplicate keys / ids
