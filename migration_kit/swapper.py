@@ -12,7 +12,10 @@ import yaml
 
 from .scanner import mark_output as _mark
 from .packs import PackSet, load_packs
-from .scanner import _is_comment, classify, iter_files, iter_model_tokens, iter_prefix_checks, iter_rows, list_bounds
+from .scanner import MARKUP, _block_map, _is_comment, classify, iter_files, iter_model_tokens, iter_prefix_checks, iter_rows, list_bounds
+from .swapsafe import (FILE_HOLD_NOTES, HOLD_NOTES, ID_FIELDS, MANUAL_HOLDS, STRUCT_LANGS, Cont, Lit, element,
+                       equality_check, extend_equality, file_hold, list_like, parse_structure, token_hold,
+                       yaml_structure)
 
 
 @dataclass
@@ -102,9 +105,18 @@ class SwapResult:
     # Checks left unchanged although swap renames the id they test elsewhere in the repo:
     # after the swap they no longer match. {"file", "line", "model", "related", "reason"}.
     must_update_together: list[dict] = field(default_factory=list)
-    # Distinct ids in one list, set, object/dict or <select> that map to the same new id.
-    # {"file", "line", "container", "target", "old"}.
+    # Distinct ids in one list, set, object/dict or <select> that would map to the same new id.
+    # Never applied (the renames are skipped). {"file", "line", "container", "target", "old", "applied"}.
     collapsed: list[dict] = field(default_factory=list)
+    # Renames skipped because they would create a duplicate object/dict/JSON/YAML key, or a
+    # duplicate id among the items of one list. {"file", "line", "model", "target", ...}.
+    skipped_duplicate_key: list[dict] = field(default_factory=list)
+    skipped_duplicate_id: list[dict] = field(default_factory=list)
+    # Files swap never rewrites: {"file", "count", "models", "note"}.
+    skipped_migration: list[dict] = field(default_factory=list)
+    skipped_catalog: list[dict] = field(default_factory=list)
+    # Exact-match allow-lists that get one new id for several renamed ids (applied once).
+    allow_list_merges: list[dict] = field(default_factory=list)
 
     def summary(self) -> dict:
         return {
@@ -112,12 +124,29 @@ class SwapResult:
             "replacements": len(self.changes),
             "must_update_together": self.must_update_together,
             "collapsed_targets": self.collapsed,
+            "skipped_duplicate_key": self.skipped_duplicate_key,
+            "skipped_duplicate_id": self.skipped_duplicate_id,
+            "skipped_migration": self.skipped_migration,
+            "skipped_catalog": self.skipped_catalog,
             "skipped_fine_tunes": [{"file": f, "line": l, "model": m} for f, l, m in self.skipped_fine_tunes],
             "skipped_name_checks": [{"file": f, "line": l, "model": m} for f, l, m in self.skipped_name_checks],
             "skipped_not_swappable": [{"file": f, "line": l, "model": m, "reason": r}
                                       for f, l, m, r in self.skipped_unsafe],
+            "allow_list_merges": self.allow_list_merges,
             "changes": [c.__dict__ for c in self.changes],
         }
+
+    def manual(self) -> list[dict]:
+        """Skipped renames someone has to decide by hand: {"file", "line", "model", "kind", "message"}."""
+        out = []
+        for d in self.skipped_duplicate_key:
+            out.append({**_pick(d), "kind": "duplicate-key", "message": d["reason"]})
+        for d in self.skipped_duplicate_id:
+            out.append({**_pick(d), "kind": "duplicate-id", "message": d["reason"]})
+        for f, l, m, r in self.skipped_unsafe:
+            if r in MANUAL_HOLDS:
+                out.append({"file": f, "line": l, "model": m, "kind": r.replace("_", "-"), "message": HOLD_NOTES[r]})
+        return out
 
     def warnings(self) -> list[str]:
         """Human-readable lines for the swap output (empty when there is nothing to check)."""
@@ -125,11 +154,20 @@ class SwapResult:
         for w in self.must_update_together:
             out.append(f"MUST UPDATE TOGETHER {w['file']}:{w['line']} {w['model']}: {w['reason']}")
         for c in self.collapsed:
-            tail = ("the new id is added once" if c["container"].startswith("allow-list")
-                    else "check for duplicate entries or keys")
-            out.append(f"COLLAPSED {c['file']}:{c['line']} ({c['container']}): {', '.join(c['old'])} all become "
-                       f"{c['target']}; {tail}")
+            out.append(f"COLLAPSED {c['file']}:{c['line']} ({c['container']}): {', '.join(c['old'])} would all become "
+                       f"{c['target']}; not applied (it would create duplicate entries or keys)")
+        for d in self.skipped_duplicate_key:
+            out.append(f"SKIPPED DUPLICATE KEY {d['file']}:{d['line']} {d['model']} -> {d['target']}: {d['reason']}")
+        for d in self.skipped_duplicate_id:
+            out.append(f"SKIPPED DUPLICATE ID {d['file']}:{d['line']} {d['model']} -> {d['target']}: {d['reason']}")
+        for f, l, m, r in self.skipped_unsafe:
+            if r in MANUAL_HOLDS:
+                out.append(f"MANUAL {f}:{l} {m}: {HOLD_NOTES[r]}")
         return out
+
+
+def _pick(d: dict) -> dict:
+    return {"file": d["file"], "line": d["line"], "model": d["model"]}
 
 
 _REASONS = {
@@ -139,7 +177,20 @@ _REASONS = {
                   "{related} elsewhere, so add the new id to this list by hand."),
     "notebook": ("exact-match allow-list in a notebook cell; swap renames {related} elsewhere, so add the new id "
                  "to this list by hand."),
+    "equality": ("exact `==` comparison that swap can't extend safely on this line; swap renames {related} "
+                 "elsewhere, so this comparison no longer matches the new id. Add the new id to it by hand."),
+    "regex": ("regex pattern left unchanged next to code that swap renames ({related}); update the pattern by hand "
+              "so it still matches the new id."),
+    "fixture": ("recorded fixture left unchanged, but swap renames {related} elsewhere in this test file; re-record "
+                "it or keep the assertions that read it on the old id."),
 }
+_DUP_KEY = ("renaming {old} to {new} here would give this object two `{key}` keys ({how}); in JS/TS that is a "
+            "compile error (TS1117) and in JSON/Python/YAML the last one silently wins. Not renamed: decide by hand "
+            "which entry the new id should get. Other references to {old} may still be renamed, so check lookups "
+            "by this key.")
+_DUP_ID = ("renaming {old} to {new} here would give two items of this list the same {field} `{value}` ({how}). "
+           "Not renamed (nor the rest of this entry): decide by hand which entry the new id should get. Other "
+           "references to {old} may still be renamed, so check references to this id.")
 
 
 @dataclass
@@ -147,8 +198,10 @@ class _Row:
     index: int
     line: int
     text: str
-    reps: list = field(default_factory=list)        # (s, e, old, new)
+    lang: str = ""
+    reps: list = field(default_factory=list)        # (s, e, old, new, kind)
     allow: list = field(default_factory=list)       # (s, e, old)
+    eq: list = field(default_factory=list)          # (s, e, old, form)
 
 
 def plan(root: str | Path, mapping: Mapping, packs: PackSet | None = None) -> SwapResult:
@@ -157,10 +210,10 @@ def plan(root: str | Path, mapping: Mapping, packs: PackSet | None = None) -> Sw
     skipped: list[tuple[str, int, str]] = []
     unsafe: list[tuple[str, int, str, str]] = []
     table = {**mapping.replacements, **mapping.fine_tuned}
-    files: list[tuple[str, str, list[str], dict[int, _Row]]] = []
+    files: list[tuple[str, str, list[str], dict[int, _Row], list]] = []
     checks: list[tuple[str, int, str]] = []          # prefix / substring name checks, in order
     family: list[tuple[str, int, str]] = []          # name checks on ids outside the mapping
-    renamed: set[str] = set()                        # ids renamed in code (not comments / docs)
+    held_files: dict[str, dict] = {}                 # migration / catalogue files: rel -> info
     # Pass 1: what each row would rename, and the checks that depend on it.
     for path, lang in iter_files(root, include_docs=mapping.include_docs):
         try:
@@ -169,11 +222,21 @@ def plan(root: str | Path, mapping: Mapping, packs: PackSet | None = None) -> Sw
             continue
         rel = path.relative_to(root).as_posix()
         rows, _ = iter_rows(text, path, lang)
+        fhold = file_hold(rel, text)
+        blocks = _block_map(rows)
+        texts = [r.text for r in rows]
         todo: dict[int, _Row] = {}
-        for row in rows:
+        for pos, row in enumerate(rows):
             if row.mode is None:
                 continue
             i, text_line = row.index + 1, row.text
+            if fhold:
+                for _, _, model, _ in iter_model_tokens(text_line, packs, row.lang, row.prev, row.mode):
+                    if model in table and (row.mode is not MARKUP or mapping.include_docs):
+                        info = held_files.setdefault(rel, {"reason": fhold, "count": 0, "models": set()})
+                        info["count"] += 1
+                        info["models"].add(model)
+                continue
             if row.mode is True and not _is_comment(text_line, row.lang):
                 family.extend((rel, i, model) for _, _, model, _ in iter_prefix_checks(text_line, packs))
             for s, e, model, pack in iter_model_tokens(text_line, packs, row.lang, row.prev, row.mode):
@@ -186,7 +249,7 @@ def plan(root: str | Path, mapping: Mapping, packs: PackSet | None = None) -> Sw
                         family.append((rel, i, model))
                     continue
                 kind, block = classify(text_line, s, e, row.lang, row.prev, row.mode, rel)
-                r = todo.setdefault(row.index, _Row(row.index, i, text_line))
+                r = todo.setdefault(row.index, _Row(row.index, i, text_line, row.lang))
                 if block == "allow_list":
                     r.allow.append((s, e, model))
                     continue
@@ -199,16 +262,33 @@ def plan(root: str | Path, mapping: Mapping, packs: PackSet | None = None) -> Sw
                     continue
                 if kind == "doc" and lang in ("html", "ipynb") and not mapping.include_docs:
                     continue                  # an HTML code sample or a notebook markdown cell: docs
-                r.reps.append((s, e, model, table[model]))
-                if kind not in ("doc", "comment"):
-                    renamed.add(model)
+                hold = token_hold(text_line, s, e, "markup" if row.mode == MARKUP else row.lang, rel, row.prev,
+                                  kind, blocks.get(row.index), texts[pos + 1:pos + 13])
+                if hold and not (mapping.include_docs and hold in ("comment", "docstring", "help_text")):
+                    unsafe.append((rel, i, model, hold))
+                    continue
+                form = (equality_check(text_line, s, e)
+                        if kind not in ("doc", "comment") and row.mode is not MARKUP else None)
+                if form:
+                    r.eq.append((s, e, model, form))
+                    continue
+                r.reps.append((s, e, model, table[model], kind))
         if todo:
-            files.append((rel, lang, text.splitlines(keepends=True), todo))
-    # Pass 2: apply, adding new ids to allow-lists whose ids are renamed elsewhere.
+            files.append((rel, lang, text.splitlines(keepends=True), todo, rows))
+    # Structure: never write a duplicate key or a duplicate id in one list.
+    dup_key: list[dict] = []
+    dup_id: list[dict] = []
+    collapsed: list[dict] = []
+    for rel, lang, old_lines, todo, rows in files:
+        if any(r.reps for r in todo.values()):
+            _dedupe(rel, lang, rows, todo, dup_key, dup_id, collapsed)
+    renamed: set[str] = {m for _, _, _, todo, _ in files for r in todo.values()
+                         for _, _, m, _, kind in r.reps if kind not in ("doc", "comment")}
+    # Pass 2: apply, adding new ids to allow-lists (and `==` checks) whose ids are renamed elsewhere.
     changes: list[Change] = []
     name_checks: list[tuple[str, int, str]] = []
     must: list[dict] = []
-    collapsed: list[dict] = []
+    merges: list[dict] = []
     diffs: list[str] = []
     new_contents: dict[str, str] = {}
     name_checks.extend(checks)
@@ -217,17 +297,12 @@ def plan(root: str | Path, mapping: Mapping, packs: PackSet | None = None) -> Sw
         if related:
             must.append({"file": rel, "line": i, "model": model, "related": related, "kind": "name_check",
                          "reason": _REASONS["name_check"].format(related=", ".join(related))})
-    for rel, lang, old_lines, todo in files:
+    for rel, lang, old_lines, todo, _rows in files:
         new_lines = list(old_lines)
         groups: dict[object, dict[str, set[str]]] = {}
-        containers = _container_keys(old_lines, lang, todo) if todo else {}
         for idx, r in sorted(todo.items()):
-            edits: list[tuple[int, int, str]] = [(s, e, new) for s, e, _, new in r.reps]
-            row_changes = [Change(rel, r.line, m, n) for _, _, m, n in r.reps]
-            for s, e, m, n in r.reps:
-                key = containers.get((idx, s))
-                if key is not None:
-                    groups.setdefault(key, {}).setdefault(n, set()).add(m)
+            edits: list[tuple[int, int, str]] = [(s, e, new) for s, e, _, new, _ in r.reps]
+            row_changes = [Change(rel, r.line, m, n) for _, _, m, n, _ in r.reps]
             done: set[tuple[int, int]] = set()
             for s, e, model in r.allow:
                 if model not in renamed:
@@ -253,6 +328,18 @@ def plan(root: str | Path, mapping: Mapping, packs: PackSet | None = None) -> Sw
                     item = r.text[qs + 1:qe - 1]
                     if item in table and item in renamed:
                         groups.setdefault(key, {}).setdefault(table[item], set()).add(item)
+            for s, e, model, form in r.eq:
+                if model not in renamed:
+                    name_checks.append((rel, r.line, model))
+                    continue
+                ext = extend_equality(r.text, s, e, table[model], r.lang) if form == "lhs" and lang != "ipynb" else None
+                if ext and not any(a < ext[1] and ext[0] < b for a, b, _ in edits):
+                    edits.append(ext)
+                    row_changes.append(Change(rel, r.line, model, table[model], "added"))
+                    continue
+                must.append({"file": rel, "line": r.line, "model": model, "related": [model], "kind": "equality",
+                             "reason": _REASONS["equality"].format(related=model)})
+                name_checks.append((rel, r.line, model))
             if not edits:
                 continue
             new = _splice(old_lines[idx], r.text, sorted(edits), lang == "ipynb")
@@ -264,18 +351,233 @@ def plan(root: str | Path, mapping: Mapping, packs: PackSet | None = None) -> Sw
         for key, by_target in groups.items():
             for target, olds in by_target.items():
                 if len(olds) > 1:
-                    kind = key[0] if isinstance(key, tuple) else "list"
-                    line = (key[1] + 1) if isinstance(key, tuple) else 0
-                    collapsed.append({"file": rel, "line": line,
-                                      "container": {"allow": "allow-list (new id added once)",
-                                                    "select": "<select> dropdown", "list": "list/set/object"}[kind],
-                                      "target": target, "old": sorted(olds)})
+                    merges.append({"file": rel, "line": key[1] + 1, "container": "allow-list (new id added once)",
+                                   "target": target, "old": sorted(olds)})
         if new_lines != old_lines:
             new_contents[rel] = "".join(new_lines)
             diffs.append(_unified(old_lines, new_lines, rel))
+    # Left-alone patterns / recordings next to code that is renamed.
+    lines_changed: dict[str, set[int]] = {}
+    for c in changes:
+        lines_changed.setdefault(c.file, set()).add(c.line)
+    models_changed: dict[str, set[str]] = {}
+    for c in changes:
+        if c.action == "replace":
+            models_changed.setdefault(c.file, set()).add(c.old)
+    for rel, i, model, why in unsafe:
+        if why == "regex" and model in renamed and any(abs(i - j) <= 10 for j in lines_changed.get(rel, ())):
+            must.append({"file": rel, "line": i, "model": model, "related": [model], "kind": "regex",
+                         "reason": _REASONS["regex"].format(related=model)})
+        elif why == "fixture" and model in models_changed.get(rel, ()):
+            must.append({"file": rel, "line": i, "model": model, "related": [model], "kind": "fixture",
+                         "reason": _REASONS["fixture"].format(related=model)})
+    held_mig, held_cat = [], []
+    for rel, info in sorted(held_files.items()):
+        rec = {"file": rel, "count": info["count"], "models": sorted(info["models"]),
+               "note": FILE_HOLD_NOTES[info["reason"]]}
+        (held_mig if info["reason"] == "migration" else held_cat).append(rec)
     collapsed.sort(key=lambda c: (c["file"], c["line"]))
+    merges.sort(key=lambda c: (c["file"], c["line"]))
     must.sort(key=lambda w: (w["file"], w["line"]))
-    return SwapResult(changes, skipped, "".join(diffs), new_contents, name_checks, unsafe, must, collapsed)
+    dup_key.sort(key=lambda d: (d["file"], d["line"]))
+    dup_id.sort(key=lambda d: (d["file"], d["line"]))
+    return SwapResult(changes, skipped, "".join(diffs), new_contents, name_checks, unsafe, must, collapsed,
+                      dup_key, dup_id, held_mig, held_cat, merges)
+
+
+# ------------------------------------------------------------------ duplicate keys / ids
+def _dedupe(rel: str, lang: str, rows, todo: dict[int, _Row], dup_key: list, dup_id: list, collapsed: list) -> None:
+    """Drop renames that would create a duplicate key in one object/dict, or the same id twice
+    in one list (or <select>). Repeats until stable: keeping one old key can clash with another rename."""
+    reps = {(idx, s): (e, old, new) for idx, r in todo.items() for s, e, old, new, _ in r.reps}
+    skip: dict[tuple[int, int], tuple[str, dict]] = {}
+    spans: list = []          # (kind, group key, unit id, row, qs, qe, current text, field, container line, how)
+    units: dict = {}          # unit id -> list of rep keys that must be skipped together
+    segs: dict = {}           # unit id -> (row, lo, hi): an <option> whose equality checks stay too
+    held: set = set()         # unit ids that were skipped
+    # <select> dropdowns: HTML, but also EJS / PHP / JSX templates and anything else with markup
+    if lang == "html" or any(_SELECT_OPEN.search(r.text) for r in rows):
+        _select_units(rows, reps, spans, units, segs)
+    if lang == "yaml":
+        _yaml_units(rows, reps, spans, units)
+    elif lang in STRUCT_LANGS:
+        _struct_units(rows, lang, reps, spans, units)
+    if not spans:
+        return
+
+    def cur(sp):
+        _, _, _, row, qs, qe, text, *_ = sp
+        out, last = [], 0
+        for (idx, s), (e, old, new) in sorted(reps.items()):
+            if idx == row and qs < s and e < qe and (idx, s) not in skip:
+                out += [text[last:s - qs - 1], new]
+                last = e - qs - 1
+        return "".join(out) + text[last:]
+
+    def renamed(sp):
+        return any(idx == sp[3] and sp[4] < s and e < sp[5] and (idx, s) not in skip
+                   for (idx, s), (e, _, _) in reps.items())
+
+    while True:
+        groups: dict[tuple, list] = {}
+        for sp in spans:
+            groups.setdefault((sp[0], sp[1], cur(sp)), []).append(sp)
+        newly = False
+        for (kind, gkey, value), members in groups.items():
+            if len(members) < 2:
+                continue
+            moved = [sp for sp in members if renamed(sp)]
+            if not moved:
+                continue
+            olds = sorted({sp[6] for sp in members})
+            cline = min(sp[8] for sp in members)
+            for sp in moved:
+                held.add(sp[2])
+                for k in units.get(sp[2], []):
+                    if k in skip:
+                        continue
+                    e, old, new = reps[k]
+                    how = (f"{len(members)} entries would share it; one already uses it" if len(moved) < len(members)
+                           else f"{len(members)} entries would share it: {', '.join(olds)}")
+                    rec = {"file": rel, "line": k[0] + 1, "column": k[1] + 1, "model": old, "target": new,
+                           "container_line": cline, "container": sp[9]}
+                    if kind == "key":
+                        rec.update(key=value, reason=_DUP_KEY.format(old=old, new=new, key=value, how=how))
+                        dup_key.append(rec)
+                    else:
+                        rec.update(field=sp[7], value=value, reason=_DUP_ID.format(old=old, new=new, field=sp[7],
+                                                                                   value=value, how=how))
+                        dup_id.append(rec)
+                    skip[k] = (kind, rec)
+                    newly = True
+            if len({sp[6] for sp in moved}) > 1 and len(moved) == len(members):
+                collapsed.append({"file": rel, "line": cline, "container": members[0][9],
+                                  "target": value, "old": olds, "applied": False})
+        if not newly:
+            break
+    for idx, r in todo.items():
+        r.reps = [rp for rp in r.reps if (idx, rp[0]) not in skip]
+    # a skipped <option> keeps its template condition exactly as it was (no `|| new` added)
+    for uid in held:
+        if uid in segs:
+            row, lo, hi = segs[uid]
+            if row in todo:
+                todo[row].eq = [q for q in todo[row].eq if not lo <= q[0] < hi]
+
+
+def _struct_units(rows, lang, reps, spans, units) -> None:
+    code = [(r.index, r.text) for r in rows if r.mode is True]
+    plang = rows[0].lang if lang == "ipynb" and rows else lang
+    if lang == "ipynb":
+        code = [(r.index, r.text) for r in rows if r.mode is True and r.lang == "python"]
+        plang = "python"
+    lits, conts = parse_structure(code, plang if lang != "ipynb" else "ipynb")
+    by_row: dict[int, list[Lit]] = {}
+    for lit in lits:
+        by_row.setdefault(lit.row, []).append(lit)
+
+    def lit_reps(lit):
+        return [(idx, s) for (idx, s), (e, _, _) in reps.items() if idx == lit.row and lit.qs < s and e < lit.qe]
+
+    def within(c: Cont):
+        if c.end is None:
+            return [k for lit in lits if lit.cont is c for k in lit_reps(lit)]
+        a, b = (c.row, c.col), c.end
+        return [(idx, s) for (idx, s) in reps if a < (idx, s) < b]
+
+    touched = {lit.row for lit in lits} & {idx for idx, _ in reps}
+    if not touched:
+        return
+    for c in [x for x in conts]:
+        # duplicate keys
+        if c.keys and c.kind == "{":
+            if any(lit is not None and lit_reps(lit) for _, _, lit in c.keys):
+                for ei, ktext, lit in c.keys:
+                    uid = ("lit", id(lit)) if lit is not None else ("ident", id(c), ei)
+                    units[uid] = lit_reps(lit) if lit is not None else []
+                    row, qs, qe, text = (lit.row, lit.qs, lit.qe, lit.text) if lit is not None else (-1, 0, 0, ktext)
+                    spans.append(("key", ("c", id(c)), uid, row, qs, qe, text, None, c.row + 1, "object/dict keys"))
+        # duplicate ids among list items
+        if list_like(c, lang):
+            for ei, ent in c.entries.items():
+                for lit in ent["lits"]:
+                    if lit.role == "item":
+                        uid = ("lit", id(lit))
+                        units[uid] = lit_reps(lit)
+                        spans.append(("id", ("c", id(c), "#item"), uid, lit.row, lit.qs, lit.qe, lit.text, "item",
+                                      c.row + 1, "list"))
+                el = element(c, ei)
+                if el is None:
+                    continue
+                for kei, ktext, klit in el.keys:
+                    if ktext not in ID_FIELDS:
+                        continue
+                    vals = [lit for lit in (el.entries.get(kei) or {}).get("lits", []) if lit.role == "value"]
+                    if len(vals) != 1:
+                        continue
+                    v = vals[0]
+                    uid = ("el", id(el))
+                    units[uid] = within(el)
+                    spans.append(("id", ("c", id(c), ktext), uid, v.row, v.qs, v.qe, v.text, ktext, c.row + 1,
+                                  "list of objects"))
+
+
+def _yaml_units(rows, reps, spans, units) -> None:
+    lines = [r.text for r in rows]
+    keys, items = yaml_structure(lines)
+
+    def in_span(row, a, b):
+        return [(idx, s) for (idx, s), (e, _, _) in reps.items() if idx == row and a <= s and e <= b]
+
+    for k in keys:
+        uid = ("ykey", k.row)
+        units[uid] = in_span(k.row, k.col, k.end)
+        spans.append(("key", ("y", k.group), uid, k.row, k.col - 1, k.end + 1, k.key, None, k.row + 1, "mapping keys"))
+    item_rows: dict[tuple, list[int]] = {}
+    for k in keys:
+        if k.item_group is not None:
+            item_rows.setdefault(k.group, []).append(k.row)
+    for k in keys:
+        if k.key in ID_FIELDS and k.value and k.group[0] == "item":
+            members = [x for x in keys if x.group == k.group]
+            parent = next((x.item_group for x in members if x.item_group is not None), None)
+            if parent is None:
+                continue
+            uid = ("yitem", k.group)
+            units[uid] = [key for x in members if x.value for key in in_span(x.row, *x.value)]
+            a, b = k.value
+            spans.append(("id", ("y", parent, k.key), uid, k.row, a - 1, b + 1, lines[k.row][a:b], k.key, k.row + 1,
+                          "list of mappings"))
+    for row, a, b, grp in items:
+        uid = ("yval", row)
+        units[uid] = in_span(row, a, b)
+        spans.append(("id", ("y", grp, "#item"), uid, row, a - 1, b + 1, lines[row][a:b], "item", row + 1, "list"))
+
+
+_OPTION_VALUE = re.compile(r"""\bvalue\s*=\s*(["'])([^"']*)\1""", re.I)
+
+
+def _select_units(rows, reps, spans, units, segs=None) -> None:
+    sel = None
+    for r in rows:
+        raw = r.text
+        if sel is None and _SELECT_OPEN.search(raw):
+            sel = r.index
+        if sel is not None:
+            for m in _OPTION_VALUE.finditer(raw):
+                a, b = m.start(2), m.end(2)
+                uid = ("opt", r.index, a)
+                # the whole <option>: its value and the template condition that selects it
+                lo = raw.rfind("<option", 0, a)
+                hi = raw.find("<option", b)
+                lo, hi = (0 if lo < 0 else lo), (len(raw) if hi < 0 else hi)
+                units[uid] = [(idx, s) for (idx, s), (e, _, _) in reps.items() if idx == r.index and lo <= s and e <= hi]
+                if segs is not None:
+                    segs[uid] = (r.index, lo, hi)
+                spans.append(("id", ("sel", sel), uid, r.index, a - 1, b + 1, m.group(2), "value", sel + 1,
+                              "<select> dropdown"))
+        if sel is not None and _SELECT_CLOSE.search(raw):
+            sel = None
 
 
 def _allow_list_edit(text: str, lb, table: dict[str, str], renamed: set[str]):
@@ -301,67 +603,8 @@ def _allow_list_edit(text: str, lb, table: dict[str, str], renamed: set[str]):
     return (pos, pos, "".join(f"{sep}{q}{n}{q}" for n in new_ids)), added
 
 
-_COMMENT_START = {"python": "#", "r": "#", "yaml": "#", "toml": "#", "ini": "#", "env": "#", "shell": "#",
-                  "make": "#", "javascript": "//", "typescript": "//", "go": "//", "rust": "//", "csharp": "//",
-                  "php": "//", "html": None, "mdx": None}
 _SELECT_OPEN = re.compile(r"<select\b", re.I)
 _SELECT_CLOSE = re.compile(r"</select\s*>", re.I)
-
-
-def _container_keys(lines: list[str], lang: str, todo: dict) -> dict[tuple[int, int], object]:
-    """For each (row index, column) being renamed, the list/set/dict/<select> it sits in
-    (a hashable key), so ids that collapse to the same new id can be reported. Brackets
-    are tracked across lines; quotes are skipped and reset at each line end."""
-    want = {idx: sorted(s for s, _, _, _ in r.reps) for idx, r in todo.items() if r.reps}
-    out: dict[tuple[int, int], object] = {}
-    if not want or lang == "ipynb":
-        return out
-    if lang == "html":
-        sel = None
-        for idx, raw in enumerate(lines):
-            if sel is None and _SELECT_OPEN.search(raw):
-                sel = idx
-            if sel is not None:
-                for s in want.get(idx, []):
-                    out[(idx, s)] = ("select", sel)
-            if sel is not None and _SELECT_CLOSE.search(raw):
-                sel = None
-        return out
-    cmt = _COMMENT_START.get(lang, "#")
-    stack: list[tuple[str, int, int]] = []
-    for idx, raw in enumerate(lines):
-        cols = want.get(idx, [])
-        ci = 0
-        q = None
-        k = 0
-        n = len(raw)
-        while k < n:
-            while ci < len(cols) and cols[ci] <= k:
-                if stack and stack[-1][0] in "[{":
-                    out[(idx, cols[ci])] = ("list", stack[-1][1], stack[-1][2])
-                ci += 1
-            c = raw[k]
-            if q:
-                if c == "\\":
-                    k += 2
-                    continue
-                if c == q:
-                    q = None
-            elif c in "\"'`":
-                q = c
-            elif cmt and raw.startswith(cmt, k):
-                break
-            elif c in "[({":
-                stack.append((c, idx, k))
-            elif c in "])}":
-                if stack:
-                    stack.pop()
-            k += 1
-        while ci < len(cols):
-            if stack and stack[-1][0] in "[{":
-                out[(idx, cols[ci])] = ("list", stack[-1][1], stack[-1][2])
-            ci += 1
-    return out
 
 
 def _splice(raw: str, text: str, reps: list[tuple[int, int, str]], notebook: bool) -> str | None:

@@ -1,0 +1,12 @@
+{
+  "gpt-4o": {
+    "provider": "openai",
+    "description": "OpenAI's flagship multimodal model.",
+    "contextWindow": 128000
+  },
+  "gpt-4o-mini": {
+    "provider": "openai",
+    "description": "Small multimodal model.",
+    "contextWindow": 128000
+  }
+}

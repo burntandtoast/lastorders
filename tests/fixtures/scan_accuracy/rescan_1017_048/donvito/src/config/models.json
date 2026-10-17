@@ -1,0 +1,13 @@
+{
+  "providers": {
+    "openai": {
+      "enabled": true,
+      "models": [
+        { "name": "gpt-4o-mini", "notes": "OpenAI multimodal small model with vision support." },
+        { "name": "gpt-4.1-nano", "notes": "OpenAI lightweight model for fast, low-cost text tasks." },
+        { "name": "gpt-5", "notes": "OpenAI next-gen model with Q&A capabilities." },
+        { "name": "gpt-4o", "notes": "OpenAI next-gen vision model with Q&A capabilities." }
+      ]
+    }
+  }
+}

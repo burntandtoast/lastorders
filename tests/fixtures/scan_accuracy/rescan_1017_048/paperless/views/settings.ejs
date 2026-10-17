@@ -1,0 +1,11 @@
+<%# excerpt: clusterzx/paperless-ai views/settings.ejs (shallow clone 16 Oct 2026), lines 297-305 %>
+<div class="space-y-2">
+    <label for="openaiModel" class="text-sm font-medium">OpenAI Model</label>
+    <select id="openaiModel"
+            name="openaiModel">
+        <option value="gpt-3.5-turbo-0125" <%= config.OPENAI_MODEL === 'gpt-3.5-turbo-0125' ? 'selected' : '' %>>GPT-3.5 Turbo</option>
+        <option value="gpt-4o" <%= config.OPENAI_MODEL === 'gpt-4o' ? 'selected' : '' %>>GPT-4o</option>
+        <option value="o3-mini" <%= config.OPENAI_MODEL === 'o3-mini' ? 'selected' : '' %>>o3-mini</option>
+        <option value="gpt-4o-mini" <%= config.OPENAI_MODEL === 'gpt-4o-mini' ? 'selected' : '' %>>GPT-4o-mini (Best value)</option>
+    </select>
+</div>

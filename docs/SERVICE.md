@@ -95,13 +95,20 @@ When `swap` renames one of their ids elsewhere in the repo, it adds the replacem
 stay), so the swapped values still pass the check. A name check on an id that `swap` renames elsewhere, or an
 allow-list it can't extend (split over lines, or holding more than quoted ids), gets
 `no_swap_reason: must_update_together`; `swap` lists those under `must_update_together` in `swap-summary.json` and
-prints them as warnings, together with `collapsed_targets`: lists, objects and `<select>` dropdowns where different
-ids become the same id (for example two options that both become one model).
+prints them as warnings. Equality checks (`===`, `==`, `!==`, `!=`) are handled the same way: when the id is renamed
+elsewhere, `swap` extends the check (`(x === 'old' || x === 'new')`) or, if it can't, lists it under
+`must_update_together`.
 
 Each finding has `auto_swap` and, when it is false, `no_swap_reason`. `swap` / `fix` never rewrite:
 `flag_only` models, `fine_tune` ids, `name_check`s, `prose` (an id in running text such as an LLM prompt,
 heredoc, help or log message, or an `echo` / `printf` message in a shell script or Makefile; low), `regex` (inside a `matchPattern`-style pattern string; low), `object_key`
-(an unquoted `o1: {...}` key, which would need quotes) and `changelog` (CHANGELOG / release-notes files; info).
+(an unquoted `o1: {...}` key, which would need quotes), `changelog` (CHANGELOG / release-notes files; info),
+`migration` (files under a `migrations/` or `migration/` folder), `catalog` (price lists and model catalogues:
+`*price*`, `*pricing*`, `*model-catalog*`, `*model_catalog*`, or `matchPattern` next to `modelName`),
+`deployment_name` (Azure `deployment=`, `azure_deployment`, `deployment_name`, `deploymentName`,
+`AZURE_OPENAI_DEPLOYMENT*`, `engine=`), `tokeniser` (`encoding_for_model`, `tokenizerModel`, gpt-tokenizer,
+js-tiktoken), `comment`, `docstring`, `help_text`, `fixture` (recorded responses in tests) and `visible_text`
+(visible HTML text).
 In shell scripts and Makefiles, unlisted provider-prefixed words with no digit (`claude-hooks`) are not findings;
 in every language, neither is such a word right before a full stop (`adopted from claude-mem.`).
 Roxygen and other `#` comments are reported at low severity. Generated and vendored files are not findings:
@@ -138,6 +145,14 @@ individually under `fine_tuned:`. Docs are skipped unless `include_docs: true` o
 with `reasoning.mode: pro`): these ids retire but are never swapped, and `scan` and `fix` say so on each finding.
 The swap changes model ids only. Code changes such as adding `reasoning_effort` are flagged in the scan,
 and we make them by hand.
+
+`swap` never creates a duplicate key (object, dict, JSON or YAML mapping) or a duplicate id in a list (lists of
+objects keyed by `id` / `name` / `model` / `value`, plain lists, `<select>` options). When different ids would become
+the same id, or a renamed id is already there, it leaves those entries as they are and lists them under
+`skipped_duplicate_key` / `skipped_duplicate_id` (and `collapsed_targets`, with `"applied": false`) in
+`swap-summary.json`. It also lists `skipped_migration` and `skipped_catalog` files, and `fix` turns duplicates,
+deployment names and tokeniser arguments into manual items. Other references to a kept id are still renamed, so
+check them when you resolve the item.
 
 ### 3. Eval
 

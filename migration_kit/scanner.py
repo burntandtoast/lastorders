@@ -11,6 +11,7 @@ from pathlib import Path
 
 from . import brand
 from .packs import Pack, PackSet, colon_prefixes, load_packs
+from .swapsafe import FILE_HOLD_NOTES, HOLD_NOTES, block_rows, file_hold, token_hold
 
 SKIP_DIRS = {".git", ".venv", "venv", "env", "__pycache__", "build",
              ".next", ".nuxt", ".cache", "coverage", ".tox", ".mypy_cache", ".pytest_cache",
@@ -1079,6 +1080,14 @@ def assess(f: Finding, pack: Pack, sig: list[str], today: dt.date) -> None:
                        "Review the branch it guards; `fix` and `swap` leave it unchanged.")
 
 
+def _block_map(rows: list[Row]) -> dict[int, str]:
+    """Row index -> 'comment' / 'docstring' for code rows inside /* */ comments or Python docstrings."""
+    seq = [r for r in rows if r.mode is True]
+    if not seq:
+        return {}
+    return {seq[k].index: v for k, v in block_rows([r.text for r in seq], seq[0].lang).items()}
+
+
 def count_model_tokens(text: str, packs: PackSet, lang: str, path: Path | str = "") -> int:
     rows, _ = iter_rows(text, path, lang)
     n = 0
@@ -1114,13 +1123,16 @@ def scan(root: str | Path, include_docs: bool = True, packs: PackSet | None = No
             continue
         n += 1
         rows, sig_lang = iter_rows(text, path, lang)
+        fhold = file_hold(rel, text)
+        blocks = _block_map(rows)
+        texts = [r.text for r in rows]
         sig_text = text if sig_lang == lang else "\n".join(r.text for r in rows if r.mode is True)
         sig, sdks = file_signals(sig_text, sig_lang, packs)
         if sig:
             fsig[rel] = sig
         if sdks:
             fsdk[rel] = sdks
-        for r in rows:
+        for pos, r in enumerate(rows):
             if r.mode is None:
                 continue
             line, i = r.text, r.index + 1
@@ -1134,8 +1146,24 @@ def scan(root: str | Path, include_docs: bool = True, packs: PackSet | None = No
                 apply_block(f, block)
                 if r.mode == MARKUP and kind == "doc" and not markup_quoted(line, s, e):
                     f.risk = "info"
+                    f.auto_swap = False
+                    if f.no_swap_reason is None:
+                        f.no_swap_reason = "visible_text"
                     f.notes.append("Visible page text (not a value the page sends); "
                                    "`swap` leaves it unless docs are included.")
+                elif fhold and f.category != "not_listed":
+                    f.auto_swap = False
+                    if f.no_swap_reason in (None, "allow_list"):
+                        f.no_swap_reason = fhold
+                    f.notes.append(FILE_HOLD_NOTES[fhold])
+                elif f.auto_swap and kind not in ("allow_list", "name_check"):
+                    hold = token_hold(line, s, e, "markup" if r.mode == MARKUP else r.lang, rel, r.prev,
+                                      kind, blocks.get(r.index), texts[pos + 1:pos + 13])
+                    if hold:
+                        f.auto_swap = False
+                        if f.no_swap_reason is None:
+                            f.no_swap_reason = hold
+                        f.notes.append(HOLD_NOTES[hold])
                 if r.note:
                     f.notes.append(r.note)
                 findings.append(f)
