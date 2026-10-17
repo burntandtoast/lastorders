@@ -58,16 +58,16 @@ def test_name_checks_are_not_auto_swap_in_json(tmp_path):
 
 
 def test_array_membership_is_a_name_check():
-    # 0.4.8: an exact-match list is an `allow_list`. o3-mini is swapped in constants.ts, so swap adds
-    # its replacement to the list (old ids stay); o1 is only an unquoted object key there, so it isn't.
+    # 0.4.8: an exact-match list is an `allow_list`. 0.4.9: this one sits in a settings migration
+    # (`migrations/`), which describes data written by past versions, so swap never rewrites it.
     res = _scan("yolo")
     row = _at(res, "src/settings/schema/migrations/5_to_6.ts", 9)
     assert [(f.model, f.kind, f.risk, f.auto_swap) for f in row] == [
-        ("o1", "allow_list", "low", False), ("o1-mini", "allow_list", "info", False), ("o3-mini", "allow_list", "low", True)]
+        ("o1", "allow_list", "low", False), ("o1-mini", "allow_list", "info", False), ("o3-mini", "allow_list", "low", False)]
+    assert row[2].no_swap_reason == "migration"
     sw = _swap(FIX / "yolo")
-    new = sw.new_contents["src/settings/schema/migrations/5_to_6.ts"].splitlines()[8]
-    assert "['o1', 'o1-mini', 'o3-mini', 'gpt-5.6-sol'].includes(" in new, new
-    assert ("src/settings/schema/migrations/5_to_6.ts", 9, "o1") in sw.skipped_name_checks
+    assert "src/settings/schema/migrations/5_to_6.ts" not in sw.new_contents
+    assert [m["file"] for m in sw.skipped_migration] == ["src/settings/schema/migrations/5_to_6.ts"]
 
 
 def test_array_membership_forms(tmp_path):
@@ -213,11 +213,11 @@ def test_regex_pattern_strings_are_flag_only():
     name, = _at(res, f, 12)
     assert (pat.model, pat.risk, pat.auto_swap) == ("o1", "low", False)
     assert any("regex pattern" in n for n in pat.notes)
-    assert (name.model, name.risk, name.auto_swap) == ("o1", "high", True)
+    # 0.4.9: a price catalogue (modelName + matchPattern) is never swapped, so the name stays too.
+    assert (name.model, name.risk, name.auto_swap, name.no_swap_reason) == ("o1", "high", False, "catalog")
     sw = _swap(FIX / "trigger")
-    lines = sw.new_contents[f].splitlines()
-    assert lines[11].strip() == '"modelName": "gpt-5.6-sol",'
-    assert lines[12].strip() == '"matchPattern": "(?i)^(openai\\/)?(o1)$",'
+    assert f not in sw.new_contents
+    assert [c["file"] for c in sw.skipped_catalog] == [f]
 
 
 def test_html_option_values_and_code_samples():
@@ -239,8 +239,9 @@ def test_django_template_conditions():
     row = _at(res, "django_workbench/workbench/templates/workbench/settings.html", 4)
     assert [f.model for f in row] == ["gpt-4.1-mini", "gpt-4.1-mini"]       # value="..." and {% if ... == '...' %}
     sw = _swap(FIX / "pfd")
-    new = sw.new_contents["django_workbench/workbench/templates/workbench/settings.html"].splitlines()[3]
-    assert new.count("gpt-6-luna") == 2 and "GPT 4.1 Mini" in new
+    # 0.4.9: both options would become gpt-6-luna, so neither is renamed (value nor its {% if %}).
+    assert "django_workbench/workbench/templates/workbench/settings.html" not in sw.new_contents
+    assert {(d["line"], d["model"]) for d in sw.skipped_duplicate_id} == {(4, "gpt-4.1-mini"), (5, "gpt-4.1")}
 
 
 def test_notebooks_cell_and_line():
@@ -294,4 +295,4 @@ def test_fix_does_not_report_prose_or_regex_as_flag_only():
                if f.file.endswith("default-model-prices.json") or f.file.endswith("research-model.sh")}
     assert reasons[(4, "ft:gpt-3.5-turbo-1106")] == "fine_tune"
     assert reasons[(5, "gpt-3.5-turbo-1106")] == "regex" and reasons[(13, "o1")] == "regex"
-    assert reasons[(12, "o1")] is None and reasons[(30, "gpt-3.5-turbo")] == "prose"
+    assert reasons[(12, "o1")] == "catalog" and reasons[(30, "gpt-3.5-turbo")] == "prose"

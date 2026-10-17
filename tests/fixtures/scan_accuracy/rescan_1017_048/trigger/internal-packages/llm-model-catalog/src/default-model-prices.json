@@ -1,0 +1,17 @@
+[
+  {
+    "id": "b9854a5c92dc496b997d99d20",
+    "modelName": "gpt-4o",
+    "matchPattern": "(?i)^(openai\\/)?(gpt-4o)$",
+    "tokenizerConfig": {
+      "tokensPerName": 1,
+      "tokenizerModel": "gpt-4o",
+      "tokensPerMessage": 3
+    }
+  },
+  {
+    "id": "b9854a5c92dc496b997d99d21",
+    "modelName": "gpt-4o-mini",
+    "matchPattern": "(?i)^(openai\\/)?(gpt-4o-mini)$"
+  }
+]

@@ -53,14 +53,13 @@ def test_pfd_allow_list_accepts_the_swapped_values():
     views = sw.new_contents[VIEWS].splitlines()
     assert views[1] == '    if model_name in {"gpt-4.1-mini", "gpt-4.1", "gpt-6-luna"}:'
     assert views[7] == '        "model_name": session.get("model_name", "gpt-6-luna"),'
-    tpl = sw.new_contents[SETTINGS].splitlines()
-    assert tpl[5].strip().startswith('<option value="gpt-6-luna" {% if model_name == \'gpt-6-luna\' %}selected')
-    assert tpl[6].strip().startswith('<option value="gpt-6-luna" {% if model_name == \'gpt-6-luna\' %}selected')
-    # Every value the swapped template can post passes the swapped allow-list.
+    # 0.4.9: the dropdown would offer gpt-6-luna twice, so it is left unchanged (and reported).
+    assert SETTINGS not in sw.new_contents
+    # Every value the template can post, and the swapped default, pass the swapped allow-list.
     import re
     allowed = set(re.findall(r'"([^"]+)"', views[1]))
-    posted = set(re.findall(r'<option value="([^"]+)"', sw.new_contents[SETTINGS]))
-    assert posted <= allowed
+    posted = set(re.findall(r'<option value="([^"]+)"', (FIX / "pfd" / SETTINGS).read_text()))
+    assert posted <= allowed and "gpt-6-luna" in allowed
     added = [c for c in sw.changes if c.file == VIEWS and c.action == "added"]
     assert [(c.line, c.old, c.new) for c in added] == [(2, "gpt-4.1-mini", "gpt-6-luna")]
     assert not sw.must_update_together
@@ -68,13 +67,15 @@ def test_pfd_allow_list_accepts_the_swapped_values():
 
 def test_pfd_collapsed_dropdown_and_allow_list_are_reported():
     sw = _swap(FIX / "pfd")
-    got = {(c["file"], c["container"].split(" ")[0], c["target"], tuple(c["old"])) for c in sw.collapsed}
-    assert (SETTINGS, "<select>", "gpt-6-luna", ("gpt-4.1", "gpt-4.1-mini")) in got
-    assert (VIEWS, "allow-list", "gpt-6-luna", ("gpt-4.1", "gpt-4.1-mini")) in got
+    got = {(c["file"], c["container"].split(" ")[0], c["target"], tuple(c["old"]), c["applied"]) for c in sw.collapsed}
+    assert got == {(SETTINGS, "<select>", "gpt-6-luna", ("gpt-4.1", "gpt-4.1-mini"), False)}
+    # Only gpt-4.1-mini is still renamed elsewhere (the dropdown isn't), so the list gets one new id.
+    assert not sw.allow_list_merges
     assert sw.summary()["collapsed_targets"] == sw.collapsed
-    assert any(w.startswith("COLLAPSED " + SETTINGS) and "duplicate" in w for w in sw.warnings())
+    assert any(w.startswith("COLLAPSED " + SETTINGS) and "not applied" in w for w in sw.warnings())
     fx = plan_fixes(FIX / "pfd")
     assert any(i.rule == "collapsed-ids" and i.file == SETTINGS for i in fx.items)
+    assert any(i.rule == "duplicate-id" and i.file == SETTINGS for i in fx.items)
 
 
 def test_pfd_scan_marks_allow_list_swappable():
@@ -157,7 +158,9 @@ def test_equality_and_prefix_list_forms(tmp_path):
     assert kinds[("a.py", 3)] == "name_check"
     assert kinds[("b.ts", 1)] == "name_check"
     sw = _swap(tmp_path)
-    assert sw.new_contents["a.py"].splitlines()[0] == 'if m == "gpt-5.6-luna":'
+    # 0.4.9: `==` is allow-list-like. Nothing else renames gpt-4.1-nano here, so it is left alone.
+    assert "a.py" not in sw.new_contents
+    assert ("a.py", 1, "gpt-4.1-nano") in sw.skipped_name_checks
 
 
 def test_collapsed_ids_in_a_dict_are_reported(tmp_path):
@@ -165,6 +168,7 @@ def test_collapsed_ids_in_a_dict_are_reported(tmp_path):
     sw = _swap(tmp_path)
     got = {(c["line"], c["target"], tuple(c["old"])) for c in sw.collapsed}
     assert got == {(1, "gpt-6-luna", ("gpt-4.1", "gpt-4.1-mini")), (5, "gpt-5.6-sol", ("gpt-4", "o1"))}
+    assert not sw.new_contents          # 0.4.9: collapsed means not applied
 
 
 # ---------------------------------------------------------------- 2-3. generated HTML

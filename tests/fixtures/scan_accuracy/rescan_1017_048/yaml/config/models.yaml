@@ -1,0 +1,13 @@
+# Synthetic: YAML mapping keys and a list of mappings
+pricing:
+  gpt-4o: 2.5
+  gpt-4o-mini: 0.15
+  gpt-5: 1.25
+models:
+  - name: gpt-4.1
+    temperature: 0
+  - name: gpt-4.1-mini
+    temperature: 0
+  - name: gpt-4.1-nano
+    temperature: 0
+default: gpt-4.1-nano

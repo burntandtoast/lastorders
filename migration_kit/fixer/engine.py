@@ -417,12 +417,17 @@ def _swap_warning_items(swapped, items: list[FixItem]) -> None:
                              f"`{w['model']}`: {w['reason']}", change="not changed; update by hand with the swap",
                              model=w["model"]))
     for c in swapped.collapsed:
-        if c["container"].startswith("allow-list"):
-            continue
         items.append(FixItem(c["file"], c["line"], "", "collapsed-ids", "manual",
-                             f"{', '.join(c['old'])} all become `{c['target']}` in one {c['container']}; "
-                             "check for duplicate entries or keys.",
-                             change="swapped; check for duplicate entries", target=c["target"]))
+                             f"{', '.join(c['old'])} would all become `{c['target']}` in one {c['container']}; "
+                             "not swapped, because that would create duplicate entries or keys.",
+                             change="not changed; decide by hand which entry gets the new id", target=c["target"]))
+    for m in swapped.manual():
+        items.append(FixItem(m["file"], m["line"], "", m["kind"], "manual", f"`{m['model']}`: {m['message']}",
+                             change="not changed; update by hand", model=m["model"]))
+    for rec in swapped.skipped_migration + swapped.skipped_catalog:
+        items.append(FixItem(rec["file"], 1, "", "migration-file" if rec in swapped.skipped_migration else "catalogue-file",
+                             "info", f"{rec['count']} id(s) ({', '.join(rec['models'])}) left unchanged. {rec['note']}",
+                             change="not changed"))
 
 
 def _file_level_items(root: Path, packs: PackSet, items: list[FixItem], parsed: dict[str, set[str]], swapped) -> None:

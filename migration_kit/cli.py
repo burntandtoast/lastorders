@@ -101,9 +101,11 @@ def cmd_swap(a) -> int:
         _print_preview([(c.file, c.old, c.new) for c in res.changes])
         if res.skipped_fine_tunes:
             print(f"{len(res.skipped_fine_tunes)} fine-tuned references left alone.")
-        if res.must_update_together or res.collapsed:
+        held = len(res.skipped_duplicate_key) + len(res.skipped_duplicate_id)
+        if res.must_update_together or res.collapsed or held or res.manual():
             print(f"Warnings: {len(res.must_update_together)} check(s) must be updated together with the swap; "
-                  f"{len(res.collapsed)} list(s) where different ids become the same id.")
+                  f"{held} rename(s) skipped because they would create a duplicate key or id; "
+                  f"{len(res.manual())} item(s) need a manual decision.")
         _preview_footer()
         return 0
     p, s = swapper.write(res, a.out)
@@ -113,11 +115,19 @@ def cmd_swap(a) -> int:
     warns = res.warnings()
     if warns:
         print(f"WARNING: {len(res.must_update_together)} check(s) must be updated together with this swap, "
-              f"{len(res.collapsed)} list(s) collapse to one id (also in swap-summary.json):")
+              f"{len(res.skipped_duplicate_key) + len(res.skipped_duplicate_id)} rename(s) skipped (duplicate key or id), "
+              f"{len(res.collapsed)} list(s) would collapse to one id (not applied), "
+              f"{sum(1 for m in res.manual() if m['kind'] not in ('duplicate-key', 'duplicate-id'))} manual item(s) "
+              f"(also in swap-summary.json):")
         for w in warns[:25]:
             print(f"  {w}")
         if len(warns) > 25:
             print(f"  ... {len(warns) - 25} more in {s}")
+    held = [f"{len(res.skipped_migration)} migration file(s)"] if res.skipped_migration else []
+    if res.skipped_catalog:
+        held.append(f"{len(res.skipped_catalog)} price/catalogue file(s)")
+    if held:
+        print(f"Left unchanged: {' and '.join(held)} (listed in swap-summary.json).")
     if a.apply:
         n = swapper.apply_in_place(a.repo, res)
         print(f"Applied in place to {n} files (--apply).")
