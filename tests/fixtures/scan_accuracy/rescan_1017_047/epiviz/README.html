@@ -1,0 +1,7 @@
+the following environment variables:</p>
+<pre class="r"><code># In your .Renviron file or before calling the function:
+Sys.setenv(LLM_PROVIDER = &quot;openai&quot;)  # Choose from: &quot;openai&quot;, &quot;gemini&quot;, &quot;anthropic&quot;
+Sys.setenv(LLM_API_KEY = &quot;your-api-key-here&quot;)
+Sys.setenv(LLM_MODEL = &quot;gpt-4.1-nano&quot;)  # Use an appropriate model for your chosen provider</code></pre>
+<p>You can set these environment variables in your
+<code>.Renviron</code> file for persistent configuration:</p>

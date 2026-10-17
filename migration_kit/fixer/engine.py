@@ -386,6 +386,8 @@ def plan_fixes(root: str | Path, packs: PackSet | None = None, mapping: Mapping 
         diffs.append(_unified(o, new_contents[rel].splitlines(keepends=True), rel))
 
     _file_level_items(root, packs, items, parsed_providers, swapped)
+    if swapped:
+        _swap_warning_items(swapped, items)
     items.sort(key=lambda i: (i.file, i.line, i.rule))
     model_changes = [(c.file, c.old, c.new) for c in swapped.changes] if swapped else []
     return FixResult(str(root), items, "".join(diffs), new_contents, len(swapped.changes) if swapped else 0, records,
@@ -406,6 +408,21 @@ def _flag_only_item(file: str, line: int, provider: str, model: str, m, endpoint
                    "Not switched automatically: " + (m.note or "a name-only swap is not enough."),
                    change="not changed; switch this model by hand", model=model, target=m.replacement,
                    endpoint=endpoint)
+
+
+def _swap_warning_items(swapped, items: list[FixItem]) -> None:
+    """Checks the model swap can't keep consistent, and lists whose ids collapse to one id."""
+    for w in swapped.must_update_together:
+        items.append(FixItem(w["file"], w["line"], "", "must-update-together", "manual",
+                             f"`{w['model']}`: {w['reason']}", change="not changed; update by hand with the swap",
+                             model=w["model"]))
+    for c in swapped.collapsed:
+        if c["container"].startswith("allow-list"):
+            continue
+        items.append(FixItem(c["file"], c["line"], "", "collapsed-ids", "manual",
+                             f"{', '.join(c['old'])} all become `{c['target']}` in one {c['container']}; "
+                             "check for duplicate entries or keys.",
+                             change="swapped; check for duplicate entries", target=c["target"]))
 
 
 def _file_level_items(root: Path, packs: PackSet, items: list[FixItem], parsed: dict[str, set[str]], swapped) -> None:

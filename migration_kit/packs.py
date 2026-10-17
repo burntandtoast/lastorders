@@ -114,6 +114,7 @@ class Pack:
     exact: dict = field(default_factory=dict)
     prefixes: list = field(default_factory=list)
     id_res: list = field(default_factory=list)          # (compiled, quoted_only)
+    bare_res: list = field(default_factory=list)
     ft_re: re.Pattern | None = None
     signals: list = field(default_factory=list)         # (id, compiled, languages, sdk)
 
@@ -131,6 +132,8 @@ class Pack:
         left = left_boundary(d.get("provider", ""))
         self.id_res = [(re.compile(left + "(" + p["pattern"] + ")" + E), bool(p.get("quoted_only")))
                        for p in d["id_patterns"]]
+        # Unanchored patterns, for checking whether a whole string is a model id.
+        self.bare_res = [re.compile("(?:" + p["pattern"] + ")") for p in d["id_patterns"]]
         if d.get("fine_tune"):
             self.ft_re = re.compile(d["fine_tune"]["pattern"])
         self.signals = [(s["id"], re.compile(s["pattern"]), set(s.get("languages") or []), s.get("sdk"))
