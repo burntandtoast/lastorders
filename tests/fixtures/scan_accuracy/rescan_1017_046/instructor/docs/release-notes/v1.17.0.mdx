@@ -1,0 +1,12 @@
+### Driver Capabilities System
+
+Explicit capability declarations for all LLM providers:
+
+```php
+$driver = $inference->getDriver();
+$capabilities = $driver->capabilities('gpt-4');
+
+if ($capabilities->supportsJsonSchema) {
+    // Use native JSON schema mode
+}
+if ($capabilities->supportsToolCalling) {

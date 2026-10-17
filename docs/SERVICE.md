@@ -78,13 +78,23 @@ lastorders scan /path/to/client-repo --out out/
 ```
 
 Walks `.py .R .Rmd .qmd .js .mjs .cjs .jsx .ts .tsx .mts .php .rs .cs .go .ejs .sh .bash .zsh .http .rest .html .htm`,
-extensionless scripts whose first line is a `python`, `node`, `deno`, `bun`, `bash`, `sh`, `zsh`, `dash` or `ksh`
-shebang, `.env*`, YAML/JSON/TOML/INI and docs (`.md .mdx .txt .rst`; skip with `--no-docs`). In `.html` only
-`<script>` blocks are scanned, not markup. In `.Rmd`, `.qmd` and `.mdx`, prose outside ` ``` ` fences is
-documentation (low) and code fences keep the normal severity. Router-prefixed short ids (`"openai/o1"`,
-`"openrouter/openai/o4-mini"`, `"azure/o3-mini"`) count as model ids. Model-name checks such as
-`m.startsWith("o1")`, `s.includes('o1')` or `"gpt-4" in name` are reported at low severity (kind `name_check`),
-and `swap` / `fix` never rewrite them.
+`.ipynb` notebooks, `Makefile` / `.mk`, Cursor rules (`.mdc`), extensionless scripts whose first line is a `python`,
+`node`, `deno`, `bun`, `bash`, `sh`, `zsh`, `dash` or `ksh` shebang, `.env*`, YAML/JSON/TOML/INI, config templates
+(`*.example`, `*.sample`, scanned as the file they stand for) and docs (`.md .mdx .mdc .txt .rst .Rd`; skip with
+`--no-docs`). In `.html`, `<script>` blocks are code; in markup only quoted values count (`<option value="...">`,
+Django/Jinja `{% if m == '...' %}`, and quoted ids in code samples, which are documentation). In `.Rmd`, `.qmd`,
+`.mdx` and `.mdc`, prose outside ` ``` ` fences is documentation (low) and code fences keep the normal severity.
+Notebook findings use the raw JSON line number plus a "Notebook cell N, line M" note; outputs are not scanned.
+Router-prefixed short ids (`"openai/o1"`, `"openrouter/openai/o4-mini"`, `"azure/o3-mini"`) and provider:model
+ids (`"openai:gpt-4o"`) count as model ids; ids inside web-page links (`https://openai.com/gpt-4`) don't.
+Model-name checks such as `m.startsWith("o1")`, `s.includes('o1')`, `"gpt-4" in name` or
+`['o1', 'o3-mini'].includes(m)` are reported at low severity (kind `name_check`).
+
+Each finding has `auto_swap` and, when it is false, `no_swap_reason`. `swap` / `fix` never rewrite:
+`flag_only` models, `fine_tune` ids, `name_check`s, `prose` (an id in running text such as an LLM prompt,
+heredoc, help or log message; low), `regex` (inside a `matchPattern`-style pattern string; low), `object_key`
+(an unquoted `o1: {...}` key, which would need quotes) and `changelog` (CHANGELOG / release-notes files; info).
+In shell scripts and Makefiles, unlisted provider-prefixed words with no digit (`claude-hooks`) are not findings.
 Roxygen and other `#` comments are reported at low severity. Generated and vendored files are not findings:
 `*.generated.*`, `*.gen.*`, `*_pb2.py`, `*.min.js`, a `@generated` / `DO NOT EDIT` / `auto-generated` header,
 and `vendor/`, `third_party/`, `node_modules/`, `.yarn/` and `dist/`. Each of those files that contains model

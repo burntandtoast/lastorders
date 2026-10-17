@@ -74,9 +74,23 @@ def _vkey(v: str) -> tuple[int, ...]:
 
 # Token boundaries. `/` is a separator so a model id is found in a URL path
 # (`.../models/<id>`). `:` may follow an id (`<id>:generateContent`) and is not
-# part of it. `:` still glues on the left so `key:o3` does not start a new token.
+# part of it. `:` still glues on the left so `key:o3` does not start a new token,
+# except after the pack's provider name or a hosting prefix (`<provider>:<id>`, the
+# provider:model form used by LiteLLM-style and agent SDK configs). A sentence-ending
+# full stop may follow an id (`for example <provider>/<id>.`); a dot followed by more
+# id characters may not, so versioned ids such as `x-4.1` stay whole.
+HOST_PREFIXES = ("azure", "openrouter", "bedrock", "vertex_ai", "litellm")
 B = r"(?<![A-Za-z0-9._:-])"
-E = r"(?![A-Za-z0-9._-])"
+E = r"(?![A-Za-z0-9_-]|\.[A-Za-z0-9_-])"
+
+
+def colon_prefixes(provider: str) -> tuple[str, ...]:
+    return tuple(dict.fromkeys(((provider,) if provider else ()) + HOST_PREFIXES))
+
+
+def left_boundary(provider: str) -> str:
+    alts = "|".join(f"(?<=(?<![A-Za-z0-9_.-]){re.escape(p)}:)" for p in colon_prefixes(provider))
+    return f"(?:{B}|{alts})"
 
 
 @dataclass
@@ -114,7 +128,8 @@ class Pack:
             else:
                 self.exact[m["id"]] = mod
         self.prefixes.sort(key=lambda x: len(x.id), reverse=True)
-        self.id_res = [(re.compile(B + "(" + p["pattern"] + ")" + E), bool(p.get("quoted_only")))
+        left = left_boundary(d.get("provider", ""))
+        self.id_res = [(re.compile(left + "(" + p["pattern"] + ")" + E), bool(p.get("quoted_only")))
                        for p in d["id_patterns"]]
         if d.get("fine_tune"):
             self.ft_re = re.compile(d["fine_tune"]["pattern"])

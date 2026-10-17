@@ -1,0 +1,17 @@
+[
+  {
+    "id": "cls08r8sq000308jq14ae96f0",
+    "modelName": "ft:gpt-3.5-turbo-1106",
+    "matchPattern": "(?i)^(ft:)(gpt-3.5-turbo-1106:)(.+)(:)(.*)(:)(.+)$",
+    "createdAt": "2024-01-31T13:25:02.141Z",
+    "updatedAt": "2024-01-31T13:25:02.141Z",
+    "tokenizerConfig": {
+  },
+  {
+    "id": "cm48cjxtc000108jrcsso3avv",
+    "modelName": "o1",
+    "matchPattern": "(?i)^(openai\/)?(o1)$",
+    "createdAt": "2025-01-17T00:01:35.373Z",
+    "updatedAt": "2025-12-12T15:00:06.513Z",
+  }
+]
