@@ -34,6 +34,16 @@ def _swap(root):
     return swapper.plan(root, swapper.mapping_from_packs(packs), packs)
 
 
+def _kept_refs(sw, file=None):
+    """0.4.10: references left on an old id because a definition of it is kept."""
+    return {(m["file"], m["line"], m["model"]) for m in sw.must_update_together
+            if m["kind"] == "kept_definition" and (file is None or m["file"] == file)}
+
+
+def _text(sw, root, rel):
+    return sw.new_contents.get(rel, (root / rel).read_text())
+
+
 def _write(tmp_path, files):
     for name, text in files.items():
         p = tmp_path / name
@@ -86,21 +96,20 @@ def test_existing_key_blocks_a_rename_and_the_fix_lists_it(tmp_path):
     _write(tmp_path, {"p.py": 'PRICES = {\n    "gpt-6-luna": 1.0,\n    "gpt-4o": 2.5,\n}\nMODEL = "gpt-4o"\n',
                       "c.json": '{"gpt-4o": {"in": 2.5}, "gpt-4o-mini": {"in": 0.15}, "x": "gpt-4o"}\n'})
     sw = _swap(tmp_path)
-    p = sw.new_contents["p.py"]
-    assert '    "gpt-4o": 2.5,' in p and 'MODEL = "gpt-6-luna"' in p
+    p = _text(sw, tmp_path, "p.py")
     assert ast.literal_eval(p.split("=", 1)[1].split("\n}")[0] + "\n}") == {"gpt-6-luna": 1.0, "gpt-4o": 2.5}
     d = [x for x in sw.skipped_duplicate_key if x["file"] == "p.py"]
     assert [(x["line"], x["model"], x["target"]) for x in d] == [(3, "gpt-4o", "gpt-6-luna")]
     assert "one already uses it" in d[0]["reason"]
-
-    def hook(pairs):
-        keys = [k for k, _ in pairs]
-        assert len(keys) == len(set(keys)), keys
-        return dict(pairs)
-    data = json.loads(sw.new_contents["c.json"], object_pairs_hook=hook)
-    assert set(data) == {"gpt-4o", "gpt-4o-mini", "x"} and data["x"] == "gpt-6-luna"
+    # 0.4.10: the gpt-4o key is kept, so MODEL (which looks it up) and "x" keep gpt-4o too and are listed.
+    assert not sw.new_contents
+    assert 'MODEL = "gpt-4o"' in p
+    assert _kept_refs(sw) == {("p.py", 5, "gpt-4o"), ("c.json", 1, "gpt-4o")}
+    data = json.loads(_text(sw, tmp_path, "c.json"))
+    assert set(data) == {"gpt-4o", "gpt-4o-mini", "x"} and data["x"] == "gpt-4o"
     fx = plan_fixes(tmp_path)
     assert {(i.file, i.line) for i in fx.items if i.rule == "duplicate-key"} == {("p.py", 3), ("c.json", 1)}
+    assert {(i.file, i.line) for i in fx.items if i.rule == "kept-definition"} == {("p.py", 5), ("c.json", 1)}
 
 
 def test_trigger_model_catalog_json_is_not_swapped():
@@ -139,17 +148,18 @@ def test_yolo_default_chat_models_keep_unique_ids():
     assert [(x["line"], x["target"], x["applied"]) for x in c] == [(2, "openai/gpt-6-luna", False)]
 
 
-@pytest.mark.parametrize("sub,file,field", [
-    ("pfd", "tests/model_comparison.py", "name"),
-    ("themefinder", "evals/benchmark.py", "name"),
-    ("donvito", "src/config/models.json", "name"),
+@pytest.mark.parametrize("sub,file,field,unique", [
+    ("pfd", "tests/model_comparison.py", "name", True),
+    # 0.4.10: themefinder's one unique id (gpt-4.1-nano) is also an Azure deployment name (kept), so it stays.
+    ("themefinder", "evals/benchmark.py", "name", False),
+    ("donvito", "src/config/models.json", "name", True),
 ])
-def test_lists_of_objects_never_get_the_same_id_twice(sub, file, field):
+def test_lists_of_objects_never_get_the_same_id_twice(sub, file, field, unique):
     sw = _swap(FIX / sub)
-    src = sw.new_contents[file]
+    src = _text(sw, FIX / sub, file)
     vals = re.findall(r"""["']?%s["']?\s*[:=]\s*["']([^"']+)["']""" % field, src)
     assert len(vals) == len(set(vals)), vals
-    assert "gpt-5.6-luna" in vals                                    # the one unique rename still happens
+    assert ("gpt-5.6-luna" in vals) is unique                        # the one unique rename still happens
     assert any(d["file"] == file for d in sw.skipped_duplicate_id)
     assert all(not c.get("applied", True) for c in sw.collapsed)
 
@@ -209,8 +219,12 @@ def test_migration_folder_name_variants(tmp_path):
                       "app/migrations_helper.py": 'DEFAULT = "gpt-4o"\n',
                       "alembic/versions/x.py": 'DEFAULT = "gpt-4o"\n'})
     sw = _swap(tmp_path)
-    assert set(sw.new_contents) == {"app/migrations_helper.py", "alembic/versions/x.py"}
     assert [m["file"] for m in sw.skipped_migration] == ["db/migration/V2__models.py"]
+    # 0.4.10: the migration keeps gpt-4o, so the other two files (not migrations) keep it too and are listed.
+    assert not sw.new_contents
+    assert _kept_refs(sw) == {("app/migrations_helper.py", 1, "gpt-4o"), ("alembic/versions/x.py", 1, "gpt-4o")}
+    g, = [x for x in sw.kept_definitions if x["model"] == "gpt-4o"]
+    assert g["kept"] == [{"file": "db/migration/V2__models.py", "line": 1, "reason": "migration"}]
 
 
 def test_equality_checks_are_extended_when_the_id_is_renamed_elsewhere(tmp_path):
@@ -255,8 +269,10 @@ def test_extend_equality_refuses_unsafe_forms():
 
 def test_azure_deployment_names_are_manual():
     sw = _swap(FIX / "themefinder")
-    new = sw.new_contents["evals/benchmark.py"]
-    assert 'JUDGE = ModelConfig(name="gpt-5.6-luna", deployment="gpt-4.1-nano")' in new
+    new = _text(sw, FIX / "themefinder", "evals/benchmark.py")
+    # 0.4.10: the deployment keeps gpt-4.1-nano, so the name next to it is not renamed either (listed).
+    assert 'JUDGE = ModelConfig(name="gpt-4.1-nano", deployment="gpt-4.1-nano")' in new
+    assert ("evals/benchmark.py", 15, "gpt-4.1-nano") in _kept_refs(sw)
     assert 'ModelConfig(name="gpt-4.1-mini", deployment="gpt-4.1-mini")' in new
     held = {(f, l, m, r) for f, l, m, r in sw.skipped_unsafe}
     assert ("evals/benchmark.py", 15, "gpt-4.1-nano", "deployment_name") in held
@@ -282,10 +298,12 @@ def test_deployment_forms(line):
 def test_tokeniser_arguments_are_manual():
     sw = _swap(FIX / "themefinder")
     f = "src/themefinder/llm_batch_processor.py"
-    new = sw.new_contents[f]
+    new = _text(sw, FIX / "themefinder", f)
     assert 'model = model or os.environ.get("MODEL_NAME", "gpt-4o")' in new            # flows into encoding_for_model
     assert 'tiktoken.encoding_for_model("gpt-4o-mini")' in new
-    assert 'def other(model="gpt-6-luna"):' in new                                   # not a tokeniser argument
+    # not a tokeniser argument, but 0.4.10 keeps it with the held gpt-4o (and lists it)
+    assert 'def other(model="gpt-4o"):' in new
+    assert (f, 20, "gpt-4o") in _kept_refs(sw)
     held = {(l, m, r) for ff, l, m, r in sw.skipped_unsafe if ff == f}
     assert {(15, "gpt-4o", "tokeniser"), (21, "gpt-4o-mini", "tokeniser")} <= held
     msg = [m["message"] for m in sw.manual() if m["kind"] == "tokeniser"]
@@ -323,7 +341,9 @@ def test_catalogue_detection(tmp_path):
                       "cfg/app.json": '{"model": "gpt-4o"}\n'})
     sw = _swap(tmp_path)
     assert {c["file"] for c in sw.skipped_catalog} == {"data/model_pricing.yaml", "cfg/llm.json"}
-    assert set(sw.new_contents) == {"src/prices.ts", "cfg/app.json"}
+    # 0.4.10: the catalogues keep gpt-4o, so the two files that aren't catalogues keep it too (listed).
+    assert not sw.new_contents
+    assert _kept_refs(sw) == {("src/prices.ts", 1, "gpt-4o"), ("cfg/app.json", 1, "gpt-4o")}
 
 
 def test_match_pattern_next_to_a_swapped_name_must_update_together(tmp_path):
@@ -338,15 +358,17 @@ def test_match_pattern_next_to_a_swapped_name_must_update_together(tmp_path):
 
 def test_comments_docstrings_and_help_text_are_left_alone():
     sw = _swap(FIX / "themefinder")
-    new = sw.new_contents["evals/benchmark.py"].splitlines()
+    new = _text(sw, FIX / "themefinder", "evals/benchmark.py").splitlines()
     assert new[4] == "    uv run python benchmark.py --models gpt-4o gemini-2.5-flash claude-haiku-4.5"
     assert new[16] == '    None  # Azure deployment name for judge LLM (e.g. "gpt-4o-2024-08-06")'
     assert new[25] == "  uv run python benchmark.py --models gpt-4o gemini-2.5-flash --runs 2"
     assert "azure provider, gpt-4.1 only." in new[31]
-    assert new[35] == '        args.models = ["gpt-6-luna"]'                         # code after the epilog still swaps
+    # code after the epilog is still code: 0.4.10 keeps it with the kept AZURE_MODELS entry and lists it
+    assert new[35] == '        args.models = ["gpt-4.1"]'
+    assert ("evals/benchmark.py", 36, "gpt-4.1") in _kept_refs(sw)
     reasons = {(l, r) for f, l, m, r in sw.skipped_unsafe if f == "evals/benchmark.py"}
     assert {(5, "docstring"), (17, "comment"), (26, "help_text"), (32, "help_text")} <= reasons
-    lb = sw.new_contents["src/themefinder/llm_batch_processor.py"]
+    lb = _text(sw, FIX / "themefinder", "src/themefinder/llm_batch_processor.py")
     assert 'Defaults to MODEL_NAME env var or "gpt-4o".' in lb
     assert 'otherwise default to "gpt-4o"' in lb
 
@@ -357,19 +379,26 @@ def test_comment_lists_in_jsdoc_and_shell_are_left_alone(tmp_path):
     (tmp_path / "t" / "src" / "a.ts").write_text(
         "/*\n gpt-4.1, gpt-4.1-mini\n*/\nconst m = 'gpt-4.1' // was gpt-4o\n")
     sw = _swap(tmp_path / "t")
-    sh = sw.new_contents["internal-packages/llm-model-catalog/scripts/generate-model-catalog.sh"].splitlines()
-    assert '(e.g. "gpt-4o|claude")' in sh[4] and sh[5].startswith('MODEL="gpt-6-luna"')
+    f = "internal-packages/llm-model-catalog/scripts/generate-model-catalog.sh"
+    sh = _text(sw, tmp_path / "t", f).splitlines()
+    # 0.4.10: the catalogues keep gpt-4o, so MODEL= keeps it too (listed); the comment is left as before.
+    assert '(e.g. "gpt-4o|claude")' in sh[4] and sh[5].startswith('MODEL="gpt-4o"')
+    assert (f, 6, "gpt-4o") in _kept_refs(sw)
     assert sw.new_contents["src/a.ts"] == "/*\n gpt-4.1, gpt-4.1-mini\n*/\nconst m = 'gpt-6-luna' // was gpt-4o\n"
 
 
 def test_recorded_fixture_payload_in_a_test_is_left_alone():
     sw = _swap(FIX / "trigger")
     f = "apps/webapp/test/otlpExporter.test.ts"
-    new = sw.new_contents[f].splitlines()
+    new = _text(sw, FIX / "trigger", f).splitlines()
     assert '"model":"gpt-4o-2024-08-06"' in new[5]
-    assert new[3].strip() == '"gen_ai.request.model": "gpt-6-luna",'
     assert (f, 6, "gpt-4o-2024-08-06", "fixture") in sw.skipped_unsafe
-    assert [(w["line"], w["kind"]) for w in sw.must_update_together if w["file"] == f] == [(6, "fixture")]
+    # 0.4.10: gpt-4o is kept by the catalogues and gpt-4o-2024-08-06 by the fixture, so the request
+    # attributes keep them too and are listed with them.
+    assert f not in sw.new_contents
+    assert new[3].strip() == '"gen_ai.request.model": "gpt-4o",'
+    assert sorted((w["line"], w["kind"]) for w in sw.must_update_together if w["file"] == f) == [
+        (4, "kept_definition"), (7, "kept_definition")]     # line 6 itself: no longer renamed elsewhere
 
 
 def test_visible_page_text_is_info_and_not_auto_swap():
@@ -422,12 +451,22 @@ def test_cli_swap_and_git_apply(tmp_path, capsys, monkeypatch):
     assert "rename(s) skipped (duplicate key or id)" in out and "MANUAL evals/benchmark.py:12" in out
     summary = json.loads((tmp_path / "out" / "swap-summary.json").read_text())
     assert summary["skipped_duplicate_id"] and summary["collapsed_targets"][0]["applied"] is False
+    # 0.4.10: every id with a rename in this fixture also has a kept definition, so the patch is empty
+    # and the CLI says so instead of suggesting `git apply` (git rejects an empty patch).
+    assert (tmp_path / "out" / "model-swap.diff").read_text() == ""
+    assert "nothing to apply" in out and "git -C" not in out
+    assert "MUST UPDATE TOGETHER evals/benchmark.py:36 gpt-4.1" in out
+    assert summary["kept_definitions"]
+    # git apply on a fixture that still has renames
+    repo = tmp_path / "repo2"
+    shutil.copytree(FIX / "donvito", repo)
+    assert cli.main(["swap", str(repo), "--out", str(tmp_path / "out2")]) == 0
+    capsys.readouterr()
     if shutil.which("git") is None:
         pytest.skip("git not installed")
     subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
-    subprocess.run(["git", "apply", str(tmp_path / "out" / "model-swap.diff")], cwd=repo, check=True)
-    compile((repo / "evals" / "benchmark.py").read_text(), "benchmark.py", "exec")
-    assert 'deployment="gpt-4.1-nano"' in (repo / "evals" / "benchmark.py").read_text()
+    subprocess.run(["git", "apply", str(tmp_path / "out2" / "model-swap.diff")], cwd=repo, check=True)
+    json.loads((repo / "src" / "config" / "models.json").read_text())
 
 
 def test_ejs_dropdown_options_and_conditions():
@@ -438,15 +477,17 @@ def test_ejs_dropdown_options_and_conditions():
     assert values == ["gpt-5.6-terra", "gpt-4o", "gpt-5.6-sol", "gpt-4o-mini"]
     # EJS tags are JavaScript, so the selected-condition is extended rather than left behind.
     assert "<%= (config.OPENAI_MODEL === 'o3-mini' || config.OPENAI_MODEL === 'gpt-5.6-sol') ? 'selected' : '' %>" in new[7]
-    # Skipped options keep their condition as it was, even though gpt-4o / gpt-4o-mini are renamed elsewhere
-    # (config/defaults.js); 0.4.9 before this check extended one of them with `|| ... 'gpt-6-luna'`.
+    # Skipped options keep their condition as it was (0.4.9 before this check extended one of them with
+    # `|| ... 'gpt-6-luna'`; since 0.4.10 gpt-4o / gpt-4o-mini aren't renamed anywhere else either).
     assert new[6] == ("        <option value=\"gpt-4o\" <%= config.OPENAI_MODEL === 'gpt-4o' ? 'selected' : '' %>>"
                       "GPT-4o</option>")
     assert new[8] == ("        <option value=\"gpt-4o-mini\" <%= config.OPENAI_MODEL === 'gpt-4o-mini' ? 'selected' : '' %>>"
                       "GPT-4o-mini (Best value)</option>")
-    assert "'gpt-6-luna'" in sw.new_contents["config/defaults.js"]
+    # 0.4.10: the skipped options keep gpt-4o / gpt-4o-mini, so config/defaults.js keeps them too (listed).
+    assert "config/defaults.js" not in sw.new_contents
     assert {(d["line"], d["model"]) for d in sw.skipped_duplicate_id} == {(7, "gpt-4o"), (9, "gpt-4o-mini")}
-    assert not sw.must_update_together
+    assert {(w["file"], w["line"], w["model"], w["kind"]) for w in sw.must_update_together} == {
+        ("config/defaults.js", 2, "gpt-4o", "kept_definition"), ("config/defaults.js", 2, "gpt-4o-mini", "kept_definition")}
 
 
 def test_jsx_dropdown_options():

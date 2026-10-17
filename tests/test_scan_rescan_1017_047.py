@@ -48,21 +48,23 @@ VIEWS = "django_workbench/workbench/views.py"
 SETTINGS = "django_workbench/workbench/templates/workbench/settings.html"
 
 
-def test_pfd_allow_list_accepts_the_swapped_values():
+def test_pfd_allow_list_and_default_stay_with_the_kept_dropdown():
+    """0.4.10: the dropdown keeps both options (they would both become gpt-6-luna), so the default and the
+    allow-list keep the old ids too (0.4.9 renamed the default and added gpt-6-luna to the allow-list,
+    an id the dropdown never posts). The default is listed with the kept option."""
     sw = _swap(FIX / "pfd")
-    views = sw.new_contents[VIEWS].splitlines()
-    assert views[1] == '    if model_name in {"gpt-4.1-mini", "gpt-4.1", "gpt-6-luna"}:'
-    assert views[7] == '        "model_name": session.get("model_name", "gpt-6-luna"),'
-    # 0.4.9: the dropdown would offer gpt-6-luna twice, so it is left unchanged (and reported).
-    assert SETTINGS not in sw.new_contents
-    # Every value the template can post, and the swapped default, pass the swapped allow-list.
+    assert VIEWS not in sw.new_contents and SETTINGS not in sw.new_contents
+    assert not [c for c in sw.changes if c.action == "added"]
+    kept = {(m["file"], m["line"], m["model"]) for m in sw.must_update_together if m["kind"] == "kept_definition"}
+    assert kept == {(VIEWS, 8, "gpt-4.1-mini"), ("django_workbench/workbench/services.py", 3, "gpt-4.1-mini")}
+    g = {x["model"]: x for x in sw.kept_definitions}["gpt-4.1-mini"]
+    assert g["kept"] == [{"file": SETTINGS, "line": 6, "reason": "duplicate_id"}]
+    # Every value the template can post still passes the (unchanged) allow-list.
     import re
+    views = (FIX / "pfd" / VIEWS).read_text().splitlines()
     allowed = set(re.findall(r'"([^"]+)"', views[1]))
     posted = set(re.findall(r'<option value="([^"]+)"', (FIX / "pfd" / SETTINGS).read_text()))
-    assert posted <= allowed and "gpt-6-luna" in allowed
-    added = [c for c in sw.changes if c.file == VIEWS and c.action == "added"]
-    assert [(c.line, c.old, c.new) for c in added] == [(2, "gpt-4.1-mini", "gpt-6-luna")]
-    assert not sw.must_update_together
+    assert posted <= allowed
 
 
 def test_pfd_collapsed_dropdown_and_allow_list_are_reported():
@@ -284,4 +286,6 @@ def test_cli_swap_prints_warnings(tmp_path, capsys, monkeypatch):
     monkeypatch.setattr(cli, "_patch_licence", lambda a, feature: True)
     assert cli.main(["swap", str(repo), "--out", str(tmp_path / "out")]) == 0
     out = capsys.readouterr().out
-    assert "WARNING: 0 check(s) must be updated together" in out and "COLLAPSED" in out
+    assert "WARNING: 2 check(s) must be updated together" in out and "COLLAPSED" in out
+    assert "KEPT gpt-4.1-mini (not renamed to gpt-6-luna anywhere)" in out
+    assert "MUST UPDATE TOGETHER django_workbench/workbench/views.py:8 gpt-4.1-mini" in out

@@ -87,7 +87,7 @@ class Finding:
     notes: list[str] = field(default_factory=list)
     auto_swap: bool = True   # False when fix/swap never rewrite it; no_swap_reason says why
     # flag_only | fine_tune | name_check | allow_list | must_update_together | prose | regex | object_key
-    # | changelog (None when auto_swap)
+    # | changelog | kept_definition (None when auto_swap)
     no_swap_reason: str | None = None
 
 
@@ -1193,10 +1193,31 @@ MUST_UPDATE_NOTE = ("Must update together: the default `swap` mapping renames {r
                     "no longer matches the new id; update it by hand in the same change.")
 
 
+KEPT_REASONS = ("migration", "catalog", "deployment_name", "tokeniser", "fixture", "object_key")
+KEPT_NOTE = ("Kept definition: {model} is still defined at {where} (left unchanged), so `swap` does not rename "
+             "this reference either; it is listed under `must_update_together`. Update it together with the "
+             "kept definition.")
+
+
 def link_checks(findings: list[Finding], mapped: set[str]) -> None:
-    """Repo-level pass, matching what `swap` does with the default mapping (`mapped`): an
+    """Repo-level pass, matching what `swap` does with the default mapping (`mapped`): a model
+    that is still defined somewhere `swap` leaves alone (a migration, catalogue, deployment,
+    tokeniser, fixture or object-key hold) is not renamed anywhere (`kept_definition`); an
     allow-list is swapped together with the values it checks; a name check on an id that is
-    renamed elsewhere is `must_update_together`."""
+    renamed elsewhere is `must_update_together`. Kept definitions that come from skipped
+    duplicate keys / ids are only known to `swap` (they need the rewritten text)."""
+    kept: dict[str, list[str]] = {}
+    for f in findings:
+        if (f.model in mapped and f.no_swap_reason in KEPT_REASONS and f.language not in DOCS_SKIP_LANGS
+                and f.kind not in ("doc", "comment", "prose")):
+            kept.setdefault(f.model, []).append(f"{f.file}:{f.line}")
+    for f in findings:
+        if (f.auto_swap and f.model in kept and f.language not in DOCS_SKIP_LANGS
+                and f.kind not in ("allow_list", "name_check", "doc", "comment")):
+            f.auto_swap, f.no_swap_reason = False, "kept_definition"
+            where = kept[f.model]
+            shown = ", ".join(where[:3]) + (f" and {len(where) - 3} more" if len(where) > 3 else "")
+            f.notes.append(KEPT_NOTE.format(model=f.model, where=shown))
     swapped = {f.model for f in findings
                if f.auto_swap and f.model in mapped and f.language not in DOCS_SKIP_LANGS
                and f.kind not in ("allow_list", "name_check", "doc", "comment")}

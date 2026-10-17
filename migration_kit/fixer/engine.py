@@ -413,6 +413,8 @@ def _flag_only_item(file: str, line: int, provider: str, model: str, m, endpoint
 def _swap_warning_items(swapped, items: list[FixItem]) -> None:
     """Checks the model swap can't keep consistent, and lists whose ids collapse to one id."""
     for w in swapped.must_update_together:
+        if w.get("kind") == "kept_definition":
+            continue                     # listed once, as a `kept-definition` item from manual()
         items.append(FixItem(w["file"], w["line"], "", "must-update-together", "manual",
                              f"`{w['model']}`: {w['reason']}", change="not changed; update by hand with the swap",
                              model=w["model"]))

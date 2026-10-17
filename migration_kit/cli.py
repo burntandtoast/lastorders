@@ -117,7 +117,7 @@ def cmd_swap(a) -> int:
         print(f"WARNING: {len(res.must_update_together)} check(s) must be updated together with this swap, "
               f"{len(res.skipped_duplicate_key) + len(res.skipped_duplicate_id)} rename(s) skipped (duplicate key or id), "
               f"{len(res.collapsed)} list(s) would collapse to one id (not applied), "
-              f"{sum(1 for m in res.manual() if m['kind'] not in ('duplicate-key', 'duplicate-id'))} manual item(s) "
+              f"{sum(1 for m in res.manual() if m['kind'] not in ('duplicate-key', 'duplicate-id', 'kept-definition'))} manual item(s) "
               f"(also in swap-summary.json):")
         for w in warns[:25]:
             print(f"  {w}")
@@ -132,7 +132,10 @@ def cmd_swap(a) -> int:
         n = swapper.apply_in_place(a.repo, res)
         print(f"Applied in place to {n} files (--apply).")
     else:
-        print(f"Nothing changed on disk. Review, then: git -C {a.repo} apply {Path(p).resolve()}")
+        if res.new_contents:
+            print(f"Nothing changed on disk. Review, then: git -C {a.repo} apply {Path(p).resolve()}")
+        else:
+            print("Nothing changed on disk, and the patch is empty: nothing to apply (see the warnings above).")
     return 0
 
 
@@ -184,7 +187,10 @@ def cmd_fix(a) -> int:
         n = fixer.engine.apply_in_place(a.repo, res)
         print(f"Applied in place to {n} files (--apply).")
     else:
-        print(f"Nothing changed on disk. Review, then: git -C {a.repo} apply {Path(paths['diff']).resolve()}")
+        if res.new_contents:
+            print(f"Nothing changed on disk. Review, then: git -C {a.repo} apply {Path(paths['diff']).resolve()}")
+        else:
+            print("Nothing changed on disk, and the patch is empty: nothing to apply (see the items above).")
     return 0 if ok else 6
 
 

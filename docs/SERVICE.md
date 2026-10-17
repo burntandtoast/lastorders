@@ -107,8 +107,9 @@ heredoc, help or log message, or an `echo` / `printf` message in a shell script 
 `*price*`, `*pricing*`, `*model-catalog*`, `*model_catalog*`, or `matchPattern` next to `modelName`),
 `deployment_name` (Azure `deployment=`, `azure_deployment`, `deployment_name`, `deploymentName`,
 `AZURE_OPENAI_DEPLOYMENT*`, `engine=`), `tokeniser` (`encoding_for_model`, `tokenizerModel`, gpt-tokenizer,
-js-tiktoken), `comment`, `docstring`, `help_text`, `fixture` (recorded responses in tests) and `visible_text`
-(visible HTML text).
+js-tiktoken), `comment`, `docstring`, `help_text`, `fixture` (recorded responses in tests), `visible_text`
+(visible HTML text) and `kept_definition` (the id is still defined in one of the held files or values above, so
+`swap` leaves this reference too; kept definitions from skipped duplicate keys / ids are only known to `swap`).
 In shell scripts and Makefiles, unlisted provider-prefixed words with no digit (`claude-hooks`) are not findings;
 in every language, neither is such a word right before a full stop (`adopted from claude-mem.`).
 Roxygen and other `#` comments are reported at low severity. Generated and vendored files are not findings:
@@ -151,8 +152,17 @@ objects keyed by `id` / `name` / `model` / `value`, plain lists, `<select>` opti
 the same id, or a renamed id is already there, it leaves those entries as they are and lists them under
 `skipped_duplicate_key` / `skipped_duplicate_id` (and `collapsed_targets`, with `"applied": false`) in
 `swap-summary.json`. It also lists `skipped_migration` and `skipped_catalog` files, and `fix` turns duplicates,
-deployment names and tokeniser arguments into manual items. Other references to a kept id are still renamed, so
-check them when you resolve the item.
+deployment names and tokeniser arguments into manual items.
+
+When any definition or option of an old id is kept (a skipped duplicate key or id, a `<select>` option, a dict or
+object key, a migration or catalogue file, an Azure deployment name, a tokeniser argument, a recorded fixture or an
+unquoted object key), `swap` renames no other reference to that id anywhere in the repo, so a default, a
+recommended list or a lookup never points at an id that is no longer defined. Each reference it leaves is listed
+under `must_update_together` (`"kind": "kept_definition"`, with `kept_at`), and the definitions and references are
+grouped per id under `kept_definitions` in `swap-summary.json`. The CLI prints a `KEPT <id>` warning followed by one
+`MUST UPDATE TOGETHER file:line` line per reference, and `fix` adds a `kept-definition` manual item for each one.
+Rename them together with the kept definition when you resolve it. When nothing is left to rename, the patch is
+empty and the CLI says there is nothing to apply.
 
 ### 3. Eval
 
