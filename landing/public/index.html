@@ -295,7 +295,7 @@ code,kbd,samp,pre,.cmd,.cmd .c,.err-block,.report .bar{font-family:ui-monospace,
       <h2>Start with the free scan</h2>
       <p class="intro">No sign-up, no account, no card. It reads your code where it already lives and prints what it finds.</p>
       <ul class="ticks">
-        <li>Every pinned or aliased GPT-4o and GPT-4.1 model ID, plus the other OpenAI models with an announced shutdown (older GPT-4, GPT-3.5 and o-series models, the first GPT-5 and o3 snapshots, image, speech and transcription models), deprecated Anthropic Claude IDs and Google Gemini 2.5 IDs on Vertex AI, in code (Python, JS/TS, R, PHP, Rust, C#, Go and EJS), config, env templates, seeds, tests and docs. Generated, minified and vendored files are collapsed to a single "skipped" line.</li>
+        <li>Every pinned or aliased GPT-4o and GPT-4.1 model ID, plus the other OpenAI models with an announced shutdown (older GPT-4, GPT-3.5 and o-series models, the first GPT-5 and o3 snapshots, image, speech and transcription models), deprecated Anthropic Claude IDs and Google Gemini 2.5 IDs on Vertex AI, in code (Python, JS/TS, R, PHP, Rust, C#, Go, EJS and shell), shebang scripts, <code>.http</code> request files, Jupyter notebooks, Makefiles, HTML <code>&lt;script&gt;</code> blocks, form values and Django templates, config (including <code>*.example</code> and <code>*.sample</code> templates), env templates, seeds, tests and docs (including MDX, R <code>.Rd</code> files and Cursor <code>.mdc</code> rules). Generated, minified and vendored files are collapsed to a single "skipped" line.</li>
         <li>Gemini 2.5 on Vertex AI (<code>gemini-2.5-pro</code>, <code>gemini-2.5-flash</code> and <code>gemini-2.5-flash-lite</code>), which retires on Vertex on 20&nbsp;October 2026. The same IDs are not deprecated on the Gemini API.</li>
         <li>The retirement date and the provider's recommended replacement for each one.</li>
         <li>Fine-tuned model IDs, listed separately, because they need a plan rather than a patch.</li>
@@ -318,7 +318,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       <span class="c"># repo: github.com/burntandtoast/lastorders</span>
-      - uses: burntandtoast/lastorders@v0.4.6
+      - uses: burntandtoast/lastorders@v0.4.7
         with:
           fail-on-high: true
           include-docs: true
