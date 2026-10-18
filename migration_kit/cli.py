@@ -122,7 +122,9 @@ def cmd_swap(a) -> int:
         for w in warns[:25]:
             print(f"  {w}")
         if len(warns) > 25:
-            print(f"  ... {len(warns) - 25} more in {s}")
+            print(f"  ... {len(warns) - 25} more lines not shown. Full list in {s}: kept_definitions (every "
+                  f"MUST UPDATE TOGETHER reference per KEPT id) and must_update_together; "
+                  f"`{brand.CLI_NAME} fix` also lists them in fix-plan.md.")
     held = [f"{len(res.skipped_migration)} migration file(s)"] if res.skipped_migration else []
     if res.skipped_catalog:
         held.append(f"{len(res.skipped_catalog)} price/catalogue file(s)")

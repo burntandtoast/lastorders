@@ -1,4 +1,4 @@
-# Automatic fix plan
+# Fix plan
 
 - Repo: `fixer-repo`
 - Packs: anthropic v2026.10.15.2, openai v2026.10.15.4

@@ -13,6 +13,8 @@
 | low | 1 |
 | info | 1 |
 
+_The licensed patch can be smaller than the replacements suggested here: `swap` skips docs (unless `--include-docs`), keeps an ID everywhere when renaming any copy would create a duplicate key or list entry, and lists those references for review instead. Generated, minified and vendored files are skipped by both. `lastorders swap .` (free) shows the real per-file count._
+
 ## Fine-tuned model
 
 | File | Line | Provider | Current model | Suggested | Shutdown | Risk | Kind | Notes |

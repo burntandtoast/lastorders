@@ -1267,6 +1267,18 @@ def _esc(s: str) -> str:
     return s.replace("|", "\\|")
 
 
+def patch_size_note(res: ScanResult) -> str | None:
+    """One line under the scan tables when some findings show a plain replacement. The scan can't
+    run swap's duplicate-key / duplicate-id checks (they need the rewritten text), and swap skips
+    docs by default, so the licensed patch can make fewer replacements than this report suggests."""
+    if not any(f.suggested and f.auto_swap for f in res.findings):
+        return None
+    return ("_The licensed patch can be smaller than the replacements suggested here: `swap` skips docs (unless "
+            "`--include-docs`), keeps an ID everywhere when renaming any copy would create a duplicate key or list "
+            "entry, and lists those references for review instead. Generated, minified and vendored files are "
+            f"skipped by both. `{brand.CLI_NAME} swap .` (free) shows the real per-file count._")
+
+
 def to_markdown(res: ScanResult) -> str:
     s = summarise(res)
     packs = ", ".join(f"{p['provider']} v{p['version']} ({p['source']})" for p in res.packs)
@@ -1279,6 +1291,9 @@ def to_markdown(res: ScanResult) -> str:
            "| Risk | Count |", "|---|---|"]
     out += [f"| {r} | {s['by_risk'][r]} |" for r in ("high", "medium", "low", "info") if s["by_risk"].get(r)]
     out.append("")
+    note = patch_size_note(res)
+    if note:
+        out += [note, ""]
     for c in ["fine_tune", "in_scope", "other_deprecated", "not_listed"]:
         items = [f for f in res.findings if f.category == c]
         if not items:
@@ -1323,6 +1338,9 @@ def to_summary_markdown(res: ScanResult, max_rows: int = 25) -> str:
         out.append(f"| {f.risk} | `{f.file}:{f.line}` | `{f.model}` | {('`'+f.suggested+'`') if f.suggested else '-'} | {f.shutdown or '-'} |")
     if len(rows) > max_rows:
         out.append(f"\n_{len(rows) - max_rows} more in the `scan.json` artifact._")
+    note = patch_size_note(res)
+    if note:
+        out += ["", note]
     packs = ", ".join(f"{p['provider']} v{p['version']}" for p in res.packs)
     out += ["", f"<sub>{brand.PRODUCT_NAME} free scan · packs: {packs} · scanned {res.scanned_on}</sub>"]
     return "\n".join(out)

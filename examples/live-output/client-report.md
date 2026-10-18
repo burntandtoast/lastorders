@@ -2,7 +2,7 @@
 
 Prepared by Burnt & Toast Studios on 15 October 2026.
 
-> **LIVE RUN on Burnt & Toast's own sample repo (Acme Widgets is fictional). Eval results are real gpt-4o-2024-08-06 vs gpt-6-luna responses via Chat Completions, 15 Oct 2026. Automatic fixes verified live against the API on 15 Oct 2026.**
+> **LIVE RUN on Burnt & Toast's own sample repo (Acme Widgets is fictional). Eval results are real gpt-4o-2024-08-06 vs gpt-6-luna responses via Chat Completions, 15 Oct 2026. The patch's code fixes were verified live against the API on 15 Oct 2026.**
 
 ## At a glance
 
@@ -14,7 +14,7 @@ Prepared by Burnt & Toast Studios on 15 October 2026.
 - **Fine-tuned models:** 1 (need a separate decision)
 - **Models set by environment variable:** `CLASSIFIER_MODEL`, `OPENAI_MODEL` (check the live values on your servers)
 - **Proposed patch:** 8 files, 11 model ID replacements plus the code fixes below
-- **Automatic fixes:** 3 code fixes in the patch, 1 that must ship with the model switch, 4 items that need a decision; verification **PASS** (live API)
+- **Fix plan:** 3 code fixes in the patch, 1 that must ship with the model switch, 4 items that need a decision; verification **PASS** (live API)
 - **Regression eval (openai):** 4 drift, 2 pass
 
 ## Anthropic Claude API (stub): what's confirmed
@@ -89,7 +89,7 @@ These can't be swapped automatically. For each one, choose to:
 - `ft:gpt-4o-mini-2024-07-18:acme-widgets:intent-v3:9xYzAbC1` in `app/agent.py` line 36
 - `ft:gpt-4o-mini-2024-07-18:acme-widgets:intent-v3:9xYzAbC1` in `config/models.yaml` line 6
 
-## Automatic fixes
+## Fix plan
 
 Generated from the migration-pack rules for each API call (not from text search).
 

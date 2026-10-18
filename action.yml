@@ -99,7 +99,7 @@ runs:
         PY
         echo "dir=$out" >> "$GITHUB_OUTPUT"
 
-    - name: Automatic fix preview
+    - name: Fix preview
       if: inputs.fix-preview == 'true'
       shell: bash
       env:
@@ -121,7 +121,7 @@ runs:
         lastorders "${args[@]}" | tee "$out/fix-preview.txt"
         {
           echo ""
-          echo "### Automatic fix preview"
+          echo "### Fix preview"
           echo ""
           echo '```'
           cat "$out/fix-preview.txt"
