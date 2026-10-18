@@ -156,7 +156,7 @@ def _edits_for(fix: dict, cs: CallSite, endpoint: str) -> tuple[list[Edit], str 
         if not cs.has(frm):
             return [], "parameter not passed explicitly here (set via a variable or **kwargs?)"
         if not new:
-            return [], f"no automatic rename defined for this call type ({endpoint})"
+            return [], f"no rename rule defined for this call type ({endpoint})"
         if cs.has(new):
             return [], f"`{new}` is already set as well; remove `{frm}` by hand"
         return [Edit("rename", frm, new_name=new)], None
@@ -168,7 +168,7 @@ def _edits_for(fix: dict, cs: CallSite, endpoint: str) -> tuple[list[Edit], str 
         if spec is None and "param" in fix:
             spec = {"param": fix["param"], "value": fix.get("value")}
         if spec is None:
-            return [], f"no automatic fix defined for this call type ({endpoint})"
+            return [], f"no fix rule defined for this call type ({endpoint})"
         cur = cs.get(spec["param"])
         if cur is not None:
             if cur.value == spec["value"]:
@@ -368,7 +368,7 @@ def plan_fixes(root: str | Path, packs: PackSet | None = None, mapping: Mapping 
                     if (k, e.op, e.path) not in done:
                         for it in items:
                             if it.file == rel and it.status.startswith("fixed") and _describe(e) in it.change:
-                                it.status, it.change = "manual", f"could not apply automatically: {it.change}"
+                                it.status, it.change = "manual", f"could not apply this change safely: {it.change}"
             cur = cur2
         if pending:
             after_sites = _find(lang, cur, rel, callees)

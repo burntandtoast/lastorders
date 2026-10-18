@@ -72,9 +72,9 @@ git apply lastorders-out/fix.diff
 `fix` swaps the retiring model IDs it can change safely, then makes the code changes the new model needs at each API call.
 It does not rename every ID. If an ID keeps a definition somewhere (a renamed copy would create a duplicate key or
 list entry, or it sits in a migration, price list, catalogue, deployment name or fixture), the ID is kept everywhere:
-no other reference to it is renamed, and each one is listed instead. The CLI prints `KEPT <id>` followed by one
-`MUST UPDATE TOGETHER file:line` per reference, `swap-summary.json` has the full `kept_definitions` list, and
-`fix-plan.md` lists them as `kept-definition` items. Together with everything below, that is the must-review list.
+no other reference to it is renamed, and each one is listed instead. The CLI prints the first `KEPT <id>` and
+`MUST UPDATE TOGETHER file:line` lines, then points to the full list: `kept_definitions` and `must_update_together` in
+`swap-summary.json`, and the `kept-definition` items in `fix-plan.md`. Together with everything below, that is the must-review list.
 On some repos it is the whole result and the patch is empty.
 
 At each call it does change:

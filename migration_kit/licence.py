@@ -45,8 +45,8 @@ REPO_ENV_VAR = brand.env_name("REPO")
 KEY_RE = re.compile(r"^BTM-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$")
 
 # The patch is paid. There is no flag or environment variable that writes it without a licence.
-PAID_FEATURES = {"swap-patch": "the model-swap patch", "fix-patch": "the automatic-fix patch",
-                 "swap-apply": "applying the patch in place", "fix-apply": "applying the automatic fixes in place",
+PAID_FEATURES = {"swap-patch": "the model-swap patch", "fix-patch": "the fix patch",
+                 "swap-apply": "applying the patch in place", "fix-apply": "applying the fixes in place",
                  "init-evals": "generating a starter eval suite", "eval": "the regression eval", "report": "the client report"}
 
 # Ed25519 public keys (kid -> base64url raw 32-byte key) that may sign licence tokens.

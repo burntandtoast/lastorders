@@ -389,7 +389,7 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--diff")
     r.add_argument("--eval")
     r.add_argument("--label", help="banner at the top of the report")
-    r.add_argument("--fix-plan", help="fix-plan.json from `fix` (adds the automatic-fixes section)")
+    r.add_argument("--fix-plan", help="fix-plan.json from `fix` (adds the Fix plan section)")
     r.add_argument("--fix-verify", help="verify/verify.json from `fix --verify`")
     r.add_argument("--out", default=f"{brand.CLI_NAME}-out")
     _lic_opt(r)
