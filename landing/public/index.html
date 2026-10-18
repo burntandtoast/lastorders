@@ -5,11 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Last Orders: free scan for retiring OpenAI, Claude and Gemini models | Burnt &amp; Toast</title>
 <link rel="icon" href="https://burntandtoast.com/favicon.svg" type="image/svg+xml">
-<meta name="description" content="Free scan in your own repo for retiring OpenAI, Anthropic Claude and Google Gemini (Vertex AI) model IDs, with the date each is switched off. Fix it yourself, buy a licence for the automatic patch and regression report, or have us do it.">
+<meta name="description" content="Free scan in your own repo for retiring OpenAI, Anthropic Claude and Google Gemini (Vertex AI) model IDs, with the date each is switched off. Fix it yourself, buy a licence for a reviewable patch and regression report, or have us do it.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://lastorders.burntandtoast.com/">
 <meta property="og:title" content="Last Orders: free scan for retiring OpenAI, Claude and Gemini models">
-<meta property="og:description" content="Free scan in your own repo for retiring OpenAI, Anthropic Claude and Google Gemini (Vertex AI) model IDs, with the date each is switched off. Fix it yourself, buy a licence for the automatic patch and regression report, or have us do it.">
+<meta property="og:description" content="Free scan in your own repo for retiring OpenAI, Anthropic Claude and Google Gemini (Vertex AI) model IDs, with the date each is switched off. Fix it yourself, buy a licence for a reviewable patch and regression report, or have us do it.">
 <meta property="og:image" content="https://lastorders.burntandtoast.com/og.png">
 <meta property="og:image:type" content="image/png">
 <meta property="og:image:width" content="1200">
@@ -239,14 +239,14 @@ code,kbd,samp,pre,.cmd,.cmd .c,.err-block,.report .bar{font-family:ui-monospace,
 <div class="hero"><div class="wrap">
   <span class="kicker">Last Orders · AI model retirements</span>
   <h1>Is your code pinned to an AI model that's being retired? Find out for free.</h1>
-  <p class="lede">Gemini 2.5 retires on Vertex AI on 20&nbsp;October 2026. OpenAI switches off o1, o3-mini, o4-mini, gpt-3.5-turbo and some GPT-4o and GPT-4.1 snapshots on 23&nbsp;October, and the rest of GPT-4o and GPT-4.1 on 14&nbsp;January 2027. Claude Sonnet 4.5 goes on 30&nbsp;November. Last Orders scans your repo, on your machine or in your own CI, lists every retiring model ID and tells you the date that applies. The free scan does not write a patch. You can fix it yourself, buy the automatic patch, or have us do it.</p>
+  <p class="lede">Gemini 2.5 retires on Vertex AI on 20&nbsp;October 2026. OpenAI switches off o1, o3-mini, o4-mini, gpt-3.5-turbo and some GPT-4o and GPT-4.1 snapshots on 23&nbsp;October, and the rest of GPT-4o and GPT-4.1 on 14&nbsp;January 2027. Claude Sonnet 4.5 goes on 30&nbsp;November. Last Orders scans your repo, on your machine or in your own CI, lists every retiring model ID and tells you the date that applies. The free scan does not write a patch. You can fix it yourself, buy a reviewable patch, or have us do it.</p>
   <div class="cta-row">
     <a class="btn" href="#scan">Run the free scan</a>
     <a class="btn ghost" href="#report">See a sample report</a>
   </div>
   <div class="ladder-hint">
     <span><b>Free</b> scan</span>
-    <span><b>£179</b> per repo · automatic patch + regression report</span>
+    <span><b>£179</b> per repo · reviewable patch + regression report</span>
     <span><b>From £1,500</b> · we do it for you</span>
   </div>
 
@@ -318,7 +318,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       <span class="c"># repo: github.com/burntandtoast/lastorders</span>
-      - uses: burntandtoast/lastorders@v0.4.9
+      - uses: burntandtoast/lastorders@v0.4.10
         with:
           fail-on-high: true
           include-docs: true
@@ -345,10 +345,10 @@ jobs:
   <div class="grid g2" style="align-items:start">
     <div>
       <h2>Then fix it yourself, with the licence</h2>
-      <p class="intro">If the scan finds work to do, a one-off licence for that repo unlocks the automatic fix and a before-and-after report. You run it, you review it, you merge it.</p>
+      <p class="intro">If the scan finds work to do, a one-off licence for that repo unlocks a reviewable patch, a must-review list of anything it couldn't safely change, and a before-and-after report. You run it, you review it, you merge it.</p>
       <ul class="ticks">
-        <li><b>The swap patch.</b> <code>fix</code> rewrites the model ID and the settings that break, as a reviewable patch for Python and JS/TS. Nothing is edited behind your back. Anything it can't safely change — fine-tunes, Assistants, legacy function calls — it flags for a decision rather than guessing.</li>
-        <li><b>Covers 23 October as well as January.</b> From version 0.4.5, the fix also moves the OpenAI models switched off on 23&nbsp;October 2026 (<code>o1</code>, <code>o3-mini</code>, <code>o4-mini</code>, <code>gpt-3.5-turbo</code>, <code>gpt-4</code>, <code>gpt-4-turbo</code>, <code>gpt-4.1-nano</code> and <code>gpt-4o-2024-05-13</code>) to <code>gpt-5.6-luna</code>, <code>gpt-5.6-sol</code> or <code>gpt-5.6-terra</code>, and makes the same parameter fixes those models need. We tested those fixes live against all three on 16&nbsp;October. <code>o1-pro</code>, image and audio models and fine-tunes are flagged, not changed.</li>
+        <li><b>The swap patch.</b> <code>fix</code> rewrites the model ID and the settings that break, as a reviewable patch for Python and JS/TS. Nothing is edited behind your back. Anything it can't safely change — fine-tunes, Assistants, legacy function calls, and model IDs still defined in a price list, migration, dropdown or duplicate entry — it leaves alone and puts on a must-review list rather than guessing. On some repos that list is the whole result.</li>
+        <li><b>Covers 23 October as well as January.</b> From version 0.4.5, the fix also switches what it safely can of the OpenAI models switched off on 23&nbsp;October 2026 (<code>o1</code>, <code>o3-mini</code>, <code>o4-mini</code>, <code>gpt-3.5-turbo</code>, <code>gpt-4</code>, <code>gpt-4-turbo</code>, <code>gpt-4.1-nano</code> and <code>gpt-4o-2024-05-13</code>) to <code>gpt-5.6-luna</code>, <code>gpt-5.6-sol</code> or <code>gpt-5.6-terra</code>, makes the same parameter fixes those models need, and lists the rest for review. We tested those fixes live against all three on 16&nbsp;October. <code>o1-pro</code>, image and audio models and fine-tunes are flagged, not changed.</li>
         <li><b>The parameter fixes.</b> <code>max_tokens</code> becomes <code>max_completion_tokens</code>; calls using <code>temperature</code>, <code>top_p</code> or <code>logprobs</code>, and Chat Completions tool calls, get <code>reasoning_effort: "none"</code>. The settings changes and the model switch ship together; Last Orders won't do one without the other.</li>
         <li><b>The regression report.</b> A command builds a starter test file from the model calls the scan finds. You trim it to 10 to 20 real examples, then run them on the old model and the new one with your own API key. Each case is marked pass, drift or fail.</li>
         <li><b>Future retirements.</b> Last Orders reads a retirement list we keep up to date, so the same repo is covered the next time OpenAI retires something.</li>
@@ -405,13 +405,13 @@ jobs:
     <div class="card price featured rung">
       <span class="num">2</span>
       <span class="tier">Self-serve licence</span>
-      <h3>Automatic patch + regression report</h3>
+      <h3>Reviewable patch + regression report</h3>
       <div class="amt">£179</div>
       <div class="per">per repo · one-off, not a subscription · tax included</div>
       <ul class="ticks">
         <li><code>fix</code> writes a reviewable patch for Python and JS/TS</li>
         <li>Covers the 23 October 2026 OpenAI shutdowns as well as 14 January 2027</li>
-        <li>Auto-fixes for <code>max_tokens</code>, sampling parameters and Chat Completions tool calls; flags fine-tunes, Assistants and legacy function calls</li>
+        <li>Fixes for <code>max_tokens</code>, sampling parameters and Chat Completions tool calls; flags fine-tunes, Assistants, legacy function calls and anything else it couldn't safely change</li>
         <li>Starter test file from the scan, trimmed by you to 10–20 real examples</li>
         <li>Before-and-after report on your code, with your API key</li>
         <li>One licence per GitHub repo (monorepos included)</li>
@@ -441,12 +441,12 @@ jobs:
 <section id="faq"><div class="wrap">
   <h2>Questions</h2>
   <p class="intro">If yours isn't here, email us. A person reads it.</p>
-  <details><summary>Is the scan really free? What's the catch?</summary><p>It's free, with no account and no card. It tells you which models are affected and when. Without a licence, the free preview shows a per-file summary of what the fix would change. It does not write a diff. You only pay if you want the automatic patch and the regression report, or want us to do the work.</p></details>
+  <details><summary>Is the scan really free? What's the catch?</summary><p>It's free, with no account and no card. It tells you which models are affected and when. Without a licence, the free preview shows a per-file summary of what the fix would change. It does not write a diff. You only pay if you want the reviewable patch and the regression report, or want us to do the work.</p></details>
   <details><summary>Does my code leave my machine?</summary><p>No. The scan and the licensed fix both run where your code already is, on your laptop or in your own CI. There's no telemetry, and your code and prompts never leave your machine. The only contact with us is to fetch the retirement list and check a licence key; pass <code>--offline</code> to use the bundled list instead. The regression report calls OpenAI with your own API key, so your prompts go to OpenAI as they do today and nowhere else.</p></details>
   <details><summary>Can't we just change the model name ourselves?</summary><p>Often you can, and the scan will say so. The traps are tool calls on Chat Completions (which need <code>reasoning_effort</code> set to <code>none</code> on <code>gpt-6-luna</code>), <code>max_tokens</code> (which <code>gpt-6-luna</code> rejects outright), sampling parameters that only work with <code>reasoning_effort: "none"</code>, fine-tunes, and quiet output drift. The report exists so you can see whether any of those apply to you.</p></details>
   <details><summary>Can I change the settings first and switch models later?</summary><p>No. GPT-4o and GPT-4.1 reject <code>reasoning_effort</code>, and <code>gpt-6-luna</code> needs it (and rejects <code>max_tokens</code>), so the settings changes and the model switch must ship together in one change; Last Orders enforces this. Found in our own API checks.</p></details>
   <details><summary>We use a fine-tuned GPT-4o or GPT-4.1 model. What happens?</summary><p>Fine-tuned models follow their base model's schedule, so they're switched off on 14 January 2027. <code>gpt-6-luna</code> can't be fine-tuned, and new fine-tuning jobs stop on 6 January 2027. The scan will list your fine-tunes, but the licence won't patch them, because there's nothing to patch them to. That's what the fine-tune tier (from £3,500) is for. Get in touch early, because some routes need that 6 January date.</p></details>
-  <details><summary>We're on <code>gpt-4.1-nano</code> or <code>gpt-4o-2024-05-13</code>.</summary><p>Those go on 23 October 2026, which is days away. Run the scan today. OpenAI recommends <code>gpt-5.6-luna</code> for <code>gpt-4.1-nano</code> and <code>gpt-5.6-sol</code> for <code>gpt-4o-2024-05-13</code>. The licensed fix makes both switches, with the parameter changes they need, in Python and JS/TS. If you'd rather we did it, email us and we'll move you up the queue.</p></details>
+  <details><summary>We're on <code>gpt-4.1-nano</code> or <code>gpt-4o-2024-05-13</code>.</summary><p>Those go on 23 October 2026, which is days away. Run the scan today. OpenAI recommends <code>gpt-5.6-luna</code> for <code>gpt-4.1-nano</code> and <code>gpt-5.6-sol</code> for <code>gpt-4o-2024-05-13</code>. The licensed fix switches what it safely can, with the parameter changes they need, in Python and JS/TS, and lists anything it couldn't change for you to review. If you'd rather we did it, email us and we'll move you up the queue.</p></details>
   <details><summary>OpenAI's API shows no shutdown date for our model. Are we safe?</summary><p>Not necessarily. The <code>shutdown_date</code> field on OpenAI's List models endpoint is still empty for the GPT-4o and 4.1 batch, even though those snapshots retire on 14&nbsp;January 2027. Earlier retirements (such as <code>gpt-4.1-nano</code> and <code>gpt-4o-2024-05-13</code>) do show a date. Last Orders works from OpenAI's deprecations page, not just that field.</p></details>
   <details><summary>What won't the scan find?</summary><p>Model IDs built at runtime (say <code>"gpt-" + version</code>) or stored only in a database. It does list environment variables that choose the model, so you can check their live values. If you want certainty, check your OpenAI usage for calls to GPT-4o or 4.1 after you deploy.</p></details>
   <details><summary>What does "per repo" mean?</summary><p>One licence covers one GitHub repository, monorepos included, and future retirements in that same repo. If you've got lots of repos, email us and we'll sort something sensible.</p></details>

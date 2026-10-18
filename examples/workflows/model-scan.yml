@@ -19,7 +19,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Last Orders free scan
         id: btm
-        uses: burntandtoast/lastorders@v0.4.9
+        uses: burntandtoast/lastorders@v0.4.10
         with:
           fail-on-high: "true"
           # packs: "openai,anthropic"
