@@ -30,7 +30,7 @@ export const TAX_CODE = "txcd_10202003";
 export const TAX_BEHAVIOR = "inclusive";
 
 export const PRODUCT_DESCRIPTION =
-  "Automatic fixes, verified patches and client reports for one repo (monorepos count as one).";
+  "Reviewable, verified patches, a must-review list and client reports for one repo (monorepos count as one).";
 
 export function licenceProductName(productName) {
   return `${productName} licence: one repository`;
