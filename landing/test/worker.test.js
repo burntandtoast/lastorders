@@ -55,3 +55,15 @@ test("head carries a large share image for LinkedIn and X", () => {
   assert.equal(png.readUInt32BE(20), 630);
   assert.ok(png.length < 300 * 1024);
 });
+
+test("/faq redirects (301) to the FAQ section on the home page", async () => {
+  const html = readFileSync(new URL("../public/index.html", import.meta.url), "utf8");
+  assert.match(html, /<section id="faq">/);
+  for (const path of ["/faq", "/faq/"]) {
+    const res = await worker.fetch(new Request(`https://lastorders.example${path}`), env());
+    assert.equal(res.status, 301);
+    assert.equal(res.headers.get("location"), "https://lastorders.example/#faq");
+  }
+  const toml = readFileSync(new URL("../wrangler.toml", import.meta.url), "utf8");
+  assert.match(toml, /run_worker_first = \[[^\]]*"\/faq"/);
+});

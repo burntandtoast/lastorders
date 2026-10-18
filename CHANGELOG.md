@@ -1,6 +1,8 @@
 # Changelog
 
 ## Unreleased
+- Licence-needed messages and CLI help no longer say "automatic": `fix` without a licence names "the fix patch" and "applying the fixes in place", and the `--fix-plan` help says it adds the Fix plan section. Manual-item reasons say "no rename rule" / "no fix rule defined for this call type" and "could not apply this change safely".
+- Landing page: `/faq` redirects (301) to `/#faq`.
 - The licence price is now £179 including VAT.
 - Refund policy (terms version 2026-10-16.2): an unactivated licence key is fully refundable if you ask within 14 days of purchase. After activation, a refund only if the fix fails on your repo and we can't resolve it within 5 working days. Wording updated on the website, `/terms`, Checkout and the licence key email.
 

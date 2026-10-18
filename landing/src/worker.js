@@ -92,6 +92,10 @@ export default {
       return new Response(null, { status: 301, headers: { location: `${url.origin}/${url.search}` } });
     }
     if (url.pathname.startsWith("/studio-assets/")) return studioAsset(url, request);
+    // The FAQ is a section of the home page, not its own page.
+    if (url.pathname === "/faq" || url.pathname === "/faq/") {
+      return new Response(null, { status: 301, headers: { location: `${url.origin}/#faq` } });
+    }
     // Customer-facing licence pages are served by the licence Worker (service binding), on this host.
     const path = url.pathname.replace(/\/+$/, "") || "/";
     // Until live payments are switched on (env BUY_OPEN = "1"), /buy goes to the sign-up box instead of checkout.
