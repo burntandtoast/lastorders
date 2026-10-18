@@ -102,7 +102,7 @@ ${linkSection}
 <h2>What you get</h2>
 <ul><li>A licence key for one GitHub repository (a monorepo counts as one), for ${e(price)} including any VAT, paid once.</li>
 <li>The repository is bound to the key the first time the key is used (activated) with the <code>${e(cliName)}</code> tool. We can move a licence to another repository on request, for example after a rename or transfer.</li>
-<li>The licence unlocks the paid features (reviewable, verified patches, a must-review list and reports) for that repository, including updates for future model retirements. The free scan never needs a licence.</li>
+<li>The licence unlocks the paid features (reviewable patches, a must-review list and reports) for that repository, including updates for future model retirements. The free scan never needs a licence.</li>
 <li>The key is for your organisation's use on that repository. Please don't share it for use on other repositories.</li></ul>
 <h2>Refund policy</h2>
 <ul><li><b>Never activated:</b> a full refund if the licence key has never been activated (we record when it is first used) and you ask within 14 days of purchase. After 14 days, an unactivated key isn't refundable under this policy.</li>
