@@ -473,7 +473,7 @@ STATUS_LABEL = {"fixed": "Fixed", "fixed-coupled": "Fixed (deploy with the model
 
 def to_markdown(res: FixResult) -> str:
     c = res.counts()
-    out = [f"# Automatic fix plan", "",
+    out = ["# Fix plan", "",
            f"- Repo: `{Path(res.root).name}`",
            f"- Packs: " + ", ".join(f"{p['provider']} v{p['version']}" for p in res.packs),
            f"- Files changed: **{len(res.new_contents)}** | model ID replacements: {res.swap_changes}",

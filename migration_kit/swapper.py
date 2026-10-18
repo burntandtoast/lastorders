@@ -475,6 +475,8 @@ def _dedupe(rel: str, lang: str, rows, todo: dict[int, _Row], dup_key: list, dup
         _yaml_units(rows, reps, spans, units)
     elif lang in STRUCT_LANGS:
         _struct_units(rows, lang, reps, spans, units)
+    elif lang == "go":
+        _go_units(rows, reps, spans, units)
     if not spans:
         return
 
@@ -593,6 +595,26 @@ def _struct_units(rows, lang, reps, spans, units) -> None:
                     units[uid] = within(el)
                     spans.append(("id", ("c", id(c), ktext), uid, v.row, v.qs, v.qe, v.text, ktext, c.row + 1,
                                   "list of objects"))
+
+
+def _go_units(rows, reps, spans, units) -> None:
+    """Go composite literals that sit on one line and hold only quoted strings
+    (`[]string{"a", "b"}`, `[]driver.Value{"a", "b"}`): the same id twice is a duplicate list item.
+    Multi-line literals and map keys are not covered."""
+    text = {r.index: r.text for r in rows if r.mode is True}
+    seen: set = set()
+    for (idx, s), (e, _, _) in sorted(reps.items()):
+        line = text.get(idx)
+        if line is None:
+            continue
+        b = list_bounds(line, s, e)
+        if not b or line[b[0]] != "{" or (idx, b[0]) in seen:
+            continue
+        seen.add((idx, b[0]))
+        for qs, qe in b[2]:
+            uid = ("go", idx, qs)
+            units[uid] = [(i, s2) for (i, s2), (e2, _, _) in reps.items() if i == idx and qs < s2 and e2 < qe]
+            spans.append(("id", ("go", idx, b[0]), uid, idx, qs, qe, line[qs + 1:qe - 1], "item", idx + 1, "list"))
 
 
 def _yaml_units(rows, reps, spans, units) -> None:

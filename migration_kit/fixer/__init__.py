@@ -1,5 +1,5 @@
 # Copyright (c) 2026 Burnt and Toast Studios Ltd. Proprietary; see LICENSE-COMMERCIAL.
-"""Automatic fixer: a generic engine driven entirely by migration-pack rules.
+"""Fixer: a generic engine driven entirely by migration-pack rules.
 
   callsite.py   language-neutral call-site model + value resolution results
   pyfix.py      Python adapter (libcst: lossless, keeps formatting and comments)

@@ -147,7 +147,7 @@ def build_markdown(c: Ctx) -> str:
         o.append(f"- **Proposed patch:** {c.swap['replacements']} replacements in {c.swap['files_changed']} files, "
                  f"{len(c.swap['skipped_fine_tunes'])} fine-tuned references left untouched")
     if _fix_glance(c):
-        o.append(f"- **Automatic fixes:** {_fix_glance(c)}")
+        o.append(f"- **Fix plan:** {_fix_glance(c)}")
     if c.ev:
         o.append(f"- **Regression eval ({c.ev['mode']}):** " + ", ".join(f"{v} {k}" for k, v in sorted(c.ev["summary"].items())))
     for p in c.packs:
@@ -174,7 +174,7 @@ def build_markdown(c: Ctx) -> str:
         o.append("")
         o += [f"- `{f['model']}` in `{f['file']}` line {f['line']}" for f in c.ft()]
     if c.fix:
-        o += ["", "## Automatic fixes", "",
+        o += ["", "## Fix plan", "",
               "Generated from the migration-pack rules for each API call (not from text search).", ""]
         o += ["| Status | File | Rule | Change | Why |", "|---|---|---|---|---|"]
         for i in c.fix["items"]:
@@ -289,7 +289,7 @@ def build_html(c: Ctx) -> str:
                  + "".join(f"<li><code>{_e(f['model'])}</code> in <code>{_e(f['file'])}</code> line {f['line']}</li>" for f in c.ft())
                  + "</ul>")
     if c.fix:
-        h.append("<h2>Automatic fixes</h2><p>Generated from the migration-pack rules for each API call (not from text search).</p>"
+        h.append("<h2>Fix plan</h2><p>Generated from the migration-pack rules for each API call (not from text search).</p>"
                  "<table><tr><th>Status</th><th>File</th><th>Rule</th><th>Change</th><th>Why</th></tr>")
         cls = {"fixed": "pass", "fixed-coupled": "drift", "manual": "fail"}
         for i in c.fix["items"]:
