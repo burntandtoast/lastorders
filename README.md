@@ -69,12 +69,20 @@ lastorders fix . --verify        # also checks the patch on a scratch copy (see 
 git apply lastorders-out/fix.diff
 ```
 
-`fix` swaps the retiring model IDs and then makes the code changes the new model needs at each API call:
+`fix` swaps the retiring model IDs it can change safely, then makes the code changes the new model needs at each API call.
+It does not rename every ID. If an ID keeps a definition somewhere (a renamed copy would create a duplicate key or
+list entry, or it sits in a migration, price list, catalogue, deployment name or fixture), the ID is kept everywhere:
+no other reference to it is renamed, and each one is listed instead. The CLI prints `KEPT <id>` followed by one
+`MUST UPDATE TOGETHER file:line` per reference, `swap-summary.json` has the full `kept_definitions` list, and
+`fix-plan.md` lists them as `kept-definition` items. Together with everything below, that is the must-review list.
+On some repos it is the whole result and the patch is empty.
+
+At each call it does change:
 
 - **Renames `max_tokens`**, to `max_completion_tokens` on Chat Completions or `max_output_tokens` on Responses.
 - **Adds `reasoning_effort: "none"`** where gpt-6-luna needs it: Chat Completions calls with tools, and
   calls that set `temperature`, `top_p` or `logprobs`. On Responses it adds `reasoning.effort`.
-- **Flags anything it can't decide safely** in `fix-plan.md`: legacy `functions` calls, Assistants and legacy
+- **Puts anything it can't decide safely on the must-review list** in `fix-plan.md`: legacy `functions` calls, Assistants and legacy
   Completions calls (these stay on their current model in the patch), fine-tunes and fine-tuning jobs,
   LangChain wrappers, calls that pass `**kwargs` or a spread object, conflicting values, and calls whose model
   isn't visible in the code (use `--assume-model`).
@@ -197,6 +205,18 @@ The patch is proprietary ([LICENSE-COMMERCIAL](LICENSE-COMMERCIAL)), together wi
   env-var lookups are listed so you can check them.
 - A pack is only as current as its `updated` date. Always check the provider's documentation before acting.
 - The scan names retiring model IDs. Review every licensed patch before you apply it.
+- `fix` aims to make parameter changes and model switches together, but a call can end up with one and not the
+  other. For example, it can rename `max_tokens` to `max_completion_tokens` on a call it leaves on `gpt-4o` (the old
+  model accepts it). It adds `reasoning_effort` only on calls it switches, or, when the model comes from an
+  environment variable, marks the change "ship with the model switch".
+- The free scan can show a finding as a plain replacement that the licensed patch won't make, so the scan report
+  can overstate the size of the patch. The scan doesn't run swap's duplicate-key and duplicate-id checks, and swap
+  skips docs unless you pass `--include-docs`. In our test on 38 public repos, 274 rows showed as plain replacements
+  but were kept by swap (119 in one repo, 35 and 18 in two others). The free `lastorders swap .` preview uses the
+  real plan and shows the actual per-file count.
+- Generated, minified and vendored files are skipped by both scan and swap. An ID still defined in a skipped
+  generated file (such as a generated model registry) doesn't count as a kept definition, so references to it
+  elsewhere can still be renamed. Check generated registries by hand.
 
 ---
 
