@@ -67,3 +67,9 @@ test("/faq redirects (301) to the FAQ section on the home page", async () => {
   const toml = readFileSync(new URL("../wrangler.toml", import.meta.url), "utf8");
   assert.match(toml, /run_worker_first = \[[^\]]*"\/faq"/);
 });
+
+test("the Burnt Brief card links to the counted short link and says to confirm by email", () => {
+  const html = readFileSync(new URL("../public/index.html", import.meta.url), "utf8");
+  assert.match(html, /href="https:\/\/burntandtoast\.com\/brief\/lo">Get The Burnt Brief</);
+  assert.match(html, /Free\. Check your inbox to confirm\./);
+});
