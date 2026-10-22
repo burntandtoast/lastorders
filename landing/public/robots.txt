@@ -1,0 +1,7 @@
+# Last Orders (lastorders.burntandtoast.com)
+User-agent: *
+# /buy starts a Stripe Checkout session; /subscribe is a form endpoint. Success, cancel and error pages are noindex.
+Disallow: /buy
+Disallow: /subscribe
+
+Sitemap: https://lastorders.burntandtoast.com/sitemap.xml

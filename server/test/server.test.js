@@ -4,6 +4,8 @@ import { fakeNetwork, harness, makeEnv, paidSessionEvent, WHSEC } from "./helper
 import { generateKey, KEY_RE, verifyToken } from "../src/keys.js";
 import { formEncode, signStripePayload, verifyStripeSignature } from "../src/stripe.js";
 import { applyManagedPayments } from "../src/managed-payments.js";
+import { createApp } from "../src/index.js";
+const createAppForRobots = (net) => createApp({ fetch: net.fetch });
 import { normaliseRepo } from "../src/util.js";
 
 const KEY_IN = (s) => (s.match(/BTM-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}/) || [])[0];
@@ -517,4 +519,23 @@ test("customer pages live on PUBLIC_SITE_URL: Checkout URLs, email, terms; API h
   assert.ok(t.includes("https://shop.example.test/buy"));
   assert.equal((await app.fetch(new Request("https://licence.example.test/healthz"), env)).status, 200);
   assert.equal((await app.fetch(new Request("https://licence.example.test/api/stripe/webhook", { method: "POST", body: "{}" }), env)).status, 400);
+});
+
+test("robots: API host responses are noindex; /terms on the site host is indexable with a self-canonical; success/cancel are noindex", async () => {
+  const net = fakeNetwork();
+  const env = await makeEnv({ PUBLIC_SITE_URL: "https://site.example.test" });
+  const app = createAppForRobots(net);
+  const api = await app.fetch(new Request("https://licence.example.test/healthz"), env);
+  assert.equal(api.headers.get("x-robots-tag"), "noindex");
+  const old = await app.fetch(new Request("https://licence.example.test/terms"), env);
+  assert.equal(old.status, 301);
+  assert.equal(old.headers.get("x-robots-tag"), "noindex");
+  const terms = await app.fetch(new Request("https://site.example.test/terms"), env);
+  assert.equal(terms.headers.get("x-robots-tag"), null);
+  const html = await terms.text();
+  assert.ok(html.includes('<link rel="canonical" href="https://lastorders.burntandtoast.com/terms">'));
+  assert.ok(!html.includes('name="robots"'));
+  const cancel = await app.fetch(new Request("https://site.example.test/cancel"), env);
+  assert.equal(cancel.headers.get("x-robots-tag"), "noindex");
+  assert.ok((await cancel.text()).includes('<meta name="robots" content="noindex">'));
 });

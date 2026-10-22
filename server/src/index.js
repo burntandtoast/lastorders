@@ -341,7 +341,19 @@ export function createApp(deps = {}) {
     }
   }
 
-  return { fetch: handle };
+  // packs.burntandtoast.com is the API / pack host, not a site: tell search engines not to index anything on it.
+  // (Static files there get the same header from site/_headers.) Customer pages reached through the landing
+  // Worker's service binding keep their own robots handling.
+  async function fetchWithRobots(request, env) {
+    const res = await handle(request, env);
+    const base = env.PUBLIC_BASE_URL ? new URL(env.PUBLIC_BASE_URL).hostname : "";
+    if (!base || new URL(request.url).hostname !== base) return res;
+    const out = new Response(res.body, res);
+    out.headers.set("x-robots-tag", "noindex");
+    return out;
+  }
+
+  return { fetch: fetchWithRobots };
 }
 
 export default createApp();

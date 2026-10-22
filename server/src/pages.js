@@ -46,9 +46,13 @@ const PAGE_CSS = `/* Metric-matched fallback for Bricolage Grotesque (Arial/Helv
 .prose code,.prose pre,.key{font-family:ui-monospace,Menlo,Consolas,monospace}.key{font-size:1.4rem;font-weight:700;background:var(--card);border:2.5px solid var(--ink);border-radius:var(--radius);box-shadow:4px 5px 0 var(--ink);padding:12px 18px;display:inline-block;user-select:all}
 .prose pre{background:var(--card);border:2px solid var(--ink);border-radius:10px;padding:12px 16px;overflow:auto;margin-bottom:1em}`;
 
-function page(title, body, status = 200, { index = false } = {}) {
+// index: true pages get a self-referencing canonical on the customer-facing host; everything else is noindex
+// (meta tag and X-Robots-Tag), since success, pending, cancel and error pages are per-customer or transient.
+function page(title, body, status = 200, { index = false, canonical = "" } = {}) {
+  const headers = { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", "referrer-policy": "no-referrer" };
+  if (!index) headers["x-robots-tag"] = "noindex";
   return new Response(`<!doctype html><html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-${index ? "" : '<meta name="robots" content="noindex">'}<title>${escapeHtml(title)} | Burnt &amp; Toast</title>
+${index ? (canonical ? `<link rel="canonical" href="${escapeHtml(canonical)}">` : "") : '<meta name="robots" content="noindex">'}<title>${escapeHtml(title)} | Burnt &amp; Toast</title>
 <link rel="icon" href="${STUDIO}/favicon.svg" type="image/svg+xml">
 <link rel="preload" href="${STUDIO_ASSETS}/fonts/bricolage-grotesque-latin.woff2" as="font" type="font/woff2" crossorigin fetchpriority="high">
 <link rel="stylesheet" href="${STUDIO_ASSETS}/chrome.css">
@@ -56,7 +60,7 @@ ${index ? "" : '<meta name="robots" content="noindex">'}<title>${escapeHtml(titl
 <style>${PAGE_CSS}</style></head>
 <body id="top">${HEADER}
 <main id="main"><section class="section"><div class="wrap prose">${body}</div></section></main>
-${FOOTER}</body></html>`, { status, headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", "referrer-policy": "no-referrer" } });
+${FOOTER}</body></html>`, { status, headers });
 }
 
 export function successPage({ key, email, productName, cliName, baseUrl, managedPayments = false }) {
@@ -116,5 +120,5 @@ ${linkRefund}
 <p>${e(productName)} proposes code changes for you to review. You're responsible for reviewing, testing and deploying them. Our total liability for a licence is limited to the price you paid for it, except where the law doesn't allow liability to be limited.</p>
 <h2>Governing law</h2>
 <p>These terms are governed by the law of England and Wales, and the courts of England and Wales have jurisdiction. If you're a consumer living in Scotland or Northern Ireland, you can also bring proceedings in your local courts.</p>
-<p class="muted">Questions: ${mail}. ${e(COMPANY.name)}, ${e(COMPANY.address)}.</p>`, 200, { index: true });
+<p class="muted">Questions: ${mail}. ${e(COMPANY.name)}, ${e(COMPANY.address)}.</p>`, 200, { index: true, canonical: `${LANDING_URL}/terms` });
 }
