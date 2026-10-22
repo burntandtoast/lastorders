@@ -30,7 +30,11 @@ VERCEL = {
             {"key": "X-Content-Type-Options", "value": "nosniff"}]}],
 }
 
-CF_HEADERS = """/v1/*
+# The pack host is data, not a page to rank: keep the whole site out of search results.
+CF_HEADERS = """/*
+  X-Robots-Tag: noindex
+
+/v1/*
   Access-Control-Allow-Origin: *
   Cache-Control: public, max-age=300, s-maxage=3600, stale-while-revalidate=86400
   Content-Type: application/json; charset=utf-8

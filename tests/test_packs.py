@@ -96,7 +96,7 @@ def test_unreachable_remote_falls_back_to_bundled():
 def test_site_build(tmp_path):
     site = build_site(tmp_path / "site")
     idx = json.loads((site / "v1" / "index.json").read_text())
-    assert {e["provider"] for e in idx["packs"]} == {"openai", "anthropic", "google"}
+    assert {e["provider"] for e in idx["packs"]} == {"openai", "anthropic", "google", "azure-foundry"}
     for e in idx["packs"]:
         assert hashlib.sha256((site / "v1" / e["url"]).read_bytes()).hexdigest() == e["sha256"]
     assert (site / "vercel.json").exists() and (site / "_headers").exists() and (site / "index.html").exists()

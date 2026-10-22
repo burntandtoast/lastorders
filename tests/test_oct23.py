@@ -266,7 +266,7 @@ def test_probe_56_result_matches_gpt6_luna_on_chat():
 
 
 def test_bundled_site_packs_match():
-    for name in ("openai", "google", "anthropic"):
+    for name in ("openai", "google", "anthropic", "azure-foundry"):
         bundled = json.loads((ROOT / "migration_kit" / "pack_data" / f"{name}.json").read_text())
         site = json.loads((ROOT / "site" / "v1" / "packs" / f"{name}.json").read_text())
         assert bundled == site

@@ -8,6 +8,7 @@
 <meta name="description" content="Free scan in your own repo for retiring OpenAI, Anthropic Claude and Google Gemini (Vertex AI) model IDs, with the date each is switched off. Fix it yourself, buy a licence for a reviewable patch and regression report, or have us do it.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://lastorders.burntandtoast.com/">
+<link rel="canonical" href="https://lastorders.burntandtoast.com/">
 <meta property="og:title" content="Last Orders: free scan for retiring OpenAI, Claude and Gemini models">
 <meta property="og:description" content="Free scan in your own repo for retiring OpenAI, Anthropic Claude and Google Gemini (Vertex AI) model IDs, with the date each is switched off. Fix it yourself, buy a licence for a reviewable patch and regression report, or have us do it.">
 <meta property="og:image" content="https://lastorders.burntandtoast.com/og.png">
@@ -194,6 +195,15 @@ code,kbd,samp,pre,.cmd,.cmd .c,.err-block,.report .bar{font-family:ui-monospace,
 .cons-card p{font-size:1rem;line-height:1.6;color:#4A382C}
 .cons-card code{white-space:nowrap}
 .err-label{margin:0 0 12px}
+/* ---- The Burnt Brief card (21 Oct 2026): the studio's free AI newsletter. A link, not a form: signup is on Beehiiv, via the counted short link burntandtoast.com/brief/lo ---- */
+.brief-card{display:grid;grid-template-columns:auto 1fr;gap:16px 24px;align-items:start;max-width:760px;margin:0 auto;padding:24px 26px 26px;background:#FFFCF5;border:2.5px solid #2B1D14;box-shadow:4px 5px 0 #2B1D14;border-radius:14px}
+.brief-card img{width:80px;height:80px;border-radius:18px}
+.brief-card h2{margin:12px 0 10px}
+.brief-card .brief-tag{font-weight:650;font-size:1.0625rem;line-height:1.35;color:#2B1D14;margin:0 0 6px}
+.brief-card .brief-what{color:#4A382C;font-size:.9375rem;line-height:1.5;margin:0 0 16px}
+.brief-action{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px}
+.brief-action p{margin:0;font-size:.875rem;font-weight:700;color:#5E4B3E}
+@media (max-width:520px){.brief-card{grid-template-columns:1fr;padding:22px 20px 24px}.brief-card img{width:64px;height:64px;border-radius:15px}}
 @media (max-width:620px){.cons-grid{gap:24px}.cons-card{padding:24px 22px 26px}}
 /* ---- Shutdown-dates timeline (preview redesign): vertical line, one roomy studio card per date ---- */
 .deadlines{list-style:none;margin:48px 0 18px;padding:0 0 0 64px;display:flex;flex-direction:column;gap:30px;position:relative;max-width:980px}
@@ -452,6 +462,22 @@ jobs:
   <details><summary>What does "per repo" mean?</summary><p>One licence covers one GitHub repository, monorepos included, and future retirements in that same repo. If you've got lots of repos, email us and we'll sort something sensible.</p></details>
   <details><summary>Does it cover Anthropic as well as OpenAI?</summary><p>Yes. The free scan reads an Anthropic migration pack too. Claude Sonnet 4.5 (<code>claude-sonnet-4-5-20250929</code>) is deprecated and retires on 30&nbsp;November 2026; Anthropic recommends <code>claude-sonnet-5-5</code>. That date is for the Claude API; Amazon Bedrock and Google Cloud set their own, which the scan doesn't cover. Source: Anthropic's <a href="https://docs.anthropic.com/en/docs/about-claude/model-deprecations">model deprecations</a> page, checked 15 October 2026. It also flags Gemini 2.5 IDs used with Vertex AI (retiring 20&nbsp;October 2026), but doesn't rewrite them.</p></details>
   <details><summary>Who are you?</summary><p>Burnt and Toast Studios Ltd, a small, self-funded games studio in the UK. We use AI heavily in our own work, so we've done this to our own code. Same rule as our games: kind to your time, no tricks.</p></details>
+</div></section>
+
+<section id="brief" class="alt" aria-labelledby="brief-title"><div class="wrap">
+  <aside class="brief-card">
+    <img src="/img/burnt-brief-logo-160.png" alt="" width="80" height="80" loading="lazy" decoding="async">
+    <div>
+      <span class="kicker">Our free AI newsletter</span>
+      <h2 id="brief-title">The Burnt Brief</h2>
+      <p class="brief-tag">We burn through the AI noise so you only get the good bit.</p>
+      <p class="brief-what">Plain-English AI news and how-tos for UK small businesses, every Monday, Wednesday and Friday at 7am. From the studio behind Last Orders.</p>
+      <div class="brief-action">
+        <a class="btn" href="https://burntandtoast.com/brief/lo">Get The Burnt Brief</a>
+        <p>Free. Check your inbox to confirm.</p>
+      </div>
+    </div>
+  </aside>
 </div></section>
 
 <section class="contact"><div class="wrap">

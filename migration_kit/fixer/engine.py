@@ -18,7 +18,7 @@ from typing import Any
 from ..scanner import mark_output as _mark
 from .. import brand
 from ..packs import Pack, PackSet, load_packs
-from ..scanner import _rule_applies, iter_files, scan
+from ..scanner import _rule_applies, iter_files, model_independent_rules, scan
 from ..swapper import Mapping, _unified, mapping_from_packs
 from ..swapper import plan as swap_plan
 from . import jsfix, pyfix
@@ -103,6 +103,10 @@ class _PackCalls:
                 self.endpoints.setdefault(s["id"], []).extend(call["callees"])
             if call.get("params") or call.get("param_values"):
                 self.params.append((s["id"], call))
+        # File-level signals (no `call` spec, e.g. an API version set in a header or config) count for
+        # every call in a file where they match, so rules can combine them with call-level signals.
+        with_call = {s["id"] for s in pack.data.get("signals", []) if s.get("call")}
+        self.file_only = [(sid, rx, langs) for sid, rx, langs, _ in pack.signals if sid not in with_call]
         self.replacements = {m.replacement for m in list(pack.exact.values()) + pack.prefixes if m.replacement}
         for r in pack.data.get("rules", []):
             self.replacements.update((r.get("applies_to") or {}).get("replacements") or [])
@@ -119,8 +123,11 @@ class _PackCalls:
                 best, ln = sid, len(p)
         return best, ln
 
-    def call_signals(self, cs: CallSite, endpoint: str) -> set[str]:
-        sig = {endpoint}
+    def file_signals(self, text: str, lang: str) -> set[str]:
+        return {sid for sid, rx, langs in self.file_only if (not langs or lang in langs) and rx.search(text)}
+
+    def call_signals(self, cs: CallSite, endpoint: str, file_sig: set[str] | None = None) -> set[str]:
+        sig = {endpoint} | (file_sig or set())
         for sid, spec in self.params:
             ign = spec.get("ignore_values") or {}
             for p in spec.get("params") or []:
@@ -220,6 +227,7 @@ def plan_fixes(root: str | Path, packs: PackSet | None = None, mapping: Mapping 
     new_contents: dict[str, str] = {}
     diffs: list[str] = []
     parsed_providers: dict[str, set[str]] = {}
+    file_sig_cache: dict[tuple[int, str], set[str]] = {}
 
     for path, lang in iter_files(root, include_docs=False):
         rel = path.relative_to(root).as_posix()
@@ -246,7 +254,10 @@ def plan_fixes(root: str | Path, packs: PackSet | None = None, mapping: Mapping 
             pc, endpoint, _ = max(cands, key=lambda c: c[2])
             pack = pc.pack
             parsed_providers.setdefault(rel, set()).add(pack.provider)
-            sig = pc.call_signals(cs, endpoint)
+            fkey = (id(pc), rel)
+            if fkey not in file_sig_cache:
+                file_sig_cache[fkey] = pc.file_signals(cur, lang)
+            sig = pc.call_signals(cs, endpoint, file_sig_cache[fkey])
             ma, ma0 = cs.get("model"), cs0.get("model")
             model = ma.value if ma is not None and isinstance(ma.value, str) else None
             model0 = ma0.value if ma0 is not None and isinstance(ma0.value, str) else None
@@ -275,10 +286,18 @@ def plan_fixes(root: str | Path, packs: PackSet | None = None, mapping: Mapping 
                 target = None
             migration = (lm0 or lm).migration if (lm0 or lm) else None
             if target is None:
+                # Model-independent rules (no `applies_to`) still hold for this call; never edited here.
+                for rule in model_independent_rules(pack):
+                    if _rule_applies(rule, None, None, sig):
+                        fix = rule.get("fix") or {}
+                        items.append(FixItem(rel, cs.line, pack.provider, rule["id"],
+                                             "info" if rule["risk"] == "info" else "manual", rule["message"],
+                                             change=fix.get("note") or "needs a manual decision",
+                                             model=model, endpoint=endpoint, confidence=rule.get("confidence", "")))
                 if model is None:
                     heads = {m["replacement"] for m in pack.headline_migrations if m.get("replacement")}
                     would = sorted({r["id"] for r in pack.data.get("rules", []) for h in heads
-                                    if r.get("fix") and _rule_applies(r, h, None, sig)})
+                                    if r.get("fix") and r.get("applies_to") and _rule_applies(r, h, None, sig)})
                     if would:
                         items.append(FixItem(rel, cs.line, pack.provider, "model-unknown", "manual",
                                              "The model for this call isn't visible in the code, so no fix was applied. "

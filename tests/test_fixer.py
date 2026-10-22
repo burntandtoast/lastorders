@@ -131,8 +131,10 @@ def test_assume_model_and_include_inferred(tmp_path):
     res = plan_fixes(FIX, pk.load_packs(offline=True), assume_model="gpt-6-luna")
     assert _status(res, "py/variants.py", 30, "luna-chat-tools-effort") == "fixed-coupled"
     res = plan_fixes(SAMPLE, pk.load_packs(offline=True), include_inferred=True)
+    # The Anthropic sampling rules are suggest-only since packs 2026.10.22.2, also with --include-inferred.
     c = res.new_contents["app/claude_fallback.py"]
-    assert "temperature" not in c and "max_tokens=400," in c
+    assert "temperature=0.3" in c
+    assert _status(res, "app/claude_fallback.py", 8, "claude-sampling-deprecated") == "manual"
 
 
 def test_engine_is_pack_driven(tmp_path):

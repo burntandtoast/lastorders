@@ -67,3 +67,19 @@ test("/faq redirects (301) to the FAQ section on the home page", async () => {
   const toml = readFileSync(new URL("../wrangler.toml", import.meta.url), "utf8");
   assert.match(toml, /run_worker_first = \[[^\]]*"\/faq"/);
 });
+
+test("the Burnt Brief card links to the counted short link and says to confirm by email", () => {
+  const html = readFileSync(new URL("../public/index.html", import.meta.url), "utf8");
+  assert.match(html, /href="https:\/\/burntandtoast\.com\/brief\/lo">Get The Burnt Brief</);
+  assert.match(html, /Free\. Check your inbox to confirm\./);
+});
+
+test("public pages have a self-canonical; robots.txt points at sitemap.xml, which lists only public pages", () => {
+  const read = (f) => readFileSync(new URL(`../public/${f}`, import.meta.url), "utf8");
+  assert.match(read("index.html"), /<link rel="canonical" href="https:\/\/lastorders\.burntandtoast\.com\/">/);
+  assert.match(read("client-report-sample.html"), /<link rel='canonical' href='https:\/\/lastorders\.burntandtoast\.com\/client-report-sample'>/);
+  assert.match(read("robots.txt"), /^Sitemap: https:\/\/lastorders\.burntandtoast\.com\/sitemap\.xml$/m);
+  assert.match(read("robots.txt"), /^Disallow: \/buy$/m);
+  const locs = [...read("sitemap.xml").matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
+  assert.deepEqual(locs, ["https://lastorders.burntandtoast.com/", "https://lastorders.burntandtoast.com/client-report-sample", "https://lastorders.burntandtoast.com/terms"]);
+});

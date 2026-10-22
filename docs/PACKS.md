@@ -13,7 +13,7 @@ engines. All provider knowledge lives in packs.
 | `migrations[]` | named retirement events `{id, title, announced, shutdown, replacement, headline}`. `headline` ones drive the report deadline and the default swap mapping |
 | `models[]` | `{id, kind: snapshot/alias/family, alias_of, match: exact/prefix, shutdown, replacement, migration, confidence, note, map_automatically}` |
 | `signals[]` | call-site and usage detectors `{id, pattern, languages[], sdk, call}`, e.g. openai/anthropic/LangChain clients, plain HTTP, `max_tokens`, tools. `pattern` works at file level (scan). The optional `call` drives the fixer at call level: `callees` (dotted-suffix match, longest wins) marks an endpoint, `params` fires when an argument is passed (`ignore_values` excepted, e.g. `temperature: 1`), and `param_values` fires on literal values (e.g. `reasoning.effort: none`) |
-| `rules[]` | `{id, type, applies_to{replacements, migrations}, when_all, when_any, unless_any, param, new_param, risk, message, confidence, evidence, fix}`. `type` is one of `param_renamed`, `param_removed`, `param_conditional`, `endpoint`, `tool_calling` or `info`. `fix` is a machine-readable hint for the auto-fixer |
+| `rules[]` | `{id, type, applies_to{replacements, migrations} (omit for a model-independent rule, reported per file), when_all, when_any, unless_any, param, new_param, risk, message, confidence, evidence, fix}`. `type` is one of `param_renamed`, `param_removed`, `param_conditional`, `endpoint`, `tool_calling` or `info`. `fix` is a machine-readable hint for the auto-fixer |
 | `risk_policy` | `{urgent_days, default_risk, shutdown_risk_when_any, otherwise_note}`. `shutdown_risk_when_any` is a list of signal ids: the shutdown date raises risk to high only when the same file has one of them. Otherwise the finding stays at `default_risk` and uses `otherwise_note` instead of the model note. Signals are file-level, so a signal in another file does not count |
 | `replacement_facts{model: {...}}` | capabilities, prices and `eval.model_params` (used by `init-evals`) |
 | `facts{confirmed, live_checked_on, live, unconfirmed}`, `report{next_steps, fine_tune_advice}` | text for the client report |
@@ -92,3 +92,21 @@ Risk uses `shutdown_risk_when_any: ["vertex"]`. The `vertex` signal matches, in 
 - the `@google-cloud/vertexai` package
 
 `@google/genai` on its own is the Gemini API client and does not count. When the file has no `vertex` signal, the finding stays informational and the note is `retires on Vertex AI; not deprecated on the Gemini API`. A Vertex import in a different file does not raise this file: that case is unclear, and unclear stays informational. The shutdown date raises a Vertex finding to high only when it is within 30 days or already past.
+
+## Microsoft Foundry (`azure-foundry`)
+
+Partner models on Microsoft Foundry. Facts are from the [model retirement schedule](https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/model-retirement-schedule), "Foundry Models from partners and community" (checked 22 Oct 2026). These dates are Foundry's; the model makers' own APIs set their own.
+
+| Model ID | Foundry retirement | Suggested replacement | Notes |
+|---|---|---|---|
+| `mistral-small-2503` | 2027-02-15 (was 2026-12-09) | `mistralai-mistral-small-4-119b-2603` | deprecated 9 Oct 2026; Mistral's own API retired it 30 Nov 2025 |
+| `Cohere-embed-v3-english`, `Cohere-embed-v3-multilingual` | 2027-02-15 | `Cohere-Embed-V5-Fast` / `-Pro` | rule `foundry-cohere-embed-v3-rebuild-index`: rebuild every vector index |
+| `Phi-4`, `Phi-4-mini-instruct`, `Phi-4-mini-reasoning`, `Phi-4-multimodal-instruct`, `Phi-4-reasoning` | 2027-01-17 | `microsoft--phi-4` (Foundry Managed Compute) | |
+| `Llama-3.3-70B-Instruct` | none | | partner listing retires 2027-01-31 |
+| `Llama-4-Maverick-17B-128E-Instruct-FP8` | none | | partner listing retires 2026-11-19 |
+
+Flag only: no model is swapped. Risk uses `shutdown_risk_when_any: ["azure_foundry"]` (Foundry / Azure AI inference hosts, `azure.ai.inference`, `@azure-rest/ai-inference`, LangChain Azure AI, `AZURE_AI_*` endpoint or key variables). Deployment names on Foundry are chosen by the customer, so a repo may not contain these ids at all.
+
+## Anthropic API version 2026-10-21
+
+`temperature`, `top_p` and `top_k` were removed in API version `2026-10-21` ([API parameter deprecations](https://platform.claude.com/docs/en/about-claude/model-deprecations), checked 22 Oct 2026). The signal `anthropic_version_2026_10_21` matches an `anthropic-version` header, env var or config value of 2026-10-21 or later. With it the sampling parameters are an error (`claude-sampling-removed-api-2026-10-21`, high); without it they are a warning (`claude-sampling-api-2026-10-21-warning`, medium), because the SDKs send an older version by default. Both rules are `manual`, and so is `claude-sampling-deprecated` (never applied, also with `--include-inferred`). They have no `applies_to`, which makes them model-independent: the scan reports them once per file in Anthropic code (category `param_rule`) unless a retiring-model finding in that file already carries them, and `fix` checks every Messages call. Installs up to 0.4.11 only show them next to retiring Claude ids in the scan, and as a warning in the fix plan when the version is set on the client.
