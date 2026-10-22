@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.4.12
 - **Anthropic sampling flags in the free scan, suggest-only fixes** (agreed with Chad, 22 Oct 2026; Anthropic pack 2026.10.22.2):
   - `scan` now flags `temperature`, `top_p` and `top_k` wherever Anthropic code sets them (a file with the Anthropic SDK, LangChain Anthropic, `api.anthropic.com/v1` or a Messages call), not only next to retiring Claude ids: one finding per file, category `param_rule` ("API parameter change"), at the first line that sets one, with the other lines listed. It says "This will fail once you move to the 2026-10-21 version": an error (high, counts for `--fail-on-high`) when the file sets `anthropic-version` 2026-10-21 or later, otherwise a warning (medium). The step-by-step fix is only in the `fix` plan.
   - The older `claude-sampling-deprecated` rule no longer removes the parameters with `--include-inferred`. All three Anthropic sampling rules are suggest-only.
