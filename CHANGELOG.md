@@ -1,6 +1,11 @@
 # Changelog
 
 ## Unreleased
+- **Packs 22 Oct 2026** (agreed with Chad, from the 22 Oct deprecation watch; hosted at packs.burntandtoast.com, bundled in the next CLI release):
+  - Anthropic pack 2026.10.22.1: two new rules for `temperature` / `top_p` / `top_k`, which Anthropic removed in API version `2026-10-21` (400 on any model). `claude-sampling-removed-api-2026-10-21` is an error (high) when the file sets `anthropic-version` to 2026-10-21 or later (new file-level signal `anthropic_version_2026_10_21`: header, curl `-H`, env or config). Otherwise `claude-sampling-api-2026-10-21-warning` is a warning (medium). Both cover the active Claude models in Anthropic's status table and are `manual`: the fix is suggested and never applied, also with `--include-inferred`.
+  - New Microsoft Foundry pack (`azure-foundry` 2026.10.22.1, flag only, risk raised only when the file shows Azure / Foundry use): `mistral-small-2503` retires on Foundry on 15 Feb 2027 (moved from 9 Dec 2026; Mistral's own API retired it on 30 Nov 2025). `Cohere-embed-v3-english` / `-multilingual` retire 15 Feb 2027 with rule `foundry-cohere-embed-v3-rebuild-index`: any vector index built with them must be rebuilt, and the id is never swapped. Plain rows for `Llama-3.3-70B-Instruct` and `Llama-4-Maverick-17B-128E-Instruct-FP8` (no date: Foundry lists them with no date when sold by Azure, partner-listing dates are in the notes), and the Phi-4 family (17 Jan 2027 on Foundry). Installs before this release don't fetch the new provider.
+  - Engine: the fixer now counts file-level signals (signals without a `call` spec) for every call in the file, so a rule can combine an API version set on the client with a parameter on the call. A model row with no shutdown, replacement or migration is reported as known but not retiring (info).
+  - Pack site build keeps `X-Robots-Tag: noindex` on the whole pack host.
 - Licence-needed messages and CLI help no longer say "automatic": `fix` without a licence names "the fix patch" and "applying the fixes in place", and the `--fix-plan` help says it adds the Fix plan section. Manual-item reasons say "no rename rule" / "no fix rule defined for this call type" and "could not apply this change safely".
 - Landing page: `/faq` redirects (301) to `/#faq`.
 - The licence price is now £179 including VAT.

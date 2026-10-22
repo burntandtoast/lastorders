@@ -3,12 +3,12 @@
   "pack_format": 1,
   "provider": "anthropic",
   "name": "Anthropic Claude API (stub)",
-  "version": "2026.10.15.2",
-  "updated": "2026-10-15",
+  "version": "2026.10.22.1",
+  "updated": "2026-10-22",
   "status": "stub",
   "notes": [
-    "STUB pack to prove the engine is provider-neutral. It contains only facts from Anthropic's model deprecations page (read 15 Oct 2026), for the Claude API. Amazon Bedrock and Google Cloud set their own retirement dates and are NOT covered.",
-    "No live API checks have been run against Anthropic. No aliases, eval adapter or fixer rules beyond the documented sampling-parameter deprecation."
+    "STUB pack to prove the engine is provider-neutral. It contains only facts from Anthropic's model deprecations page (read 15 Oct 2026; API parameter deprecations re-read 22 Oct 2026), for the Claude API. Amazon Bedrock and Google Cloud set their own retirement dates and are NOT covered.",
+    "No live API checks have been run against Anthropic. No aliases or eval adapter. Sampling-parameter rules: claude-sampling-deprecated (Claude 4.7+ models, earlier API versions) and the two anthropic-version 2026-10-21 rules, which are never applied automatically."
   ],
   "sources": [
     {
@@ -16,6 +16,12 @@
       "title": "Anthropic model deprecations",
       "url": "https://docs.anthropic.com/en/docs/about-claude/model-deprecations",
       "checked": "2026-10-15"
+    },
+    {
+      "id": "api-parameter-deprecations",
+      "title": "Anthropic model deprecations: API parameter deprecations",
+      "url": "https://platform.claude.com/docs/en/about-claude/model-deprecations",
+      "checked": "2026-10-22"
     }
   ],
   "id_patterns": [
@@ -211,6 +217,22 @@
           "top_k"
         ]
       }
+    },
+    {
+      "id": "anthropic_version_2026_10_21",
+      "languages": [
+        "python",
+        "javascript",
+        "typescript",
+        "yaml",
+        "json",
+        "toml",
+        "ini",
+        "env",
+        "text"
+      ],
+      "pattern": "(?i)anthropic[-_]version[\"'\\]]{0,2}\\s*[:=,]\\s*[\"']?(?:2026-10-(?:2[1-9]|3[01])|2026-1[12]-[0-3]\\d|20(?:2[7-9]|[3-9]\\d)-[01]\\d-[0-3]\\d)(?![0-9])",
+      "description": "anthropic-version header or config set to 2026-10-21 or later (file level). The SDKs send an older version by default."
     }
   ],
   "rules": [
@@ -246,6 +268,82 @@
         "requires_new_model": false,
         "note": "Inferred rule: shown for manual review unless you pass --include-inferred."
       }
+    },
+    {
+      "id": "claude-sampling-removed-api-2026-10-21",
+      "type": "param_removed",
+      "applies_to": {
+        "replacements": [
+          "claude-fable-5-1",
+          "claude-mythos-5-1",
+          "claude-fable-5",
+          "claude-mythos-5",
+          "claude-mythos-preview",
+          "claude-opus-5-5",
+          "claude-opus-5",
+          "claude-opus-4-8",
+          "claude-opus-4-7",
+          "claude-opus-4-6",
+          "claude-opus-4-5-20251101",
+          "claude-sonnet-5-5",
+          "claude-sonnet-5",
+          "claude-sonnet-4-6",
+          "claude-haiku-5-5",
+          "claude-haiku-4-5-20251001"
+        ]
+      },
+      "when_all": [
+        "claude_sampling",
+        "anthropic_version_2026_10_21"
+      ],
+      "param": "temperature,top_p,top_k",
+      "risk": "high",
+      "confidence": "confirmed",
+      "evidence": "Anthropic model deprecations, API parameter deprecations (checked 22 Oct 2026): temperature, top_p, top_k are 'Removed in API version 2026-10-21' and return a 400 error; earlier API versions return a 400 only when set to a non-default value on Claude 4.7 and later models and Claude Mythos Preview. Recommended replacement: omit them and use prompting.",
+      "message": "Error: sets temperature/top_p/top_k while anthropic-version is 2026-10-21 or later. Anthropic removed these parameters in API version 2026-10-21, so every request that sends them returns HTTP 400, on any model. Suggested fix (not applied): remove them and guide behaviour with prompting.",
+      "fix": {
+        "action": "manual",
+        "note": "Suggested fix, not applied automatically: remove temperature, top_p and top_k from this call and guide behaviour with prompting. Check the output before you ship it."
+      }
+    },
+    {
+      "id": "claude-sampling-api-2026-10-21-warning",
+      "type": "param_removed",
+      "applies_to": {
+        "replacements": [
+          "claude-fable-5-1",
+          "claude-mythos-5-1",
+          "claude-fable-5",
+          "claude-mythos-5",
+          "claude-mythos-preview",
+          "claude-opus-5-5",
+          "claude-opus-5",
+          "claude-opus-4-8",
+          "claude-opus-4-7",
+          "claude-opus-4-6",
+          "claude-opus-4-5-20251101",
+          "claude-sonnet-5-5",
+          "claude-sonnet-5",
+          "claude-sonnet-4-6",
+          "claude-haiku-5-5",
+          "claude-haiku-4-5-20251001"
+        ]
+      },
+      "when_all": [
+        "claude_sampling"
+      ],
+      "unless_any": [
+        "anthropic_version_2026_10_21"
+      ],
+      "param": "temperature,top_p,top_k",
+      "risk": "medium",
+      "confidence": "confirmed",
+      "evidence": "Anthropic model deprecations, API parameter deprecations (checked 22 Oct 2026): temperature, top_p, top_k are 'Removed in API version 2026-10-21' and return a 400 error; earlier API versions return a 400 only when set to a non-default value on Claude 4.7 and later models and Claude Mythos Preview. Recommended replacement: omit them and use prompting.",
+      "message": "Warning: sets temperature/top_p/top_k. Anthropic removed them in API version 2026-10-21: once this code sends anthropic-version 2026-10-21 or later, these requests return HTTP 400 (earlier versions already reject non-default values on Claude 4.7 and later). Suggested fix (not applied): remove them before you move to the new API version.",
+      "fix": {
+        "action": "manual",
+        "note": "Suggested fix, not applied automatically: remove temperature, top_p and top_k from this call and guide behaviour with prompting. Check the output before you ship it."
+      }
     }
   ],
   "risk_policy": {
@@ -257,7 +355,8 @@
       "claude-sonnet-4-5-20250929 is deprecated and retires on the Claude API on 30 Nov 2026; recommended replacement claude-sonnet-5-5.",
       "Anthropic gives at least 60 days' notice before retiring publicly released models.",
       "Amazon Bedrock and Google Cloud set their own retirement schedules; these dates apply to Anthropic-operated platforms only.",
-      "temperature, top_p and top_k are deprecated on Claude 4.7 and later models (400 at non-default values)."
+      "temperature, top_p and top_k are deprecated on Claude 4.7 and later models (400 at non-default values).",
+      "API version 2026-10-21 removes temperature, top_p and top_k: requests that send them return a 400 error on any model. Earlier API versions reject them only at non-default values on Claude 4.7 and later and Claude Mythos Preview."
     ],
     "unconfirmed": [
       "This is a stub pack: no live checks, no alias data, and replacements' parameter behaviour beyond the docs is untested."
@@ -265,7 +364,8 @@
   },
   "report": {
     "next_steps": [
-      "Swap retired Claude model ids for the recommended replacements, remove temperature/top_p/top_k where targeting Claude 4.7+, and run a regression eval."
+      "Swap retired Claude model ids for the recommended replacements, remove temperature/top_p/top_k where targeting Claude 4.7+, and run a regression eval.",
+      "Before moving to anthropic-version 2026-10-21 or later, remove temperature/top_p/top_k from every Messages call (Last Orders flags these and never removes them for you)."
     ]
   }
 }

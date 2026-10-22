@@ -1,15 +1,24 @@
 {
   "index_format": 1,
-  "generated": "2026-10-16",
+  "generated": "2026-10-22",
   "packs": [
     {
       "provider": "anthropic",
       "name": "Anthropic Claude API (stub)",
-      "version": "2026.10.15.2",
+      "version": "2026.10.22.1",
       "status": "stub",
       "pack_format": 1,
       "url": "packs/anthropic.json",
-      "sha256": "d1cfc1574127221714c7ef0f60a640c199b53d36598a68fb7ed501af7c40646b"
+      "sha256": "d4a3264b3efdb661d137f71397934c195edf96d5393c2824a9a46b8a5ad0ab3b"
+    },
+    {
+      "provider": "azure-foundry",
+      "name": "Microsoft Foundry partner models (Mistral, Cohere, Meta, Microsoft)",
+      "version": "2026.10.22.1",
+      "status": "stable",
+      "pack_format": 1,
+      "url": "packs/azure-foundry.json",
+      "sha256": "b8fe947a6cde99b26504eb759b52896f0a6e86814bbfbda4c0d0094d42faafd5"
     },
     {
       "provider": "google",

@@ -1,0 +1,267 @@
+{
+  "$schema": "https://packs.burntandtoast.com/v1/pack.schema.json",
+  "pack_format": 1,
+  "provider": "azure-foundry",
+  "name": "Microsoft Foundry partner models (Mistral, Cohere, Meta, Microsoft)",
+  "version": "2026.10.22.1",
+  "updated": "2026-10-22",
+  "status": "stable",
+  "notes": [
+    "Facts from Microsoft's Foundry model retirement schedule (checked 22 Oct 2026), 'Foundry Models from partners and community' section. These dates apply to Microsoft Foundry only: the model makers' own APIs and other hosts set their own dates.",
+    "Flag only: every model has map_automatically false, so `swap` and `fix` never rewrite these IDs. Risk is raised by a shutdown date only when the same file shows Azure / Foundry use (signal azure_foundry).",
+    "Llama 3.3 70B and Llama 4 Maverick are plain rows with no retirement date: the schedule lists them twice (sold by Azure: no date; partner listing: a date), and a repo doesn't show which one it uses. The partner dates are in each note."
+  ],
+  "sources": [
+    {
+      "id": "foundry-schedule",
+      "title": "Microsoft Foundry: Model retirement schedule",
+      "url": "https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/model-retirement-schedule",
+      "checked": "2026-10-22"
+    },
+    {
+      "id": "mistral-models",
+      "title": "Mistral docs: Models overview (deprecated and retired models)",
+      "url": "https://docs.mistral.ai/models",
+      "checked": "2026-10-22"
+    },
+    {
+      "id": "cohere-deprecations",
+      "title": "Cohere deprecations",
+      "url": "https://docs.cohere.com/docs/deprecations",
+      "checked": "2026-10-22"
+    }
+  ],
+  "id_patterns": [
+    {
+      "pattern": "mistral-small-2503"
+    },
+    {
+      "pattern": "Cohere-embed-v3-(?:english|multilingual)"
+    },
+    {
+      "pattern": "Llama-3\\.3-70B-Instruct"
+    },
+    {
+      "pattern": "Llama-4-Maverick-17B-128E-Instruct-FP8"
+    },
+    {
+      "pattern": "Phi-4(?:-mini-instruct|-mini-reasoning|-multimodal-instruct|-reasoning)?"
+    }
+  ],
+  "migrations": [
+    {
+      "id": "foundry-mistral-small-2503-2027-02-15",
+      "title": "Microsoft Foundry retires mistral-small-2503",
+      "announced": "2026-10-09",
+      "shutdown": "2027-02-15",
+      "replacement": "mistralai-mistral-small-4-119b-2603",
+      "headline": false,
+      "source": "foundry-schedule"
+    },
+    {
+      "id": "foundry-cohere-embed-v3-2027-02-15",
+      "title": "Microsoft Foundry retires Cohere Embed v3 (English and multilingual)",
+      "shutdown": "2027-02-15",
+      "replacement": "Cohere-Embed-V5-Fast",
+      "headline": false,
+      "source": "foundry-schedule"
+    },
+    {
+      "id": "foundry-phi-4-2027-01-17",
+      "title": "Microsoft Foundry retires the Phi-4 family (partner listing)",
+      "shutdown": "2027-01-17",
+      "replacement": "microsoft--phi-4",
+      "headline": false,
+      "source": "foundry-schedule"
+    }
+  ],
+  "models": [
+    {
+      "id": "mistral-small-2503",
+      "kind": "snapshot",
+      "match": "exact",
+      "shutdown": "2027-02-15",
+      "replacement": "mistralai-mistral-small-4-119b-2603",
+      "migration": "foundry-mistral-small-2503-2027-02-15",
+      "section": "Foundry Models from partners and community > Mistral AI",
+      "confidence": "confirmed",
+      "source": "foundry-schedule",
+      "map_automatically": false,
+      "note": "Microsoft Foundry (version 1): deprecated 9 Oct 2026, retires 15 Feb 2027 (the date moved from 9 Dec 2026). Mistral's own API already retired mistral-small-2503 on 30 Nov 2025 (alternative: Mistral Small 4), so calls outside Foundry are failing now."
+    },
+    {
+      "id": "Cohere-embed-v3-english",
+      "kind": "snapshot",
+      "match": "exact",
+      "shutdown": "2027-02-15",
+      "replacement": "Cohere-Embed-V5-Fast",
+      "migration": "foundry-cohere-embed-v3-2027-02-15",
+      "section": "Foundry Models from partners and community > Cohere",
+      "confidence": "confirmed",
+      "source": "foundry-schedule",
+      "map_automatically": false,
+      "note": "Microsoft Foundry: deprecated 15 Nov 2026, retires 15 Feb 2027; replacements Cohere-Embed-V5-Fast or Cohere-Embed-V5-Pro. Embedding model: vectors from Cohere-embed-v3 can't be compared with vectors from any other model. Before switching, re-embed every document and rebuild each vector index (and stored embeddings or caches) built with it, then move the queries over at the same time. Cohere's own API lists no retirement for embed-english-v3.0."
+    },
+    {
+      "id": "Cohere-embed-v3-multilingual",
+      "kind": "snapshot",
+      "match": "exact",
+      "shutdown": "2027-02-15",
+      "replacement": "Cohere-Embed-V5-Fast",
+      "migration": "foundry-cohere-embed-v3-2027-02-15",
+      "section": "Foundry Models from partners and community > Cohere",
+      "confidence": "confirmed",
+      "source": "foundry-schedule",
+      "map_automatically": false,
+      "note": "Microsoft Foundry: deprecated 15 Nov 2026, retires 15 Feb 2027; replacements Cohere-Embed-V5-Fast or Cohere-Embed-V5-Pro. Embedding model: vectors from Cohere-embed-v3 can't be compared with vectors from any other model. Before switching, re-embed every document and rebuild each vector index (and stored embeddings or caches) built with it, then move the queries over at the same time. Cohere's own API lists no retirement for embed-multilingual-v3.0."
+    },
+    {
+      "id": "Llama-3.3-70B-Instruct",
+      "kind": "snapshot",
+      "match": "exact",
+      "section": "Meta",
+      "confidence": "confirmed",
+      "source": "foundry-schedule",
+      "note": "Llama 3.3 70B Instruct. Microsoft Foundry: no retirement date when sold by Azure; the partner (Marketplace) listing retires 31 Jan 2027. Check which one your deployment uses."
+    },
+    {
+      "id": "Llama-4-Maverick-17B-128E-Instruct-FP8",
+      "kind": "snapshot",
+      "match": "exact",
+      "section": "Meta",
+      "confidence": "confirmed",
+      "source": "foundry-schedule",
+      "note": "Llama 4 Maverick. Microsoft Foundry: no retirement date when sold by Azure; the partner (Marketplace) listing retires 19 Nov 2026. Check which one your deployment uses."
+    },
+    {
+      "id": "Phi-4",
+      "kind": "snapshot",
+      "match": "exact",
+      "shutdown": "2027-01-17",
+      "replacement": "microsoft--phi-4",
+      "migration": "foundry-phi-4-2027-01-17",
+      "section": "Foundry Models from partners and community > Microsoft",
+      "confidence": "confirmed",
+      "source": "foundry-schedule",
+      "map_automatically": false,
+      "note": "Microsoft Foundry (partner listing): retires 17 Jan 2027; Microsoft lists microsoft--phi-4 on Foundry Managed Compute as the replacement. Other hosts (local, Hugging Face) are not covered."
+    },
+    {
+      "id": "Phi-4-mini-instruct",
+      "kind": "snapshot",
+      "match": "exact",
+      "shutdown": "2027-01-17",
+      "replacement": "microsoft--phi-4",
+      "migration": "foundry-phi-4-2027-01-17",
+      "section": "Foundry Models from partners and community > Microsoft",
+      "confidence": "confirmed",
+      "source": "foundry-schedule",
+      "map_automatically": false,
+      "note": "Microsoft Foundry (partner listing): retires 17 Jan 2027; Microsoft lists microsoft--phi-4 on Foundry Managed Compute as the replacement. Other hosts (local, Hugging Face) are not covered."
+    },
+    {
+      "id": "Phi-4-mini-reasoning",
+      "kind": "snapshot",
+      "match": "exact",
+      "shutdown": "2027-01-17",
+      "replacement": "microsoft--phi-4",
+      "migration": "foundry-phi-4-2027-01-17",
+      "section": "Foundry Models from partners and community > Microsoft",
+      "confidence": "confirmed",
+      "source": "foundry-schedule",
+      "map_automatically": false,
+      "note": "Microsoft Foundry (partner listing): retires 17 Jan 2027; Microsoft lists microsoft--phi-4 on Foundry Managed Compute as the replacement. Other hosts (local, Hugging Face) are not covered."
+    },
+    {
+      "id": "Phi-4-multimodal-instruct",
+      "kind": "snapshot",
+      "match": "exact",
+      "shutdown": "2027-01-17",
+      "replacement": "microsoft--phi-4",
+      "migration": "foundry-phi-4-2027-01-17",
+      "section": "Foundry Models from partners and community > Microsoft",
+      "confidence": "confirmed",
+      "source": "foundry-schedule",
+      "map_automatically": false,
+      "note": "Microsoft Foundry (partner listing): retires 17 Jan 2027; Microsoft lists microsoft--phi-4 on Foundry Managed Compute as the replacement. Other hosts (local, Hugging Face) are not covered."
+    },
+    {
+      "id": "Phi-4-reasoning",
+      "kind": "snapshot",
+      "match": "exact",
+      "shutdown": "2027-01-17",
+      "replacement": "microsoft--phi-4",
+      "migration": "foundry-phi-4-2027-01-17",
+      "section": "Foundry Models from partners and community > Microsoft",
+      "confidence": "confirmed",
+      "source": "foundry-schedule",
+      "map_automatically": false,
+      "note": "Microsoft Foundry (partner listing): retires 17 Jan 2027; Microsoft lists microsoft--phi-4 on Foundry Managed Compute as the replacement. Other hosts (local, Hugging Face) are not covered."
+    }
+  ],
+  "signals": [
+    {
+      "id": "azure_foundry",
+      "sdk": "azure",
+      "pattern": "services\\.ai\\.azure\\.com|models\\.ai\\.azure\\.com|inference\\.ai\\.azure\\.com|\\.openai\\.azure\\.com|cognitiveservices\\.azure\\.com",
+      "description": "Microsoft Foundry / Azure AI endpoint host in the same file"
+    },
+    {
+      "id": "azure_foundry",
+      "sdk": "azure",
+      "pattern": "azure\\.ai\\.inference|azure-ai-inference|@azure-rest/ai-inference|langchain_azure_ai|AzureAIChatCompletionsModel|AzureAIEmbeddingsModel|AZURE_AI_[A-Z_]*(?:ENDPOINT|KEY)|\\bazure_ai/",
+      "description": "Azure AI inference SDK, LangChain Azure AI or Foundry env vars in the same file"
+    },
+    {
+      "id": "cohere_embed_v3",
+      "pattern": "Cohere-embed-v3-(?:english|multilingual)",
+      "description": "Cohere Embed v3 model id (file level)"
+    }
+  ],
+  "rules": [
+    {
+      "id": "foundry-cohere-embed-v3-rebuild-index",
+      "type": "info",
+      "applies_to": {
+        "migrations": [
+          "foundry-cohere-embed-v3-2027-02-15"
+        ]
+      },
+      "when_any": [
+        "cohere_embed_v3"
+      ],
+      "risk": "medium",
+      "confidence": "confirmed",
+      "evidence": "Microsoft Foundry model retirement schedule (checked 22 Oct 2026): Cohere-embed-v3-english and Cohere-embed-v3-multilingual retire 2027-02-15, replacements Cohere-Embed-V5-Fast / Cohere-Embed-V5-Pro. Embeddings from different models are not interchangeable.",
+      "message": "Cohere Embed v3 retires on Microsoft Foundry on 15 Feb 2027. Any vector index built with it must be rebuilt: re-embed every document with the new model before queries switch, because v3 vectors can't be compared with V5 vectors. Never swap the model id on its own; Last Orders won't change it for you.",
+      "fix": {
+        "action": "manual",
+        "note": "Not automated: plan a re-embedding job and an index rebuild, then switch the model for indexing and queries together."
+      }
+    }
+  ],
+  "risk_policy": {
+    "urgent_days": 30,
+    "default_risk": "info",
+    "shutdown_risk_when_any": [
+      "azure_foundry"
+    ]
+  },
+  "facts": {
+    "confirmed": [
+      "Microsoft Foundry: mistral-small-2503 (version 1) was deprecated on 9 Oct 2026 and retires on 15 Feb 2027; replacement mistralai-mistral-small-4-119b-2603.",
+      "Mistral's own API deprecated mistral-small-2503 on 6 Nov 2025 and retired it on 30 Nov 2025.",
+      "Microsoft Foundry: Cohere-embed-v3-english and Cohere-embed-v3-multilingual are deprecated on 15 Nov 2026 and retire on 15 Feb 2027; replacements Cohere-Embed-V5-Fast and Cohere-Embed-V5-Pro.",
+      "Microsoft Foundry: Phi-4, Phi-4-mini-instruct, Phi-4-mini-reasoning, Phi-4-multimodal-instruct and Phi-4-reasoning retire on 17 Jan 2027 (partner listing).",
+      "Microsoft Foundry: Llama-3.3-70B-Instruct and Llama-4-Maverick-17B-128E-Instruct-FP8 have no retirement date when sold by Azure; the partner listings retire on 31 Jan 2027 and 19 Nov 2026."
+    ],
+    "unconfirmed": [
+      "No live API checks. Deployment names on Foundry are chosen by the customer, so a repo may not contain these model IDs at all."
+    ]
+  },
+  "report": {
+    "next_steps": [
+      "For Foundry deployments of these models, plan the switch by hand. For Cohere Embed v3, budget a full re-embed and index rebuild."
+    ]
+  }
+}

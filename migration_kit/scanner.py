@@ -1028,6 +1028,11 @@ def assess(f: Finding, pack: Pack, sig: list[str], today: dt.date) -> None:
         f.category, f.risk, f.confidence = "not_listed", "info", "n/a"
         f.notes.append(f"Not listed as retiring in the {pack.provider} pack (v{pack.version}).")
         return
+    if not m.shutdown and not m.replacement and not m.migration:
+        # A plain model row: the pack knows the id but lists no retirement for it.
+        f.category, f.risk, f.confidence = "not_listed", "info", m.confidence
+        f.notes.append(m.note or f"Known to the {pack.provider} pack (v{pack.version}); no retirement date listed.")
+        return
     headline = {x["id"] for x in pack.headline_migrations}
     f.category = "in_scope" if m.migration in headline else "other_deprecated"
     f.shutdown, f.suggested, f.confidence, f.migration = m.shutdown, m.replacement, m.confidence, m.migration
@@ -1049,7 +1054,7 @@ def assess(f: Finding, pack: Pack, sig: list[str], today: dt.date) -> None:
         elif days <= pack.urgent_days:
             f.risk = "high"
             f.notes.append(f"Shuts down in {days} days.")
-    if f.category == "other_deprecated":
+    if f.category == "other_deprecated" and m.replacement:
         f.notes.append(f"Outside the headline migration; the listed replacement is {m.replacement}.")
     for rule in pack.data.get("rules", []):
         if _rule_applies(rule, m.replacement, m.migration, sigset):

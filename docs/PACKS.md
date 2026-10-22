@@ -92,3 +92,21 @@ Risk uses `shutdown_risk_when_any: ["vertex"]`. The `vertex` signal matches, in 
 - the `@google-cloud/vertexai` package
 
 `@google/genai` on its own is the Gemini API client and does not count. When the file has no `vertex` signal, the finding stays informational and the note is `retires on Vertex AI; not deprecated on the Gemini API`. A Vertex import in a different file does not raise this file: that case is unclear, and unclear stays informational. The shutdown date raises a Vertex finding to high only when it is within 30 days or already past.
+
+## Microsoft Foundry (`azure-foundry`)
+
+Partner models on Microsoft Foundry. Facts are from the [model retirement schedule](https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/model-retirement-schedule), "Foundry Models from partners and community" (checked 22 Oct 2026). These dates are Foundry's; the model makers' own APIs set their own.
+
+| Model ID | Foundry retirement | Suggested replacement | Notes |
+|---|---|---|---|
+| `mistral-small-2503` | 2027-02-15 (was 2026-12-09) | `mistralai-mistral-small-4-119b-2603` | deprecated 9 Oct 2026; Mistral's own API retired it 30 Nov 2025 |
+| `Cohere-embed-v3-english`, `Cohere-embed-v3-multilingual` | 2027-02-15 | `Cohere-Embed-V5-Fast` / `-Pro` | rule `foundry-cohere-embed-v3-rebuild-index`: rebuild every vector index |
+| `Phi-4`, `Phi-4-mini-instruct`, `Phi-4-mini-reasoning`, `Phi-4-multimodal-instruct`, `Phi-4-reasoning` | 2027-01-17 | `microsoft--phi-4` (Foundry Managed Compute) | |
+| `Llama-3.3-70B-Instruct` | none | | partner listing retires 2027-01-31 |
+| `Llama-4-Maverick-17B-128E-Instruct-FP8` | none | | partner listing retires 2026-11-19 |
+
+Flag only: no model is swapped. Risk uses `shutdown_risk_when_any: ["azure_foundry"]` (Foundry / Azure AI inference hosts, `azure.ai.inference`, `@azure-rest/ai-inference`, LangChain Azure AI, `AZURE_AI_*` endpoint or key variables). Deployment names on Foundry are chosen by the customer, so a repo may not contain these ids at all.
+
+## Anthropic API version 2026-10-21
+
+`temperature`, `top_p` and `top_k` were removed in API version `2026-10-21` ([API parameter deprecations](https://platform.claude.com/docs/en/about-claude/model-deprecations), checked 22 Oct 2026). The signal `anthropic_version_2026_10_21` matches an `anthropic-version` header, env var or config value of 2026-10-21 or later. With it the sampling parameters are an error (`claude-sampling-removed-api-2026-10-21`, high); without it they are a warning (`claude-sampling-api-2026-10-21-warning`, medium), because the SDKs send an older version by default. Both rules are `manual`. The scan only attaches rules to listed (retiring) model ids, so in the free scan these rules show next to retiring Claude ids; `fix` checks every Messages call on an active Claude model.
