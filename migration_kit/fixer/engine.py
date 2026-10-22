@@ -18,7 +18,7 @@ from typing import Any
 from ..scanner import mark_output as _mark
 from .. import brand
 from ..packs import Pack, PackSet, load_packs
-from ..scanner import _rule_applies, iter_files, scan
+from ..scanner import _rule_applies, iter_files, model_independent_rules, scan
 from ..swapper import Mapping, _unified, mapping_from_packs
 from ..swapper import plan as swap_plan
 from . import jsfix, pyfix
@@ -286,10 +286,18 @@ def plan_fixes(root: str | Path, packs: PackSet | None = None, mapping: Mapping 
                 target = None
             migration = (lm0 or lm).migration if (lm0 or lm) else None
             if target is None:
+                # Model-independent rules (no `applies_to`) still hold for this call; never edited here.
+                for rule in model_independent_rules(pack):
+                    if _rule_applies(rule, None, None, sig):
+                        fix = rule.get("fix") or {}
+                        items.append(FixItem(rel, cs.line, pack.provider, rule["id"],
+                                             "info" if rule["risk"] == "info" else "manual", rule["message"],
+                                             change=fix.get("note") or "needs a manual decision",
+                                             model=model, endpoint=endpoint, confidence=rule.get("confidence", "")))
                 if model is None:
                     heads = {m["replacement"] for m in pack.headline_migrations if m.get("replacement")}
                     would = sorted({r["id"] for r in pack.data.get("rules", []) for h in heads
-                                    if r.get("fix") and _rule_applies(r, h, None, sig)})
+                                    if r.get("fix") and r.get("applies_to") and _rule_applies(r, h, None, sig)})
                     if would:
                         items.append(FixItem(rel, cs.line, pack.provider, "model-unknown", "manual",
                                              "The model for this call isn't visible in the code, so no fix was applied. "

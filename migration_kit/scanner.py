@@ -77,7 +77,7 @@ class Finding:
     kind: str            # sdk_call | env | config | string_literal | doc | comment | name_check | allow_list | prose
     language: str
     snippet: str
-    category: str        # in_scope | fine_tune | other_deprecated | not_listed
+    category: str        # in_scope | fine_tune | other_deprecated | not_listed | param_rule
     shutdown: str | None
     suggested: str | None
     confidence: str
@@ -978,6 +978,43 @@ def file_signals(text: str, lang: str, packs: PackSet) -> tuple[list[str], list[
     return sorted(sig), sorted(sdks)
 
 
+def model_independent_rules(pack: Pack) -> list[dict]:
+    """Rules with no `applies_to`: they hold for every call of the provider, whatever the model
+    (e.g. a parameter removed by an API version). The scan reports them per file, not per model id."""
+    return [r for r in pack.data.get("rules", []) if not r.get("applies_to") and (r.get("when_all") or r.get("when_any"))]
+
+
+def param_rule_findings(rel: str, rows: list, sig: list[str], packs: PackSet, found: list[Finding]) -> list[Finding]:
+    """One finding per file and model-independent rule, at the first code line that sets one of the
+    rule's parameters (`param`, comma-separated). Skipped when a model finding in the file already carries it."""
+    out: list[Finding] = []
+    sigset = set(sig)
+    for pack in packs:
+        for rule in model_independent_rules(pack):
+            if not _rule_applies(rule, None, None, sigset):
+                continue
+            if any(f.file == rel and rule["id"] in f.rules for f in found):
+                continue
+            params = [x.strip() for x in (rule.get("param") or "").split(",") if x.strip()]
+            if not params:
+                continue
+            rx = re.compile(r"(?<![A-Za-z0-9_.])(" + "|".join(re.escape(x) for x in params) + r")(?![A-Za-z0-9_])")
+            hits = [(r, m) for r in rows if r.mode is True and r.lang not in DOC_LANGS and not _is_comment(r.text, r.lang)
+                    for m in [rx.search(r.text)] if m]
+            if not hits:
+                continue
+            r, m = hits[0]
+            f = Finding(rel, r.index + 1, m.start() + 1, m.group(1), pack.provider, "param", r.lang, r.text.strip()[:200],
+                        "param_rule", None, None, rule.get("confidence", "confirmed"), rule["risk"], None, [rule["id"]],
+                        [rule["message"]], False, "param_rule")
+            more = sorted({h.index + 1 for h, _ in hits[1:]} - {r.index + 1})
+            if more:
+                shown = ", ".join(map(str, more[:10])) + (f" and {len(more) - 10} more" if len(more) > 10 else "")
+                f.notes.append(f"Also set on line(s) {shown} of this file.")
+            out.append(f)
+    return out
+
+
 def _rule_applies(rule: dict, model_repl: str | None, migration: str | None, sig: set[str]) -> bool:
     at = rule.get("applies_to") or {}
     if at:
@@ -1184,6 +1221,7 @@ def scan(root: str | Path, include_docs: bool = True, packs: PackSet | None = No
                     findings.append(f)
             for m in ENV_REF_RE.finditer(line):
                 env_refs.append(EnvRef(rel, i, m.group(1), line.strip()[:200]))
+        findings += param_rule_findings(rel, rows, sig, packs, findings)
     link_checks(findings, {k for p in packs for k in p.default_mapping()})
     return ScanResult(str(root), n, findings, env_refs, fsig, fsdk, packs.info(), today.isoformat(), skipped)
 
@@ -1265,7 +1303,8 @@ def summarise(res: ScanResult) -> dict:
 
 
 CAT_LABEL = {"in_scope": "Headline migration", "fine_tune": "Fine-tuned model",
-             "other_deprecated": "Other retiring model", "not_listed": "Not listed as retiring"}
+             "other_deprecated": "Other retiring model", "not_listed": "Not listed as retiring",
+             "param_rule": "API parameter change"}
 
 
 def _esc(s: str) -> str:
@@ -1299,7 +1338,7 @@ def to_markdown(res: ScanResult) -> str:
     note = patch_size_note(res)
     if note:
         out += [note, ""]
-    for c in ["fine_tune", "in_scope", "other_deprecated", "not_listed"]:
+    for c in ["fine_tune", "in_scope", "other_deprecated", "param_rule", "not_listed"]:
         items = [f for f in res.findings if f.category == c]
         if not items:
             continue
@@ -1365,7 +1404,10 @@ def github_annotations(res: ScanResult, base: str | Path | None = None) -> list[
             level = "error" if f.risk == "high" else "warning"
             msg = f"{f.model} -> {f.suggested or 'manual decision'} (shutdown {f.shutdown or '?'}). " + " ".join(f.notes[:2])
             msg = msg.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
-            out.append(f"::{level} file={path},line={f.line},title=Retiring model {f.model}::{msg[:900]}")
+            title = f"API parameter {f.model}" if f.category == "param_rule" else f"Retiring model {f.model}"
+            if f.category == "param_rule":
+                msg = " ".join(f.notes[:2]).replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+            out.append(f"::{level} file={path},line={f.line},title={title}::{msg[:900]}")
     return out
 
 

@@ -208,7 +208,7 @@ def test_sources_and_conventions():
                    for s in d["sources"])
         for m in d["models"] + d.get("migrations", []):
             assert m.get("source", next(iter(ids))) in ids, m["id"]
-        assert d["version"] == "2026.10.22.1" and d["updated"] == "2026-10-22"
+        assert d["version"] in ("2026.10.22.1", "2026.10.22.2") and d["updated"] == "2026-10-22"
     for m in _pack("azure-foundry")["models"]:
         assert m["confidence"] == "confirmed" and m.get("note")
 

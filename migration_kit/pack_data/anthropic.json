@@ -3,12 +3,12 @@
   "pack_format": 1,
   "provider": "anthropic",
   "name": "Anthropic Claude API (stub)",
-  "version": "2026.10.22.1",
+  "version": "2026.10.22.2",
   "updated": "2026-10-22",
   "status": "stub",
   "notes": [
     "STUB pack to prove the engine is provider-neutral. It contains only facts from Anthropic's model deprecations page (read 15 Oct 2026; API parameter deprecations re-read 22 Oct 2026), for the Claude API. Amazon Bedrock and Google Cloud set their own retirement dates and are NOT covered.",
-    "No live API checks have been run against Anthropic. No aliases or eval adapter. Sampling-parameter rules: claude-sampling-deprecated (Claude 4.7+ models, earlier API versions) and the two anthropic-version 2026-10-21 rules, which are never applied automatically."
+    "No live API checks have been run against Anthropic. No aliases or eval adapter. Sampling-parameter rules: claude-sampling-deprecated (Claude 4.7+ models, earlier API versions) and the two anthropic-version 2026-10-21 rules. All three are suggest-only: `fix` never removes the parameters, also with --include-inferred."
   ],
   "sources": [
     {
@@ -193,7 +193,7 @@
         "javascript",
         "typescript"
       ],
-      "pattern": "messages\\.(?:create|stream)|/v1/messages",
+      "pattern": "(?<!threads\\.)messages\\.(?:create|stream)|/v1/messages\\b",
       "call": {
         "callees": [
           "messages.create",
@@ -259,39 +259,13 @@
       "evidence": "Anthropic docs: temperature/top_p/top_k return 400 at non-default values on Claude 4.7 and later; Python SDK v1.0+ removes them (TypeError). We infer the listed replacements count as '4.7 and later'.",
       "message": "Sets temperature/top_p/top_k: on Claude 4.7 and later models these return HTTP 400 at non-default values, and the anthropic Python SDK v1.0+ raises TypeError. Remove them and guide behaviour with prompting.",
       "fix": {
-        "action": "remove_param",
-        "params": [
-          "temperature",
-          "top_p",
-          "top_k"
-        ],
-        "requires_new_model": false,
-        "note": "Inferred rule: shown for manual review unless you pass --include-inferred."
+        "action": "manual",
+        "note": "Suggested, not applied automatically (also with --include-inferred): remove temperature, top_p and top_k from this call and guide behaviour with prompting."
       }
     },
     {
       "id": "claude-sampling-removed-api-2026-10-21",
       "type": "param_removed",
-      "applies_to": {
-        "replacements": [
-          "claude-fable-5-1",
-          "claude-mythos-5-1",
-          "claude-fable-5",
-          "claude-mythos-5",
-          "claude-mythos-preview",
-          "claude-opus-5-5",
-          "claude-opus-5",
-          "claude-opus-4-8",
-          "claude-opus-4-7",
-          "claude-opus-4-6",
-          "claude-opus-4-5-20251101",
-          "claude-sonnet-5-5",
-          "claude-sonnet-5",
-          "claude-sonnet-4-6",
-          "claude-haiku-5-5",
-          "claude-haiku-4-5-20251001"
-        ]
-      },
       "when_all": [
         "claude_sampling",
         "anthropic_version_2026_10_21"
@@ -300,35 +274,21 @@
       "risk": "high",
       "confidence": "confirmed",
       "evidence": "Anthropic model deprecations, API parameter deprecations (checked 22 Oct 2026): temperature, top_p, top_k are 'Removed in API version 2026-10-21' and return a 400 error; earlier API versions return a 400 only when set to a non-default value on Claude 4.7 and later models and Claude Mythos Preview. Recommended replacement: omit them and use prompting.",
-      "message": "Error: sets temperature/top_p/top_k while anthropic-version is 2026-10-21 or later. Anthropic removed these parameters in API version 2026-10-21, so every request that sends them returns HTTP 400, on any model. Suggested fix (not applied): remove them and guide behaviour with prompting.",
+      "message": "Error: this code sets temperature, top_p or top_k. This will fail once you move to the 2026-10-21 version, and this file already sets anthropic-version 2026-10-21 or later, so these requests return HTTP 400 now, on every model.",
       "fix": {
         "action": "manual",
-        "note": "Suggested fix, not applied automatically: remove temperature, top_p and top_k from this call and guide behaviour with prompting. Check the output before you ship it."
-      }
+        "note": "Suggested fix, not applied automatically: 1. Remove temperature, top_p and top_k from this call. 2. If you relied on them (for example temperature 0 for repeatable output), say what you need in the prompt instead. 3. Re-run your evals, then move anthropic-version to 2026-10-21 or later."
+      },
+      "when_any": [
+        "anthropic_sdk",
+        "langchain_anthropic",
+        "http_anthropic",
+        "messages_api"
+      ]
     },
     {
       "id": "claude-sampling-api-2026-10-21-warning",
       "type": "param_removed",
-      "applies_to": {
-        "replacements": [
-          "claude-fable-5-1",
-          "claude-mythos-5-1",
-          "claude-fable-5",
-          "claude-mythos-5",
-          "claude-mythos-preview",
-          "claude-opus-5-5",
-          "claude-opus-5",
-          "claude-opus-4-8",
-          "claude-opus-4-7",
-          "claude-opus-4-6",
-          "claude-opus-4-5-20251101",
-          "claude-sonnet-5-5",
-          "claude-sonnet-5",
-          "claude-sonnet-4-6",
-          "claude-haiku-5-5",
-          "claude-haiku-4-5-20251001"
-        ]
-      },
       "when_all": [
         "claude_sampling"
       ],
@@ -339,11 +299,17 @@
       "risk": "medium",
       "confidence": "confirmed",
       "evidence": "Anthropic model deprecations, API parameter deprecations (checked 22 Oct 2026): temperature, top_p, top_k are 'Removed in API version 2026-10-21' and return a 400 error; earlier API versions return a 400 only when set to a non-default value on Claude 4.7 and later models and Claude Mythos Preview. Recommended replacement: omit them and use prompting.",
-      "message": "Warning: sets temperature/top_p/top_k. Anthropic removed them in API version 2026-10-21: once this code sends anthropic-version 2026-10-21 or later, these requests return HTTP 400 (earlier versions already reject non-default values on Claude 4.7 and later). Suggested fix (not applied): remove them before you move to the new API version.",
+      "message": "Warning: this code sets temperature, top_p or top_k. This will fail once you move to the 2026-10-21 version (Anthropic removed them in API version 2026-10-21; requests that send them return HTTP 400 on every model).",
       "fix": {
         "action": "manual",
-        "note": "Suggested fix, not applied automatically: remove temperature, top_p and top_k from this call and guide behaviour with prompting. Check the output before you ship it."
-      }
+        "note": "Suggested fix, not applied automatically: 1. Remove temperature, top_p and top_k from this call. 2. If you relied on them (for example temperature 0 for repeatable output), say what you need in the prompt instead. 3. Re-run your evals, then move anthropic-version to 2026-10-21 or later."
+      },
+      "when_any": [
+        "anthropic_sdk",
+        "langchain_anthropic",
+        "http_anthropic",
+        "messages_api"
+      ]
     }
   ],
   "risk_policy": {

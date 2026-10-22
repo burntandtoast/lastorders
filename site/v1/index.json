@@ -5,11 +5,11 @@
     {
       "provider": "anthropic",
       "name": "Anthropic Claude API (stub)",
-      "version": "2026.10.22.1",
+      "version": "2026.10.22.2",
       "status": "stub",
       "pack_format": 1,
       "url": "packs/anthropic.json",
-      "sha256": "d4a3264b3efdb661d137f71397934c195edf96d5393c2824a9a46b8a5ad0ab3b"
+      "sha256": "bd539c56ac6fc29f314bc63d3d757f15ac0f7f4caf51c39f2adc640040a7d852"
     },
     {
       "provider": "azure-foundry",
