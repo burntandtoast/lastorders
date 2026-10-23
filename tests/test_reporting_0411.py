@@ -19,7 +19,8 @@ def _swap(root):
     return swapper.plan(root, swapper.mapping_from_packs(packs), packs)
 
 
-NOTE = "The licensed patch can be smaller than the replacements suggested here"
+# 0.4.13: the caveat moved into a "Next steps" block at the end of scan.md and the job summary.
+NOTE = "so it can be smaller than the table above"
 
 
 def test_scan_report_and_job_summary_carry_the_patch_size_note(tmp_path):
@@ -28,9 +29,10 @@ def test_scan_report_and_job_summary_carry_the_patch_size_note(tmp_path):
     assert any(f.suggested and f.auto_swap for f in res.findings)
     md, summary = to_markdown(res), to_summary_markdown(res)
     assert NOTE in md and NOTE in summary
-    assert "swap .` (free) shows the real per-file count" in md
-    assert "Generated, minified and vendored files are skipped by both" in md
+    assert "fix .` shows the real per-file count" in md
+    assert "It skips docs unless you pass `--include-docs`" in md
     assert len([l for l in md.splitlines() if NOTE in l]) == 1
+    assert md.rstrip().splitlines()[-5] == "## Next steps" and md.index("## Next steps") > md.rindex("| `app.py`")
 
 
 def test_no_patch_size_note_without_plain_replacements(tmp_path):

@@ -18,7 +18,7 @@ def test_full_demo_pipeline(tmp_path, monkeypatch):
     assert "gpt-6-luna" in html and "14 Jan 2027" in html and "Demo run" in html
     assert "--- a/" not in html and "@@" not in html
     assert "ft:gpt-4o-mini-2024-07-18" in html and "claude-sonnet-4-5-20250929" in html
-    assert "Anthropic Claude API (stub)" in html and "<script" not in html
+    assert "Anthropic Claude API" in html and "(stub)" not in html and "<script" not in html
     scan = json.loads((tmp_path / "scan.json").read_text())
     assert scan["summary"]["fine_tuned_models"] == ["ft:gpt-4o-mini-2024-07-18:acme-widgets:intent-v3:9xYzAbC1"]
     assert {p["provider"] for p in scan["packs"]} == {"openai", "anthropic", "google", "azure-foundry"}

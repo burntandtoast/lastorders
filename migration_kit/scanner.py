@@ -10,6 +10,7 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
 from . import brand
+from . import messages as msg
 from .packs import Pack, PackSet, colon_prefixes, load_packs
 from .swapsafe import FILE_HOLD_NOTES, HOLD_NOTES, block_rows, file_hold, token_hold
 
@@ -123,6 +124,8 @@ class ScanResult:
     packs: list[dict]
     scanned_on: str
     skipped: list[SkippedFile] = field(default_factory=list)
+    # The packs' next announced headline shutdown after the scan date: (title, YYYY-MM-DD).
+    next_shutdown: tuple[str, str] | None = None
 
     def to_dict(self) -> dict:
         return {
@@ -978,13 +981,147 @@ def file_signals(text: str, lang: str, packs: PackSet) -> tuple[list[str], list[
     return sorted(sig), sorted(sdks)
 
 
+CALL_LANGS = {"python", "javascript", "typescript"}
+_IDENT_END = re.compile(r"[A-Za-z0-9_$\]\)]\s*$")
+
+
+def bracket_pairs(code: str, lang: str) -> list[tuple[int, int, str]]:
+    """(open, close, kind) for each call ( ... ) and object { ... } in `code`, skipping strings and
+    comments. kind is "call" for a '(' straight after a name, `)` or `]`, "object" for a '{'."""
+    pairs, stack = [], []
+    i, n = 0, len(code)
+    line_comment = "#" if lang == "python" else "//"
+    while i < n:
+        c = code[i]
+        if code.startswith(line_comment, i):
+            j = code.find("\n", i)
+            i = n if j < 0 else j
+            continue
+        if lang != "python" and code.startswith("/*", i):
+            j = code.find("*/", i + 2)
+            i = n if j < 0 else j + 2
+            continue
+        if c in "\"'`":
+            q = code[i:i + 3] if lang == "python" and code[i:i + 3] in ('"""', "'''") else c
+            j = i + len(q)
+            while j < n and not code.startswith(q, j):
+                if code[j] == "\\":
+                    j += 1
+                elif code[j] == "\n" and len(q) == 1 and q != "`":
+                    break
+                j += 1
+            i = j + len(q)
+            continue
+        if c in "({[":
+            stack.append((c, i))
+        elif c in ")}]":
+            while stack:
+                oc, oi = stack.pop()
+                if {"(": ")", "{": "}", "[": "]"}[oc] == c:
+                    if oc == "(" and _IDENT_END.search(code[max(0, oi - 80):oi]):
+                        pairs.append((oi, i, "call"))
+                    elif oc == "{":
+                        pairs.append((oi, i, "object"))
+                    break
+        i += 1
+    return pairs
+
+
+def call_span(pairs: list[tuple[int, int, str]], pos: int) -> tuple[int, int] | None:
+    """The innermost call ( ... ) that contains `pos`, or failing that the innermost { ... }."""
+    for kind in ("call", "object"):
+        inside = [(o, c) for o, c, k in pairs if k == kind and o < pos < c]
+        if inside:
+            return max(inside)
+    return None
+
+
+_MODEL_ARG = re.compile(r"""\bmodel\w*["']?\s*[=:]\s*(?:[\w.]+\(\s*(?:[^()]*?,\s*)?)?["'`]?$""")
+
+
+def model_call_span(pairs: list[tuple[int, int, str]], code: str, pos: int) -> tuple[int, int] | None:
+    """The innermost call or object in which the token at `pos` is the value of a model argument or key
+    (`model=...`, `"model": ...`, `model: os.getenv("X", ...)`). None when the id is not passed as a model
+    there, e.g. a module-level `MODEL = os.getenv("X", "id")` that a later call uses by name."""
+    for o, c, _k in sorted((t for t in pairs if t[0] < pos < t[1]), reverse=True):
+        if _MODEL_ARG.search(code[o + 1:pos]):
+            return o, c
+    return None
+
+
+class CallScopes:
+    """Per-call signals for one file. A signal that describes a call argument (signals[].call.params)
+    belongs to the call that holds the model id, so a call to one provider's model is not flagged for
+    a parameter set on another provider's call in the same file. Model ids not passed as a model
+    argument (a constant, a config value) keep the file's signals, minus parameters set only inside
+    another provider's calls. Only used when the file holds model ids of more than one provider."""
+
+    def __init__(self, rows: list, lang: str, sig: list[str], packs: PackSet):
+        self.sig, self.packs, self.lang = set(sig), packs, lang
+        self.param_ids = set().union(*(p.param_signal_ids for p in packs))
+        self.on = lang in CALL_LANGS and bool(self.param_ids & self.sig)
+        if not self.on:
+            return
+        self.offset: dict[int, int] = {}
+        parts, at = [], 0
+        for pos, r in enumerate(rows):
+            if r.mode is True:
+                self.offset[pos] = at
+                parts.append(r.text)
+                at += len(r.text) + 1
+        self.code = "\n".join(parts)
+        self.pairs = bracket_pairs(self.code, lang)
+        self.tokens: list[tuple[int, str]] = []
+        for pos, r in enumerate(rows):
+            if pos in self.offset:
+                for s, _e, _tok, pack in iter_model_tokens(r.text, packs, r.lang, r.prev, r.mode):
+                    self.tokens.append((self.offset[pos] + s, pack.provider))
+        # Single-provider files keep file-level signals, as before 0.4.13.
+        self.on = len({p for _at, p in self.tokens}) > 1
+        self._fallback: dict[str, set[str]] = {}
+
+    def _param_sigs(self, text: str) -> set[str]:
+        return {sid for pack in self.packs for sid, rx, langs, _ in pack.signals
+                if sid in self.param_ids and (not langs or self.lang in langs) and rx.search(text)}
+
+    def foreign(self, a: int, b: int, provider: str) -> bool:
+        """True when the span holds a model id of another provider and none of this one."""
+        provs = {p for at, p in self.tokens if a < at < b}
+        return bool(provs) and provider not in provs
+
+    def at(self, pos: int, col: int, provider: str) -> list[str]:
+        if not self.on or pos not in self.offset:
+            return sorted(self.sig)
+        span = model_call_span(self.pairs, self.code, self.offset[pos] + col)
+        if span:
+            return sorted((self.sig - self.param_ids) | self._param_sigs(self.code[span[0]:span[1] + 1]))
+        if provider not in self._fallback:
+            self._fallback[provider] = self._param_sigs(self._outside_foreign(provider))
+        return sorted((self.sig - self.param_ids) | self._fallback[provider])
+
+    def _outside_foreign(self, provider: str) -> str:
+        code = list(self.code)
+        for a, b, kind in self.pairs:
+            if kind == "call" and self.foreign(a, b, provider):
+                code[a:b + 1] = " " * (b + 1 - a)
+        return "".join(code)
+
+    def hit_ok(self, pos: int, col: int, provider: str) -> bool:
+        """False when a parameter at this spot sits in a call that only uses another provider's model."""
+        if not self.on or pos not in self.offset:
+            return True
+        span = call_span(self.pairs, self.offset[pos] + col)
+        return not (span and self.foreign(span[0], span[1], provider))
+
+
 def model_independent_rules(pack: Pack) -> list[dict]:
     """Rules with no `applies_to`: they hold for every call of the provider, whatever the model
     (e.g. a parameter removed by an API version). The scan reports them per file, not per model id."""
     return [r for r in pack.data.get("rules", []) if not r.get("applies_to") and (r.get("when_all") or r.get("when_any"))]
 
 
-def param_rule_findings(rel: str, rows: list, sig: list[str], packs: PackSet, found: list[Finding]) -> list[Finding]:
+def param_rule_findings(rel: str, rows: list, sig: list[str], packs: PackSet, found: list[Finding],
+                        scopes: "CallScopes | None" = None) -> list[Finding]:
     """One finding per file and model-independent rule, at the first code line that sets one of the
     rule's parameters (`param`, comma-separated). Skipped when a model finding in the file already carries it."""
     out: list[Finding] = []
@@ -999,8 +1136,10 @@ def param_rule_findings(rel: str, rows: list, sig: list[str], packs: PackSet, fo
             if not params:
                 continue
             rx = re.compile(r"(?<![A-Za-z0-9_.])(" + "|".join(re.escape(x) for x in params) + r")(?![A-Za-z0-9_])")
-            hits = [(r, m) for r in rows if r.mode is True and r.lang not in DOC_LANGS and not _is_comment(r.text, r.lang)
-                    for m in [rx.search(r.text)] if m]
+            hits = [(r, m) for pos, r in enumerate(rows)
+                    if r.mode is True and r.lang not in DOC_LANGS and not _is_comment(r.text, r.lang)
+                    for m in [rx.search(r.text)] if m
+                    and (scopes is None or scopes.hit_ok(pos, m.start(), pack.provider))]
             if not hits:
                 continue
             r, m = hits[0]
@@ -1174,6 +1313,7 @@ def scan(root: str | Path, include_docs: bool = True, packs: PackSet | None = No
             fsig[rel] = sig
         if sdks:
             fsdk[rel] = sdks
+        scopes = CallScopes(rows, sig_lang, sig, packs)
         for pos, r in enumerate(rows):
             if r.mode is None:
                 continue
@@ -1184,7 +1324,7 @@ def scan(root: str | Path, include_docs: bool = True, packs: PackSet | None = No
                 kind, block = classify(line, s, e, r.lang, r.prev, r.mode, rel)
                 f = Finding(rel, i, s + 1, tok, pack.provider, kind, r.lang,
                             line.strip()[:200], "not_listed", None, None, "n/a", "info")
-                assess(f, pack, sig, today)
+                assess(f, pack, scopes.at(pos, s, pack.provider), today)
                 apply_block(f, block)
                 if r.mode == MARKUP and kind == "doc" and not markup_quoted(line, s, e):
                     f.risk = "info"
@@ -1213,7 +1353,7 @@ def scan(root: str | Path, include_docs: bool = True, packs: PackSet | None = No
                 for s, e, tok, pack in iter_prefix_checks(line, packs):
                     f = Finding(rel, i, s + 1, tok, pack.provider, "name_check", r.lang,
                                 line.strip()[:200], "not_listed", None, None, "n/a", "info")
-                    assess(f, pack, sig, today)
+                    assess(f, pack, scopes.at(pos, s, pack.provider), today)
                     apply_block(f, "name_check")
                     f.notes.append(f"Prefix check for the {tok} family (`{line[s:e + 1]}`).")
                     if r.note:
@@ -1221,9 +1361,12 @@ def scan(root: str | Path, include_docs: bool = True, packs: PackSet | None = No
                     findings.append(f)
             for m in ENV_REF_RE.finditer(line):
                 env_refs.append(EnvRef(rel, i, m.group(1), line.strip()[:200]))
-        findings += param_rule_findings(rel, rows, sig, packs, findings)
+        findings += param_rule_findings(rel, rows, sig, packs, findings, scopes)
     link_checks(findings, {k for p in packs for k in p.default_mapping()})
-    return ScanResult(str(root), n, findings, env_refs, fsig, fsdk, packs.info(), today.isoformat(), skipped)
+    upcoming = sorted((m["shutdown"], m["title"]) for p in packs for m in p.headline_migrations
+                      if m.get("shutdown") and m["shutdown"] > today.isoformat())
+    nxt = (upcoming[0][1], upcoming[0][0]) if upcoming else None
+    return ScanResult(str(root), n, findings, env_refs, fsig, fsdk, packs.info(), today.isoformat(), skipped, nxt)
 
 
 ALLOW_LIST_SWAP_NOTE = ("Exact-match allow-list. `swap` adds the replacement id to this list (the old ids stay), "
@@ -1311,16 +1454,102 @@ def _esc(s: str) -> str:
     return s.replace("|", "\\|")
 
 
-def patch_size_note(res: ScanResult) -> str | None:
-    """One line under the scan tables when some findings show a plain replacement. The scan can't
-    run swap's duplicate-key / duplicate-id checks (they need the rewritten text), and swap skips
-    docs by default, so the licensed patch can make fewer replacements than this report suggests."""
-    if not any(f.suggested and f.auto_swap for f in res.findings):
+RETIRING_CATS = ("in_scope", "other_deprecated", "fine_tune")
+
+
+def retiring(res: ScanResult) -> list[Finding]:
+    """Findings for a model id with a shutdown date that applies here (risk above info)."""
+    return [f for f in res.findings if f.category in RETIRING_CATS and f.shutdown and f.risk != "info"]
+
+
+def _long_date(iso: str) -> str:
+    d = dt.date.fromisoformat(iso)
+    return f"{d.day} {d.strftime('%B %Y')}"
+
+
+def _short_date(iso: str) -> str:
+    d = dt.date.fromisoformat(iso)
+    return f"{d.day} {d.strftime('%b %Y')}"
+
+
+def clean_note(res: ScanResult) -> str | None:
+    """The line under the summary when nothing is retiring."""
+    if retiring(res):
         return None
-    return ("_The licensed patch can be smaller than the replacements suggested here: `swap` skips docs (unless "
-            "`--include-docs`), keeps an ID everywhere when renaming any copy would create a duplicate key or list "
-            "entry, and lists those references for review instead. Generated, minified and vendored files are "
-            f"skipped by both. `{brand.CLI_NAME} swap .` (free) shows the real per-file count._")
+    if res.next_shutdown:
+        title, when = res.next_shutdown
+        return msg.MD_CLEAN.format(next=f"{title}, {_long_date(when)}")
+    return msg.MD_CLEAN_NO_NEXT
+
+
+def next_steps(res: ScanResult) -> list[str]:
+    """The "Next steps" block at the end of scan.md, when there is something to fix."""
+    return list(msg.MD_NEXT_STEPS) if retiring(res) else []
+
+
+def terminal_summary(res: ScanResult, md: Path, js: Path, repo: str = ".", packs: str | None = None) -> str:
+    """What `scan` prints. Wording lives in messages.py."""
+    s = summarise(res)
+    ret = retiring(res)
+    files_word = msg.plural(res.files_scanned, "file")
+    params = [f for f in res.findings if f.category == "param_rule"]
+    out: list[str] = []
+    if ret:
+        files = len({f.file for f in ret})
+        by: dict[str, int] = {}
+        for f in ret:
+            by[f.risk] = by.get(f.risk, 0) + 1
+        order = [r for r in ("high", "medium", "low") if by.get(r)]
+        risks = ", ".join(f"{by[r]} {r}" + (" risk" if i == 0 else "") for i, r in enumerate(order))
+        out.append(msg.SCAN_FOUND.format(n=len(ret), ids=msg.plural(len(ret), "ID"), files=files,
+                                         file_word=msg.plural(files, "file"), risks=risks,
+                                         fine_tunes=len(s["fine_tuned_models"])))
+        today = dt.date.fromisoformat(res.scanned_on)
+        past = sorted((f for f in ret if f.shutdown <= res.scanned_on), key=lambda f: f.shutdown)
+        future = sorted((f for f in ret if f.shutdown > res.scanned_on), key=lambda f: f.shutdown)
+        if past:
+            out.append(msg.SCAN_ALREADY.format(model=past[-1].model, date=_short_date(past[-1].shutdown)))
+        if future:
+            days = (dt.date.fromisoformat(future[0].shutdown) - today).days
+            out.append(msg.SCAN_SOONEST.format(model=future[0].model, date=_short_date(future[0].shutdown),
+                                               days=days, day_word=msg.plural(days, "day")))
+        out.append("")
+        rows = sorted(ret, key=lambda f: (f.shutdown, f.file, f.line))
+        shown = rows[:msg.SCAN_MAX_ROWS]
+        cells = [(f"{f.file}:{f.line}", f"{f.model} -> {f.suggested or 'manual decision'}", _short_date(f.shutdown))
+                 for f in shown]
+        w1 = max(len(c[0]) for c in cells)
+        w2 = max(len(c[1]) for c in cells)
+        out += [msg.SCAN_ROW.format(where=a, change=b, date=c, w1=w1, w2=w2).rstrip() for a, b, c in cells]
+        if len(rows) > len(shown):
+            out.append(msg.SCAN_MORE.format(n=len(rows) - len(shown), md=md))
+        if params:
+            out += ["", msg.SCAN_PARAM_ONLY.format(n=len(params), item_word=msg.plural(len(params), "item"), md=md)]
+        out += ["", msg.SCAN_REPORT.format(md=md, json_name=js.name)]
+        out += [sk.line() for sk in res.skipped]
+        if packs:
+            out.append(msg.SCAN_PACKS.format(packs=packs))
+        out += ["", msg.SCAN_NEXT_STEPS.format(repo=repo)]
+        return "\n".join(out)
+    unlisted = sorted({f.model for f in res.findings if f.category == "not_listed" and f.kind != "name_check"})
+    if res.findings:
+        out.append(msg.SCAN_CLEAN_IDS.format(files=res.files_scanned, file_word=files_word))
+        if unlisted:
+            out.append(msg.SCAN_CLEAN_UNLISTED.format(n=len(unlisted), ids=msg.plural(len(unlisted), "ID"),
+                                                      is_are="is" if len(unlisted) == 1 else "are",
+                                                      models=", ".join(unlisted[:5]) + (", ..." if len(unlisted) > 5 else ""),
+                                                      md=md))
+        else:
+            out.append(msg.SCAN_REPORT.format(md=md, json_name=js.name))
+        if params:
+            out.append(msg.SCAN_PARAM_ONLY.format(n=len(params), item_word=msg.plural(len(params), "item"), md=md))
+    else:
+        out += [msg.SCAN_CLEAN_NONE.format(files=res.files_scanned, file_word=files_word), msg.SCAN_CLEAN_BLIND_SPOT]
+    out += [sk.line() for sk in res.skipped]
+    if packs:
+        out.append(msg.SCAN_PACKS.format(packs=packs))
+    out += ["", msg.SCAN_REMIND]
+    return "\n".join(out)
 
 
 def to_markdown(res: ScanResult) -> str:
@@ -1335,7 +1564,7 @@ def to_markdown(res: ScanResult) -> str:
            "| Risk | Count |", "|---|---|"]
     out += [f"| {r} | {s['by_risk'][r]} |" for r in ("high", "medium", "low", "info") if s["by_risk"].get(r)]
     out.append("")
-    note = patch_size_note(res)
+    note = clean_note(res)
     if note:
         out += [note, ""]
     for c in ["fine_tune", "in_scope", "other_deprecated", "param_rule", "not_listed"]:
@@ -1365,6 +1594,9 @@ def to_markdown(res: ScanResult) -> str:
                 "Pass `--include-generated` to scan them.", ""]
         out += [f"- {s.line()}" for s in res.skipped]
         out.append("")
+    steps = next_steps(res)
+    if steps:
+        out += steps + [""]
     return "\n".join(out)
 
 
@@ -1382,11 +1614,14 @@ def to_summary_markdown(res: ScanResult, max_rows: int = 25) -> str:
         out.append(f"| {f.risk} | `{f.file}:{f.line}` | `{f.model}` | {('`'+f.suggested+'`') if f.suggested else '-'} | {f.shutdown or '-'} |")
     if len(rows) > max_rows:
         out.append(f"\n_{len(rows) - max_rows} more in the `scan.json` artifact._")
-    note = patch_size_note(res)
+    note = clean_note(res)
     if note:
         out += ["", note]
+    steps = next_steps(res)
+    if steps:
+        out += [""] + ["#" + steps[0]] + steps[1:]
     packs = ", ".join(f"{p['provider']} v{p['version']}" for p in res.packs)
-    out += ["", f"<sub>{brand.PRODUCT_NAME} free scan · packs: {packs} · scanned {res.scanned_on}</sub>"]
+    out += ["", msg.SUMMARY_FOOTER.format(scanned_on=res.scanned_on, packs=packs)]
     return "\n".join(out)
 
 

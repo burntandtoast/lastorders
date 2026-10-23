@@ -35,8 +35,10 @@ dev = ["pytest>=8", "build>=1"]
 lastorders = "migration_kit.cli:main"
 
 [project.urls]
-# TODO: set once the repo / site exist
-Homepage = "https://burntandtoast.com"
+Homepage = "https://lastorders.burntandtoast.com"
+Pricing = "https://lastorders.burntandtoast.com/#pricing"
+Source = "https://github.com/burntandtoast/lastorders"
+Changelog = "https://github.com/burntandtoast/lastorders/blob/main/CHANGELOG.md"
 
 [tool.setuptools]
 packages = ["migration_kit", "migration_kit.pack_data", "migration_kit.fixer"]

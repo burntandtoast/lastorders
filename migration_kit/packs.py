@@ -138,6 +138,10 @@ class Pack:
             self.ft_re = re.compile(d["fine_tune"]["pattern"])
         self.signals = [(s["id"], re.compile(s["pattern"]), set(s.get("languages") or []), s.get("sdk"))
                         for s in d.get("signals", [])]
+        # Signals that describe an argument of one call (signals[].call.params / param_values). The scan
+        # checks these against the call that holds the model id, not the whole file.
+        self.param_signal_ids = {s["id"] for s in d.get("signals", [])
+                                 if (s.get("call") or {}).get("params") or (s.get("call") or {}).get("param_values")}
 
     # -- accessors
     @property

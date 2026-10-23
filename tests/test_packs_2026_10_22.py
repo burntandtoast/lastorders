@@ -204,11 +204,11 @@ def test_sources_and_conventions():
     for name in ("anthropic", "azure-foundry"):
         d = _pack(name)
         ids = {s["id"] for s in d["sources"]}
-        assert all(s["url"].startswith("https://") and s["checked"] == "2026-10-22" or s["checked"] < "2026-10-22"
-                   for s in d["sources"])
+        assert all(s["url"].startswith("https://") and s["checked"] <= "2026-10-23" for s in d["sources"])
         for m in d["models"] + d.get("migrations", []):
             assert m.get("source", next(iter(ids))) in ids, m["id"]
-        assert d["version"] in ("2026.10.22.1", "2026.10.22.2") and d["updated"] == "2026-10-22"
+        # anthropic moved on to 2026.10.23.1 in 0.4.13 (alias, real data; see test_0413.py)
+        assert d["version"] in ("2026.10.22.1", "2026.10.22.2", "2026.10.23.1") and d["updated"] in ("2026-10-22", "2026-10-23")
     for m in _pack("azure-foundry")["models"]:
         assert m["confidence"] == "confirmed" and m.get("note")
 

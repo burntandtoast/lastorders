@@ -1,8 +1,12 @@
-# Last Orders (working name)
+# Last Orders
 
-**Find retiring AI model IDs in your code before they break.** One command scans your repo for OpenAI
-(and, as a preview, Anthropic) model IDs that are being shut down. For each one it tells you the
+**Find retiring AI model IDs in your code before they break.** One command scans your repo for OpenAI,
+Anthropic Claude and Google Gemini model IDs that are being shut down. For each one it tells you the
 shutdown date, the replacement the provider recommends, and the code changes the new model needs.
+
+> **Next shutdown:** Claude Sonnet 4.5 (`claude-sonnet-4-5-20250929`, and the `claude-sonnet-4-5` alias) retires
+> on the Claude API on **30 November 2026**. OpenAI switched off o1, o3-mini, o4-mini, gpt-3.5-turbo and others
+> on 23 October 2026.
 
 > **Heads-up:** OpenAI removes **GPT-4o, GPT-4o mini, GPT-4.1 and GPT-4.1 mini** from the API on
 > **14 January 2027** and recommends `gpt-6-luna`. In our tests, `gpt-6-luna` rejects `max_tokens`, and it
@@ -123,7 +127,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: burntandtoast/lastorders@v0.4.11
+      - uses: burntandtoast/lastorders@v0.4.13
         with:
           fail-on-high: "true"
 ```
@@ -155,14 +159,16 @@ rules. Every fact links to the provider's documentation and the date we checked 
 against the live API are marked `live-tested`, and anything we assumed is marked `inferred`.
 
 - **OpenAI**: full pack. The default mapping swaps the 14 Jan 2027 GPT-4o / GPT-4.1 batch to `gpt-6-luna`, and the 23 Oct 2026 chat and reasoning models to `gpt-5.6-luna`, `gpt-5.6-sol` or `gpt-5.6-terra`. For those three replacements, live-tested on 16 Oct 2026 (`probes/probe_56-result.json`), the paid `fix` renames Chat Completions `max_tokens` to `max_completion_tokens` and sets `reasoning_effort` to `none` where the call uses temperature (other than 1), `top_p`, `logprobs` or tools, in the same change as the model switch. Responses calls with those parameters are flagged. `reasoning_effort` `max` is flagged. `o1-pro` (the documented substitute is `gpt-5.6-sol` with `reasoning.mode: pro`), `gpt-image-1` and fine-tunes are flagged, not rewritten. Models that have already shut down, including the 28 Sep 2026 batch and the 23 Jul 2026 batch, are reported as already retired.
-- **Anthropic**: preview (stub). It covers Claude API retirement dates from Anthropic's deprecations page.
-  Amazon Bedrock and Google Cloud dates for Claude are not covered.
+- **Anthropic**: Claude API retirement dates from Anthropic's model deprecations page, plus the undated
+  `claude-sonnet-4-5` alias (from the Sonnet 4.5 model page), which retires with `claude-sonnet-4-5-20250929` on
+  30 Nov 2026. Sampling-parameter rules are checked per call, so a `temperature` on an OpenAI call in the same file
+  doesn't flag a Claude call. Amazon Bedrock and Google Cloud dates for Claude are not covered.
 - **Google**: Vertex AI only, and flag-only. `gemini-2.5-pro`, `gemini-2.5-flash` and `gemini-2.5-flash-lite` retire on Vertex on 20 Oct 2026. `gemini-live-2.5-flash-native-audio` retires on 13 Dec 2026; the model versions table lists no replacement ID. `gemini-2.5-flash-image` retires on 15 Mar 2027; the table lists `gemini-3.1-flash-lite-image`. A Vertex retirement is high risk only when that file is using Vertex and the shutdown is within 30 days or already past. On the Gemini API the same IDs are not treated as this retirement, so the finding stays informational. Nothing is rewritten automatically.
 - Azure OpenAI and Bedrock: planned
 
 The tool checks for a newer pack once a day and falls back to the copy bundled with the package.
 `lastorders packs list` shows which version and source you're using. The format is documented in
-[docs/PACKS.md](docs/PACKS.md), with a JSON Schema in `migration_kit/pack_data/pack.schema.json`.
+[docs/PACKS.md](https://github.com/burntandtoast/lastorders/blob/main/docs/PACKS.md), with a JSON Schema in [`migration_kit/pack_data/pack.schema.json`](https://github.com/burntandtoast/lastorders/blob/main/migration_kit/pack_data/pack.schema.json).
 
 ## Privacy and network use
 
@@ -183,11 +189,14 @@ The tool checks for a newer pack once a day and falls back to the copy bundled w
 | We do the migration, evals and handoff | | | ✓ |
 
 One licence covers **one GitHub repository, monorepos included**. It's bound to the repo the first time
-you use it. Buy one with `lastorders licence buy` (it prints a Stripe Checkout link for this repo), then pass the key
-with `LASTORDERS_LICENCE` (a repository secret in Actions) or `--licence`. `lastorders licence status` shows
+you use it. A licence is **£179 per repo, one-off, tax included**. It unlocks a reviewable patch plus a must-review
+list of anything it couldn't safely change, and a before-and-after report. You run it and review it before you
+merge. See <https://lastorders.burntandtoast.com/#pricing>, or run `lastorders licence buy`, which prints the checkout
+link for this repo. Then pass the key with `LASTORDERS_LICENCE` (a repository secret in Actions) or `--licence`.
+Prefer us to do it? From £1,500: hello@burntandtoast.com. `lastorders licence status` shows
 whether it's verified. Paid commands work `--offline` from the cached check. Repos without an `origin` remote
 can set `LASTORDERS_REPO=github.com/owner/repo`. The licence server lives in `server/`; see
-[docs/LICENCE-SERVER.md](docs/LICENCE-SERVER.md).
+[docs/LICENCE-SERVER.md](https://github.com/burntandtoast/lastorders/blob/main/docs/LICENCE-SERVER.md).
 
 `init-evals` reads the call sites the scan found, including prompts, JSON schemas and tool definitions where
 they can be read from the code, and writes a starter `evals/regression.yaml`. You then edit it into 10 to 20
@@ -195,9 +204,9 @@ real examples. `eval` runs them against the old and new model with your own key.
 
 ## Licence
 
-The free scan is [MIT](LICENSE): the scanner, migration packs, CLI and licence client.
+The free scan is [MIT](https://github.com/burntandtoast/lastorders/blob/main/LICENSE): the scanner, migration packs, CLI and licence client.
 
-The patch is proprietary ([LICENSE-COMMERCIAL](LICENSE-COMMERCIAL)), together with `eval`, `init-evals` and `report`. That covers `migration_kit/swapper.py` and `migration_kit/fixer/`: generating the diff, writing it, applying it, and simulated or live verify. The source is in this repository so you can read it. Using it requires a paid licence from <https://lastorders.burntandtoast.com>. You may not redistribute that code, or modify it to skip the licence check. Without a licence the CLI prints only the per-file model summary.
+The patch is proprietary ([LICENSE-COMMERCIAL](https://github.com/burntandtoast/lastorders/blob/main/LICENSE-COMMERCIAL)), together with `eval`, `init-evals` and `report`. That covers `migration_kit/swapper.py` and `migration_kit/fixer/`: generating the diff, writing it, applying it, and simulated or live verify. The source is in this repository so you can read it. Using it requires a paid licence (£179 per repo) from <https://lastorders.burntandtoast.com/#pricing>. You may not redistribute that code, or modify it to skip the licence check. Without a licence the CLI prints only the per-file model summary.
 
 ## Limitations
 
@@ -212,8 +221,8 @@ The patch is proprietary ([LICENSE-COMMERCIAL](LICENSE-COMMERCIAL)), together wi
 - The free scan can show a finding as a plain replacement that the licensed patch won't make, so the scan report
   can overstate the size of the patch. The scan doesn't run swap's duplicate-key and duplicate-id checks, and swap
   skips docs unless you pass `--include-docs`. In our test on 38 public repos, 274 rows showed as plain replacements
-  but were kept by swap (119 in one repo, 35 and 18 in two others). The free `lastorders swap .` preview uses the
-  real plan and shows the actual per-file count.
+  but were kept by swap (119 in one repo, 35 and 18 in two others). The free `lastorders fix .` (or `swap .`) preview uses
+  the real plan and shows the actual per-file count.
 - Generated, minified and vendored files are skipped by both scan and swap. An ID still defined in a skipped
   generated file (such as a generated model registry) doesn't count as a kept definition, so references to it
   elsewhere can still be renamed. Check generated registries by hand.

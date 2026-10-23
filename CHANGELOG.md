@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.13
+- **Claude Sonnet 4.5 alias and urgency** (Anthropic pack 2026.10.23.1, checked against Anthropic's model deprecations, Sonnet 4.5 and model IDs pages on 23 Oct 2026): the undated `claude-sonnet-4-5` alias is now listed and retires with `claude-sonnet-4-5-20250929` on 30 Nov 2026 (replacement `claude-sonnet-5-5`). The pack's urgent window is 60 days, Anthropic's minimum retirement notice, so both are high risk now and `--fail-on-high` fails CI. Other undated Claude aliases are not listed because Anthropic doesn't document them as retiring. The pack is no longer marked "stub".
+- **Sampling parameters are checked per call.** A `temperature` / `top_p` / `top_k` on an OpenAI call no longer flags a Claude call in the same file (Python, JS and TS). Calls outside a call expression (a model constant) ignore other providers' calls in the file.
+- **Plain scan output.** The terminal shows "Found N retiring model IDs in M files (x high risk, y medium)", the soonest shutdown, up to 5 rows and a Next steps block with the free `fix .` preview and the £179 patch (lastorders.burntandtoast.com/#pricing). A clean scan says so and names the next announced shutdown; a scan with no model IDs says what it can't see. The packs line moved to `--verbose`.
+- scan.md and the Action job summary end with the same Next steps; the job summary footer carries the pricing pointer. The unlicensed `fix` / `swap` preview ends with a count, how to get the patch, and the command to run next. The paid-command licence message names £179 and the buy link.
+- User-facing CLI copy lives in `migration_kit/messages.py`.
+- README: no "(working name)", the price and what the licence covers, the next shutdown, absolute links for PyPI; PyPI project URLs point at the product site, pricing and source. Action pin `@v0.4.13`.
+
 ## 0.4.12
 - **Anthropic sampling flags in the free scan, suggest-only fixes** (agreed with Chad, 22 Oct 2026; Anthropic pack 2026.10.22.2):
   - `scan` now flags `temperature`, `top_p` and `top_k` wherever Anthropic code sets them (a file with the Anthropic SDK, LangChain Anthropic, `api.anthropic.com/v1` or a Messages call), not only next to retiring Claude ids: one finding per file, category `param_rule` ("API parameter change"), at the first line that sets one, with the other lines listed. It says "This will fail once you move to the 2026-10-21 version": an error (high, counts for `--fail-on-high`) when the file sets `anthropic-version` 2026-10-21 or later, otherwise a warning (medium). The step-by-step fix is only in the `fix` plan.

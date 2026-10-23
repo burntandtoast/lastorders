@@ -13,8 +13,6 @@
 | low | 1 |
 | info | 1 |
 
-_The licensed patch can be smaller than the replacements suggested here: `swap` skips docs (unless `--include-docs`), keeps an ID everywhere when renaming any copy would create a duplicate key or list entry, and lists those references for review instead. Generated, minified and vendored files are skipped by both. `lastorders swap .` (free) shows the real per-file count._
-
 ## Fine-tuned model
 
 | File | Line | Provider | Current model | Suggested | Shutdown | Risk | Kind | Notes |
@@ -61,3 +59,9 @@ These are set outside the repo (hosting dashboard, CI secrets, .env on servers).
 |---|---|---|
 | `app/agent.py` | 8 | `OPENAI_MODEL` |
 | `web/src/classify.js` | 4 | `CLASSIFIER_MODEL` |
+
+## Next steps
+
+- **See what the fix would change, free:** `lastorders fix .` shows the real per-file count. It skips docs unless you pass `--include-docs`, and it leaves alone any ID it can't rename safely (for example where renaming would create a duplicate entry), so it can be smaller than the table above.
+- **Get the patch for this repo:** a reviewable patch plus a must-review list of anything it couldn't safely change, with a before-and-after report. £179 one-off, tax included: <https://lastorders.burntandtoast.com/#pricing>
+- **Or have us do it:** from £1,500. Email hello@burntandtoast.com.
