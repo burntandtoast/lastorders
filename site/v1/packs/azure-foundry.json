@@ -2,13 +2,13 @@
   "$schema": "https://packs.burntandtoast.com/v1/pack.schema.json",
   "pack_format": 1,
   "provider": "azure-foundry",
-  "name": "Microsoft Foundry partner models (Mistral, Cohere, Meta, Microsoft)",
-  "version": "2026.10.22.1",
-  "updated": "2026-10-22",
+  "name": "Microsoft Foundry (Azure OpenAI and partner models)",
+  "version": "2026.11.02.1",
+  "updated": "2026-11-02",
   "status": "stable",
   "notes": [
-    "Facts from Microsoft's Foundry model retirement schedule (checked 22 Oct 2026), 'Foundry Models from partners and community' section. These dates apply to Microsoft Foundry only: the model makers' own APIs and other hosts set their own dates.",
-    "Flag only: every model has map_automatically false, so `swap` and `fix` never rewrite these IDs. Risk is raised by a shutdown date only when the same file shows Azure / Foundry use (signal azure_foundry).",
+    "Facts from Microsoft's Foundry model retirement schedule. Partner-model rows were checked 22 Oct 2026 ('Foundry Models from partners and community'). Azure OpenAI rows were checked 2 Nov 2026 ('Foundry Models sold by Azure' > Azure OpenAI). These dates apply to Microsoft Foundry / Azure OpenAI only. The OpenAI platform pack keeps its own dates and replacements.",
+    "Flag only: models with a replacement have map_automatically false, so `swap` and `fix` never rewrite these IDs. When the same snapshot id is also in the OpenAI pack, this pack owns the finding only if the file shows Azure / Foundry use (signal azure_foundry). Risk is raised by a shutdown date only when that signal is present.",
     "Llama 3.3 70B and Llama 4 Maverick are plain rows with no retirement date: the schedule lists them twice (sold by Azure: no date; partner listing: a date), and a repo doesn't show which one it uses. The partner dates are in each note."
   ],
   "sources": [
@@ -17,6 +17,12 @@
       "title": "Microsoft Foundry: Model retirement schedule",
       "url": "https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/model-retirement-schedule",
       "checked": "2026-10-22"
+    },
+    {
+      "id": "foundry-schedule-azure-openai",
+      "title": "Microsoft Foundry: Model retirement schedule (Azure OpenAI)",
+      "url": "https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/model-retirement-schedule",
+      "checked": "2026-11-02"
     },
     {
       "id": "mistral-models",
@@ -46,6 +52,9 @@
     },
     {
       "pattern": "Phi-4(?:-mini-instruct|-mini-reasoning|-multimodal-instruct|-reasoning)?"
+    },
+    {
+      "pattern": "gpt-(?:4o-2024-05-13|4\\.1-mini-2025-04-14|5-mini-2025-08-07|5\\.1-2025-11-13)"
     }
   ],
   "migrations": [
@@ -73,6 +82,35 @@
       "replacement": "microsoft--phi-4",
       "headline": false,
       "source": "foundry-schedule"
+    },
+    {
+      "id": "azure-gpt-4o-2024-05-13-2027-01-14",
+      "title": "Azure OpenAI retires gpt-4o version 2024-05-13",
+      "shutdown": "2027-01-14",
+      "replacement": "gpt-5.1",
+      "headline": false,
+      "source": "foundry-schedule-azure-openai"
+    },
+    {
+      "id": "azure-gpt-4-1-mini-2025-04-14-2027-04-14",
+      "title": "Azure OpenAI retires gpt-4.1-mini version 2025-04-14",
+      "shutdown": "2027-04-14",
+      "headline": false,
+      "source": "foundry-schedule-azure-openai"
+    },
+    {
+      "id": "azure-gpt-5-mini-2025-08-07-2027-07-13",
+      "title": "Azure OpenAI retires gpt-5-mini version 2025-08-07",
+      "shutdown": "2027-07-13",
+      "headline": false,
+      "source": "foundry-schedule-azure-openai"
+    },
+    {
+      "id": "azure-gpt-5-1-2025-11-13-2027-07-13",
+      "title": "Azure OpenAI retires gpt-5.1 version 2025-11-13",
+      "shutdown": "2027-07-13",
+      "headline": false,
+      "source": "foundry-schedule-azure-openai"
     }
   ],
   "models": [
@@ -197,6 +235,55 @@
       "source": "foundry-schedule",
       "map_automatically": false,
       "note": "Microsoft Foundry (partner listing): retires 17 Jan 2027; Microsoft lists microsoft--phi-4 on Foundry Managed Compute as the replacement. Other hosts (local, Hugging Face) are not covered."
+    },
+    {
+      "id": "gpt-4o-2024-05-13",
+      "kind": "snapshot",
+      "match": "exact",
+      "shutdown": "2027-01-14",
+      "replacement": "gpt-5.1",
+      "migration": "azure-gpt-4o-2024-05-13-2027-01-14",
+      "section": "Foundry Models sold by Azure > Azure OpenAI",
+      "confidence": "confirmed",
+      "source": "foundry-schedule-azure-openai",
+      "map_automatically": false,
+      "note": "Azure OpenAI on Microsoft Foundry: gpt-4o version 2024-05-13 retires on 14 January 2027 (the Azure date moved from 9 December 2026). Replacement deployment is gpt-5.1 version 2025-11-13. Global Standard and Data Zone Standard deployments upgrade automatically to that version. Provisioned deployments (Regional Provisioned, Global Provisioned, and Data Zone Provisioned) do not: create a new deployment and move traffic before retirement. Regional Standard deployments of this version already retired on 31 March 2026. The OpenAI platform schedule for this snapshot is a separate row."
+    },
+    {
+      "id": "gpt-4.1-mini-2025-04-14",
+      "kind": "snapshot",
+      "match": "exact",
+      "shutdown": "2027-04-14",
+      "migration": "azure-gpt-4-1-mini-2025-04-14-2027-04-14",
+      "section": "Foundry Models sold by Azure > Azure OpenAI",
+      "confidence": "confirmed",
+      "source": "foundry-schedule-azure-openai",
+      "map_automatically": false,
+      "note": "Azure OpenAI on Microsoft Foundry: gpt-4.1-mini version 2025-04-14 retires on 14 April 2027 (footnote 3: that date covers this version's active base-model inference offers in Azure public cloud). The schedule lists no replacement. The OpenAI platform schedule for this snapshot is a separate row."
+    },
+    {
+      "id": "gpt-5-mini-2025-08-07",
+      "kind": "snapshot",
+      "match": "exact",
+      "shutdown": "2027-07-13",
+      "migration": "azure-gpt-5-mini-2025-08-07-2027-07-13",
+      "section": "Foundry Models sold by Azure > Azure OpenAI",
+      "confidence": "confirmed",
+      "source": "foundry-schedule-azure-openai",
+      "map_automatically": false,
+      "note": "Azure OpenAI on Microsoft Foundry: gpt-5-mini version 2025-08-07 retires on 13 July 2027 (the Azure date moved from 9 February 2027). The schedule lists no replacement. The OpenAI platform schedule for this snapshot is a separate row."
+    },
+    {
+      "id": "gpt-5.1-2025-11-13",
+      "kind": "snapshot",
+      "match": "exact",
+      "shutdown": "2027-07-13",
+      "migration": "azure-gpt-5-1-2025-11-13-2027-07-13",
+      "section": "Foundry Models sold by Azure > Azure OpenAI",
+      "confidence": "confirmed",
+      "source": "foundry-schedule-azure-openai",
+      "map_automatically": false,
+      "note": "Azure OpenAI on Microsoft Foundry: gpt-5.1 version 2025-11-13 retires on 13 July 2027 (the Azure date moved from 15 May 2027). The schedule lists no replacement. This is the version that Global Standard and Data Zone Standard deployments of gpt-4o 2024-05-13 upgrade to. The OpenAI platform's undated gpt-5.1 alias is a separate row."
     }
   ],
   "signals": [
@@ -213,9 +300,20 @@
       "description": "Azure AI inference SDK, LangChain Azure AI or Foundry env vars in the same file"
     },
     {
+      "id": "azure_foundry",
+      "sdk": "azure",
+      "pattern": "AzureOpenAI|AzureChatOpenAI|\\bazure_endpoint\\b|AZURE_OPENAI_[A-Z0-9_]*",
+      "description": "Azure OpenAI client, LangChain Azure chat, azure_endpoint, or AZURE_OPENAI_* settings in the same file"
+    },
+    {
       "id": "cohere_embed_v3",
       "pattern": "Cohere-embed-v3-(?:english|multilingual)",
       "description": "Cohere Embed v3 model id (file level)"
+    },
+    {
+      "id": "azure_gpt4o_20240513",
+      "pattern": "gpt-4o-2024-05-13",
+      "description": "gpt-4o snapshot 2024-05-13 in the same file (Azure OpenAI retirement rule)"
     }
   ],
   "rules": [
@@ -238,6 +336,26 @@
         "action": "manual",
         "note": "Not automated: plan a re-embedding job and an index rebuild, then switch the model for indexing and queries together."
       }
+    },
+    {
+      "id": "azure-gpt-4o-20240513-provisioned",
+      "type": "info",
+      "applies_to": {
+        "migrations": [
+          "azure-gpt-4o-2024-05-13-2027-01-14"
+        ]
+      },
+      "when_any": [
+        "azure_gpt4o_20240513"
+      ],
+      "risk": "medium",
+      "confidence": "confirmed",
+      "evidence": "Microsoft Foundry model retirement schedule, Azure OpenAI table and footnote 2 (checked 2 Nov 2026): gpt-4o version 2024-05-13 retires 2027-01-14, replacement gpt-5.1 version 2025-11-13. Global Standard and Data Zone Standard deployments upgrade automatically. Provisioned deployments are not upgraded.",
+      "message": "On Azure, gpt-4o version 2024-05-13 retires on 14 January 2027. The replacement is gpt-5.1 version 2025-11-13. Global Standard and Data Zone Standard deployments upgrade automatically. Provisioned deployments do not: create a new deployment and move traffic before retirement.",
+      "fix": {
+        "action": "manual",
+        "note": "Not automated. Global Standard and Data Zone Standard deployments of gpt-4o version 2024-05-13 upgrade themselves to gpt-5.1 version 2025-11-13. Provisioned deployments need a new deployment; Last Orders will not rewrite the id."
+      }
     }
   ],
   "risk_policy": {
@@ -253,7 +371,9 @@
       "Mistral's own API deprecated mistral-small-2503 on 6 Nov 2025 and retired it on 30 Nov 2025.",
       "Microsoft Foundry: Cohere-embed-v3-english and Cohere-embed-v3-multilingual are deprecated on 15 Nov 2026 and retire on 15 Feb 2027; replacements Cohere-Embed-V5-Fast and Cohere-Embed-V5-Pro.",
       "Microsoft Foundry: Phi-4, Phi-4-mini-instruct, Phi-4-mini-reasoning, Phi-4-multimodal-instruct and Phi-4-reasoning retire on 17 Jan 2027 (partner listing).",
-      "Microsoft Foundry: Llama-3.3-70B-Instruct and Llama-4-Maverick-17B-128E-Instruct-FP8 have no retirement date when sold by Azure; the partner listings retire on 31 Jan 2027 and 19 Nov 2026."
+      "Microsoft Foundry: Llama-3.3-70B-Instruct and Llama-4-Maverick-17B-128E-Instruct-FP8 have no retirement date when sold by Azure; the partner listings retire on 31 Jan 2027 and 19 Nov 2026.",
+      "Azure OpenAI: gpt-4o version 2024-05-13 retires on 14 January 2027; replacement gpt-5.1 version 2025-11-13. Global Standard and Data Zone Standard deployments upgrade automatically. Provisioned deployments do not.",
+      "Azure OpenAI: gpt-4.1-mini version 2025-04-14 retires on 14 April 2027. gpt-5-mini version 2025-08-07 and gpt-5.1 version 2025-11-13 retire on 13 July 2027. The schedule lists no replacement for those three."
     ],
     "unconfirmed": [
       "No live API checks. Deployment names on Foundry are chosen by the customer, so a repo may not contain these model IDs at all."
@@ -261,7 +381,8 @@
   },
   "report": {
     "next_steps": [
-      "For Foundry deployments of these models, plan the switch by hand. For Cohere Embed v3, budget a full re-embed and index rebuild."
+      "For Foundry deployments of these models, plan the switch by hand. For Cohere Embed v3, budget a full re-embed and index rebuild.",
+      "For Azure OpenAI gpt-4o version 2024-05-13, Global Standard and Data Zone Standard deployments upgrade to gpt-5.1 version 2025-11-13 on 14 January 2027. Provisioned deployments need a new deployment before that date."
     ]
   }
 }

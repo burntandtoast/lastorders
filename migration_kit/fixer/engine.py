@@ -422,8 +422,9 @@ def _match_after(before: list[CallSite], after: list[CallSite], wanted: list[Cal
 
 def _flag_only_item(file: str, line: int, provider: str, model: str, m, endpoint: str | None = None) -> FixItem:
     """A retiring id that is never swapped automatically (o1-pro, image models, ...)."""
+    repl = f" Replacement: {m.replacement}." if m.replacement else " No replacement is listed."
     return FixItem(file, line, provider, "flag-only", "manual",
-                   f"`{model}` shuts down {m.shutdown or '(date not announced)'}. Replacement: {m.replacement}. "
+                   f"`{model}` shuts down {m.shutdown or '(date not announced)'}.{repl} "
                    "Not switched automatically: " + (m.note or "a name-only swap is not enough."),
                    change="not changed; switch this model by hand", model=model, target=m.replacement,
                    endpoint=endpoint)

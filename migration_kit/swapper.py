@@ -12,7 +12,8 @@ import yaml
 
 from .scanner import mark_output as _mark
 from .packs import PackSet, load_packs
-from .scanner import MARKUP, _block_map, _is_comment, classify, iter_files, iter_model_tokens, iter_prefix_checks, iter_rows, list_bounds
+from .scanner import (MARKUP, _block_map, _is_comment, classify, file_signals, iter_files, iter_model_tokens,
+                       iter_prefix_checks, iter_rows, list_bounds)
 from .swapsafe import (FILE_HOLD_NOTES, HOLD_NOTES, ID_FIELDS, MANUAL_HOLDS, STRUCT_LANGS, Cont, Lit, element,
                        equality_check, extend_equality, file_hold, list_like, parse_structure, token_hold,
                        yaml_structure)
@@ -37,6 +38,12 @@ def mapping_from_packs(packs: PackSet, migrations: list[str] | None = None) -> M
         flag.update(p.flag_only(migrations))
     srcs = ", ".join(f"{p.provider} pack v{p.version}" for p in packs)
     return Mapping(reps, {}, False, f"generated from {srcs}", flag)
+
+
+def _pack_refuses_swap(pack, model: str) -> bool:
+    """The pack that owns this token asked not to rewrite it, even if another pack maps the same id."""
+    owned = pack.lookup(model)
+    return owned is not None and not owned.map_automatically
 
 
 def load_mapping(path: str | Path) -> Mapping:
@@ -250,6 +257,7 @@ def plan(root: str | Path, mapping: Mapping, packs: PackSet | None = None) -> Sw
             continue
         rel = path.relative_to(root).as_posix()
         rows, _ = iter_rows(text, path, lang)
+        sig, _sdks = file_signals(text, lang, packs)
         fhold = file_hold(rel, text)
         blocks = _block_map(rows)
         texts = [r.text for r in rows]
@@ -259,8 +267,9 @@ def plan(root: str | Path, mapping: Mapping, packs: PackSet | None = None) -> Sw
                 continue
             i, text_line = row.index + 1, row.text
             if fhold:
-                for s, e, model, _ in iter_model_tokens(text_line, packs, row.lang, row.prev, row.mode):
-                    if model in table and (row.mode is not MARKUP or mapping.include_docs):
+                for s, e, model, pack in iter_model_tokens(text_line, packs, row.lang, row.prev, row.mode, sig):
+                    if (model in table and not _pack_refuses_swap(pack, model)
+                            and (row.mode is not MARKUP or mapping.include_docs)):
                         info = held_files.setdefault(rel, {"reason": fhold, "count": 0, "models": set(), "lines": {}})
                         info["count"] += 1
                         info["models"].add(model)
@@ -271,12 +280,12 @@ def plan(root: str | Path, mapping: Mapping, packs: PackSet | None = None) -> Sw
                             info["lines"].setdefault(model, i)
                 continue
             if row.mode is True and not _is_comment(text_line, row.lang):
-                family.extend((rel, i, model) for _, _, model, _ in iter_prefix_checks(text_line, packs))
-            for s, e, model, pack in iter_model_tokens(text_line, packs, row.lang, row.prev, row.mode):
+                family.extend((rel, i, model) for _, _, model, _ in iter_prefix_checks(text_line, packs, sig))
+            for s, e, model, pack in iter_model_tokens(text_line, packs, row.lang, row.prev, row.mode, sig):
                 if pack.fine_tune_base(model) is not None and model not in mapping.fine_tuned:
                     skipped.append((rel, i, model))
                     continue
-                if model not in table:
+                if _pack_refuses_swap(pack, model) or model not in table:
                     # `startsWith("o3")` still matters when o3-mini is renamed elsewhere.
                     if classify(text_line, s, e, row.lang, row.prev, row.mode, rel)[1] == "name_check":
                         family.append((rel, i, model))
