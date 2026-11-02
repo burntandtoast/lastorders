@@ -1,0 +1,384 @@
+{
+  "$schema": "https://packs.burntandtoast.com/v1/pack.schema.json",
+  "pack_format": 1,
+  "provider": "mistral",
+  "name": "Mistral API",
+  "version": "2026.11.02.1",
+  "updated": "2026-11-02",
+  "status": "stable",
+  "notes": [
+    "Mistral's own API only, from the models overview (checked 2 Nov 2026). Flag only: every row has map_automatically false, so swap and fix never rewrite these IDs. The switch is not a rename: prices change, and Large 4 and Voxtral 3 reject calls the old IDs still accept.",
+    "Deprecation 31 Oct 2026 and retirement 30 Apr 2027 match the models overview for all five IDs. Large 4's API name on that page and on the pricing page is mistral-large-4. The model card also accepts mistral-large-4-0. This pack pins mistral-large-4.",
+    "Aliases listed on the retiring model cards (mistral-medium-3, mistral-medium-latest, mistral-large-latest, voxtral-mini-latest, voxtral-mini-realtime-latest, voxtral-mini-tts-latest) are not separate rows. voxtral-mini-tts-latest is not the replacement: Mistral says that alias will point at Voxtral 3 within a month of GA.",
+    "voxtral-small-2507 is still GA on the models overview and is not in the deprecated table. The Voxtral 2 migration page maps it to Voxtral Small Transcribe 3; that page disagrees with the overview, so this pack leaves it out.",
+    "Third-party models Mistral hosts (DeepSeek, Z.ai, and others) are not rows in this pack. The Microsoft Foundry mistral-small-2503 row is unchanged and stays in the azure-foundry pack."
+  ],
+  "sources": [
+    {
+      "id": "models",
+      "title": "Mistral docs: Models overview (deprecated and retired models)",
+      "url": "https://docs.mistral.ai/models",
+      "checked": "2026-11-02"
+    },
+    {
+      "id": "pricing",
+      "title": "Mistral docs: API pricing",
+      "url": "https://docs.mistral.ai/inference/pricing",
+      "checked": "2026-11-02"
+    },
+    {
+      "id": "large-4",
+      "title": "Mistral Large 4 model card",
+      "url": "https://docs.mistral.ai/models/mistral-large-4-0",
+      "checked": "2026-11-02"
+    },
+    {
+      "id": "medium-3-5",
+      "title": "Mistral Medium 3.5 model card",
+      "url": "https://docs.mistral.ai/models/mistral-medium-3-5-26-04",
+      "checked": "2026-11-02"
+    },
+    {
+      "id": "large-3",
+      "title": "Mistral Large 3 model card",
+      "url": "https://docs.mistral.ai/models/mistral-large-3-25-12",
+      "checked": "2026-11-02"
+    },
+    {
+      "id": "reasoning",
+      "title": "Mistral docs: Reasoning",
+      "url": "https://docs.mistral.ai/studio/conversations/reasoning",
+      "checked": "2026-11-02"
+    },
+    {
+      "id": "voxtral-migrate",
+      "title": "Mistral docs: Migrate from Voxtral 2",
+      "url": "https://docs.mistral.ai/studio/audio/migrate-from-voxtral-2",
+      "checked": "2026-11-02"
+    },
+    {
+      "id": "voxtral-transcribe-2",
+      "title": "Voxtral Mini Transcribe 2 model card",
+      "url": "https://docs.mistral.ai/models/voxtral-mini-transcribe-26-02",
+      "checked": "2026-11-02"
+    },
+    {
+      "id": "voxtral-transcribe-3",
+      "title": "Voxtral Mini Transcribe 3 model card",
+      "url": "https://docs.mistral.ai/models/voxtral-mini-transcribe-3-0",
+      "checked": "2026-11-02"
+    },
+    {
+      "id": "voxtral-realtime-2",
+      "title": "Voxtral Mini Transcribe Realtime model card",
+      "url": "https://docs.mistral.ai/models/voxtral-mini-transcribe-realtime-26-02",
+      "checked": "2026-11-02"
+    },
+    {
+      "id": "voxtral-realtime-3",
+      "title": "Voxtral Mini Transcribe Realtime 3 model card",
+      "url": "https://docs.mistral.ai/models/voxtral-mini-transcribe-realtime-3-0",
+      "checked": "2026-11-02"
+    },
+    {
+      "id": "voxtral-tts-2",
+      "title": "Voxtral TTS model card",
+      "url": "https://docs.mistral.ai/models/voxtral-tts-26-03",
+      "checked": "2026-11-02"
+    },
+    {
+      "id": "voxtral-tts-3",
+      "title": "Voxtral TTS 3 model card",
+      "url": "https://docs.mistral.ai/models/voxtral-mini-tts-3-0",
+      "checked": "2026-11-02"
+    }
+  ],
+  "id_patterns": [
+    {
+      "pattern": "mistral-medium-3-5"
+    },
+    {
+      "pattern": "mistral-large-2512"
+    },
+    {
+      "pattern": "voxtral-mini-tts-2603"
+    },
+    {
+      "pattern": "voxtral-mini-transcribe-realtime-2602"
+    },
+    {
+      "pattern": "voxtral-mini-2602"
+    }
+  ],
+  "migrations": [
+    {
+      "id": "mistral-large-4-2027-04-30",
+      "title": "Mistral retires Medium 3.5 and Large 3",
+      "announced": "2026-10-31",
+      "shutdown": "2027-04-30",
+      "replacement": "mistral-large-4",
+      "headline": true,
+      "source": "models"
+    },
+    {
+      "id": "voxtral-mini-transcribe-3-2027-04-30",
+      "title": "Mistral retires Voxtral Mini Transcribe 2",
+      "announced": "2026-10-31",
+      "shutdown": "2027-04-30",
+      "replacement": "voxtral-mini-transcribe-3-0",
+      "headline": true,
+      "source": "models"
+    },
+    {
+      "id": "voxtral-mini-transcribe-realtime-3-2027-04-30",
+      "title": "Mistral retires Voxtral Mini Transcribe Realtime",
+      "announced": "2026-10-31",
+      "shutdown": "2027-04-30",
+      "replacement": "voxtral-mini-transcribe-realtime-3-0",
+      "headline": true,
+      "source": "models"
+    },
+    {
+      "id": "voxtral-tts-3-2027-04-30",
+      "title": "Mistral retires Voxtral TTS",
+      "announced": "2026-10-31",
+      "shutdown": "2027-04-30",
+      "replacement": "voxtral-mini-tts-3-0",
+      "headline": true,
+      "source": "models"
+    }
+  ],
+  "models": [
+    {
+      "id": "mistral-medium-3-5",
+      "kind": "snapshot",
+      "match": "exact",
+      "shutdown": "2027-04-30",
+      "replacement": "mistral-large-4",
+      "migration": "mistral-large-4-2027-04-30",
+      "section": "Deprecated and retired models",
+      "confidence": "confirmed",
+      "source": "models",
+      "map_automatically": false,
+      "note": "Mistral API (Medium 3.5): deprecated 31 Oct 2026, retires 30 Apr 2027. Replacement API name is mistral-large-4; the model card also accepts mistral-large-4-0. Medium 3.5 is $1.50 input / $7.50 output per 1M tokens, 256k context, and accepts reasoning_effort \"none\". Large 4 is public preview, 1M context, $0.70 input / $0.07 cached input / $2.10 output per 1M tokens, and accepts only low, medium, and high. The model card also lists mistral-medium-3 and mistral-medium-latest; those aliases are not separate rows."
+    },
+    {
+      "id": "mistral-large-2512",
+      "kind": "snapshot",
+      "match": "exact",
+      "shutdown": "2027-04-30",
+      "replacement": "mistral-large-4",
+      "migration": "mistral-large-4-2027-04-30",
+      "section": "Deprecated and retired models",
+      "confidence": "confirmed",
+      "source": "models",
+      "map_automatically": false,
+      "note": "Mistral API (Large 3): deprecated 31 Oct 2026, retires 30 Apr 2027. Replacement API name is mistral-large-4; the model card also accepts mistral-large-4-0. Large 3 is $0.50 input / $1.50 output per 1M tokens, 256k, text output. Large 4 is public preview, 1M context, $0.70 input / $0.07 cached input / $2.10 output per 1M tokens, and returns reasoning plus text, so this switch costs more and changes the response shape. Also listed as mistral-large-latest; that alias is not a separate row."
+    },
+    {
+      "id": "voxtral-mini-2602",
+      "kind": "snapshot",
+      "match": "exact",
+      "shutdown": "2027-04-30",
+      "replacement": "voxtral-mini-transcribe-3-0",
+      "migration": "voxtral-mini-transcribe-3-2027-04-30",
+      "section": "Deprecated and retired models",
+      "confidence": "confirmed",
+      "source": "models",
+      "map_automatically": false,
+      "note": "Mistral API (Voxtral Mini Transcribe 2): deprecated 31 Oct 2026, retires 30 Apr 2027. Replacement ID is voxtral-mini-transcribe-3-0 (aliases voxtral-mini-transcribe-3 and voxtral-mini-transcribe-latest). Input price goes from $0.003 to $0.0035 per minute. Word timestamps are gone: timestamp_granularities accepts segment only, and word returns 400. Also listed as voxtral-mini-latest; that alias is not a separate row."
+    },
+    {
+      "id": "voxtral-mini-transcribe-realtime-2602",
+      "kind": "snapshot",
+      "match": "exact",
+      "shutdown": "2027-04-30",
+      "replacement": "voxtral-mini-transcribe-realtime-3-0",
+      "migration": "voxtral-mini-transcribe-realtime-3-2027-04-30",
+      "section": "Deprecated and retired models",
+      "confidence": "confirmed",
+      "source": "models",
+      "map_automatically": false,
+      "note": "Mistral API (Voxtral Mini Transcribe Realtime): deprecated 31 Oct 2026, retires 30 Apr 2027. Replacement ID is voxtral-mini-transcribe-realtime-3-0. The model card also lists voxtral-mini-transcribe-realtime-3 and voxtral-mini-transcribe-realtime-latest; the migrate page's alias cell is cut off after the first alias. Input price goes from $0.006 to $0.008 per minute. A realtime session locks its settings when the first audio chunk arrives; a later session.update returns an error. Also listed as voxtral-mini-realtime-latest; that alias is not a separate row."
+    },
+    {
+      "id": "voxtral-mini-tts-2603",
+      "kind": "snapshot",
+      "match": "exact",
+      "shutdown": "2027-04-30",
+      "replacement": "voxtral-mini-tts-3-0",
+      "migration": "voxtral-tts-3-2027-04-30",
+      "section": "Deprecated and retired models",
+      "confidence": "confirmed",
+      "source": "models",
+      "map_automatically": false,
+      "note": "Mistral API (Voxtral TTS): deprecated 31 Oct 2026, retires 30 Apr 2027. Replacement ID is voxtral-mini-tts-3-0 (aliases voxtral-mini-tts-3 and voxtral-mini-tts-latest). Input price goes from $16 to $13 per million characters. Emotion moves from per-voice presets to inline tags; the Voxtral 2 presets are still accepted. Do not pin voxtral-mini-tts-latest: Mistral says that alias will point at Voxtral 3 within a month of GA."
+    }
+  ],
+  "signals": [
+    {
+      "id": "mistral_sdk",
+      "sdk": "mistralai",
+      "languages": ["python"],
+      "pattern": "\\bimport mistralai\\b|\\bfrom mistralai\\b|\\bMistral\\(",
+      "description": "mistralai Python client"
+    },
+    {
+      "id": "mistral_sdk",
+      "sdk": "mistralai",
+      "languages": ["javascript", "typescript"],
+      "pattern": "@mistralai/mistralai|\\bnew\\s+Mistral\\(",
+      "description": "mistralai JS/TS client"
+    },
+    {
+      "id": "http_mistral",
+      "sdk": "http",
+      "pattern": "api\\.mistral\\.ai",
+      "description": "Mistral API host"
+    },
+    {
+      "id": "reasoning_effort_unsupported",
+      "pattern": "reasoning_effort\\s*[=:]\\s*[\"'](?:none|minimal|xhigh|max)[\"']",
+      "description": "reasoning_effort value Large 4 rejects (none, minimal, xhigh, max)"
+    },
+    {
+      "id": "voxtral_word_timestamps",
+      "pattern": "timestamp_granularities",
+      "description": "transcription timestamp_granularities argument"
+    },
+    {
+      "id": "voxtral_realtime_session",
+      "pattern": "session\\.update",
+      "description": "realtime session.update"
+    }
+  ],
+  "rules": [
+    {
+      "id": "mistral-large-4-reasoning-effort",
+      "type": "param_conditional",
+      "applies_to": {
+        "replacements": ["mistral-large-4"]
+      },
+      "when_any": ["reasoning_effort_unsupported"],
+      "param": "reasoning_effort",
+      "risk": "medium",
+      "confidence": "confirmed",
+      "evidence": "Mistral reasoning docs (checked 2 Nov 2026): Large 4 accepts low, medium, and high only. none, minimal, xhigh, and max are not aliases. Medium 3.5 accepts none.",
+      "message": "Mistral Large 4 accepts reasoning_effort low, medium, and high only. none, minimal, xhigh, and max are rejected. Medium 3.5 still accepts none. Mistral recommends high. Last Orders will not change the argument.",
+      "fix": {
+        "action": "manual",
+        "note": "Not automated: set reasoning_effort to low, medium, or high (high is Mistral's recommended starting point) in the same change as the model id."
+      }
+    },
+    {
+      "id": "voxtral-word-timestamps-removed",
+      "type": "param_removed",
+      "applies_to": {
+        "migrations": ["voxtral-mini-transcribe-3-2027-04-30"]
+      },
+      "when_any": ["voxtral_word_timestamps"],
+      "param": "timestamp_granularities",
+      "risk": "medium",
+      "confidence": "confirmed",
+      "evidence": "Migrate from Voxtral 2 (checked 2 Nov 2026): timestamp_granularities accepts segment only, and word returns 400.",
+      "message": "Voxtral Mini Transcribe 3 no longer returns word timestamps. timestamp_granularities accepts segment only; word returns 400. Last Orders will not change the argument.",
+      "fix": {
+        "action": "manual",
+        "note": "Not automated: request segment timestamps, or drop word granularity, before switching the model id."
+      }
+    },
+    {
+      "id": "voxtral-realtime-session-lock",
+      "type": "info",
+      "applies_to": {
+        "migrations": ["voxtral-mini-transcribe-realtime-3-2027-04-30"]
+      },
+      "when_any": ["voxtral_realtime_session"],
+      "risk": "medium",
+      "confidence": "confirmed",
+      "evidence": "Migrate from Voxtral 2 (checked 2 Nov 2026): a realtime session locks its settings when the first audio chunk arrives. A later session.update gets an error event.",
+      "message": "Voxtral Mini Transcribe Realtime 3 locks the session when the first audio chunk arrives. Send every setting in the first session.update, before any audio. A later session.update returns an error. Last Orders will not change the call.",
+      "fix": {
+        "action": "manual",
+        "note": "Not automated: move every session.update ahead of the first audio chunk."
+      }
+    }
+  ],
+  "risk_policy": {
+    "urgent_days": 30,
+    "default_risk": "medium"
+  },
+  "replacement_facts": {
+    "mistral-large-4": {
+      "status": "public-preview",
+      "aliases": ["mistral-large-4-0"],
+      "context_window": 1000000,
+      "input": ["text", "image"],
+      "output": ["reasoning", "text"],
+      "reasoning_effort": ["low", "medium", "high"],
+      "reasoning_effort_recommended": "high",
+      "reasoning_effort_rejected": ["none", "minimal", "xhigh", "max"],
+      "price_usd_per_1m": {
+        "input": 0.7,
+        "cached_input": 0.07,
+        "output": 2.1
+      },
+      "source": "large-4",
+      "note": "API name on the models overview and the pricing page is mistral-large-4. The model card also lists mistral-large-4-0. Prices are the model card figures (input $0.70, cached input $0.07, output $2.10 per 1M tokens), which match the pricing page. Checked 2 Nov 2026."
+    },
+    "voxtral-mini-transcribe-3-0": {
+      "status": "public-preview",
+      "aliases": ["voxtral-mini-transcribe-3", "voxtral-mini-transcribe-latest"],
+      "price_usd_per_1m": null,
+      "price": {
+        "input": 0.0035,
+        "unit": "usd_per_minute"
+      },
+      "source": "voxtral-transcribe-3",
+      "note": "Not a token price, so price_usd_per_1m is null. Model card: input $0.0035 per minute. The pricing page table also lists cached input $0.00035 per minute. Checked 2 Nov 2026."
+    },
+    "voxtral-mini-transcribe-realtime-3-0": {
+      "status": "public-preview",
+      "aliases": ["voxtral-mini-transcribe-realtime-3", "voxtral-mini-transcribe-realtime-latest"],
+      "price_usd_per_1m": null,
+      "price": {
+        "input": 0.008,
+        "unit": "usd_per_minute"
+      },
+      "source": "voxtral-realtime-3",
+      "note": "Not a token price, so price_usd_per_1m is null. Model card: input $0.008 per minute. The pricing page table also lists cached input $0.0008 per minute. Checked 2 Nov 2026."
+    },
+    "voxtral-mini-tts-3-0": {
+      "status": "public-preview",
+      "aliases": ["voxtral-mini-tts-3", "voxtral-mini-tts-latest"],
+      "price_usd_per_1m": null,
+      "price": {
+        "input": 13,
+        "unit": "usd_per_million_characters"
+      },
+      "source": "voxtral-tts-3",
+      "note": "Not a token price, so price_usd_per_1m is null. Model card: input $13 per million characters. The pricing page table also lists cached input $1.30 per million characters. voxtral-mini-tts-latest will point at Voxtral 3 within a month of GA, so the pinned id is voxtral-mini-tts-3-0. Checked 2 Nov 2026."
+    }
+  },
+  "facts": {
+    "confirmed": [
+      "Mistral API: mistral-medium-3-5 (Medium 3.5) was deprecated on 31 Oct 2026 and retires on 30 Apr 2027. Replacement API name mistral-large-4 (also mistral-large-4-0).",
+      "Mistral API: mistral-large-2512 (Large 3) was deprecated on 31 Oct 2026 and retires on 30 Apr 2027. Replacement API name mistral-large-4 (also mistral-large-4-0).",
+      "Mistral API: voxtral-mini-tts-2603 was deprecated on 31 Oct 2026 and retires on 30 Apr 2027. Replacement ID voxtral-mini-tts-3-0.",
+      "Mistral API: voxtral-mini-2602 was deprecated on 31 Oct 2026 and retires on 30 Apr 2027. Replacement ID voxtral-mini-transcribe-3-0.",
+      "Mistral API: voxtral-mini-transcribe-realtime-2602 was deprecated on 31 Oct 2026 and retires on 30 Apr 2027. Replacement ID voxtral-mini-transcribe-realtime-3-0.",
+      "Large 4 price on the model card and the pricing page: $0.70 input, $0.07 cached input, $2.10 output per 1M tokens. Public preview. reasoning_effort is low, medium, or high.",
+      "Medium 3.5 price on its model card: $1.50 input and $7.50 output per 1M tokens. Large 3: $0.50 input and $1.50 output per 1M tokens.",
+      "Voxtral Mini Transcribe 2 is $0.003 per minute; Voxtral Mini Transcribe 3 is $0.0035 per minute. Realtime goes from $0.006 to $0.008 per minute. TTS goes from $16 to $13 per million characters."
+    ],
+    "unconfirmed": [
+      "No live API calls. Cached audio prices ($0.00035/min, $0.0008/min, $1.30 per million characters) are on the pricing page table and are not repeated on the model cards, so they are noted and not stored as the primary price."
+    ]
+  },
+  "report": {
+    "next_steps": [
+      "Switch these IDs by hand. Large 4 is not a drop-in for Medium 3.5 or Large 3: check reasoning_effort and the response shape, and expect Large 3 to cost more.",
+      "For Voxtral, use the -3-0 IDs. Drop word timestamps, and send realtime session settings before the first audio chunk."
+    ]
+  }
+}

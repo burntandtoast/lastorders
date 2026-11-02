@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+- **Mistral API pack** (`mistral` 2026.11.02.1, flag only, checked 2 Nov 2026 against docs.mistral.ai). `mistral-medium-3-5` and `mistral-large-2512` retire on 30 Apr 2027 (deprecated 31 Oct 2026); replacement API name `mistral-large-4` (the model card also accepts `mistral-large-4-0`). Large 4 is $0.70 / $0.07 cached / $2.10 per 1M tokens and does not accept `reasoning_effort` `none`. `voxtral-mini-tts-2603` → `voxtral-mini-tts-3-0`, `voxtral-mini-2602` → `voxtral-mini-transcribe-3-0`, `voxtral-mini-transcribe-realtime-2602` → `voxtral-mini-transcribe-realtime-3-0`, same window. `swap` and `fix` do not rewrite these IDs. DeepSeek and the Foundry `mistral-small-2503` row are unchanged.
 - **Azure OpenAI rows in `azure-foundry` 2026.11.02.1** (Foundry model retirement schedule, checked 2 Nov 2026). These rows stay off the OpenAI platform pack. `gpt-4o-2024-05-13` retires on Azure on 14 January 2027, replacement `gpt-5.1` version `2025-11-13`. Global Standard and Data Zone Standard deployments upgrade automatically; Provisioned deployments do not (`azure-gpt-4o-20240513-provisioned`). `gpt-5-mini-2025-08-07` and `gpt-5.1-2025-11-13` retire on 13 July 2027. `gpt-4.1-mini-2025-04-14` retires on 14 April 2027. A snapshot that exists in both packs is read on the Azure schedule only when the file shows Azure / Foundry use; otherwise the OpenAI date and replacement are unchanged, and `swap` still uses the OpenAI mapping.
 
 ## 0.4.12

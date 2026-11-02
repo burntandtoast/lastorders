@@ -118,6 +118,24 @@ Rows under "Foundry Models sold by Azure > Azure OpenAI" on the [model retiremen
 | `gpt-5-mini-2025-08-07` | 2027-07-13 (was 9 February 2027) | none listed | |
 | `gpt-5.1-2025-11-13` | 2027-07-13 (was 15 May 2027) | none listed | target of the gpt-4o 2024-05-13 automatic upgrade |
 
+## Mistral API (`mistral`)
+
+Mistral's own API, from the [models overview](https://docs.mistral.ai/models) (checked 2 Nov 2026). These dates are not Microsoft Foundry's. `mistral-small-2503` stays in the `azure-foundry` pack. Third-party models Mistral hosts (DeepSeek, Z.ai, and others) are not rows here.
+
+Flag only: every row has `map_automatically: false`, so `swap` and `fix` do not rewrite the IDs. The replacement is not a name-only change.
+
+| Model ID | Mistral retirement | Suggested replacement | Notes |
+|---|---|---|---|
+| `mistral-medium-3-5` | 2027-04-30 (deprecated 2026-10-31) | `mistral-large-4` | Medium 3.5. $1.50 / $7.50 per 1M tokens. Accepts `reasoning_effort` `none`. Large 4 does not |
+| `mistral-large-2512` | 2027-04-30 (deprecated 2026-10-31) | `mistral-large-4` | Large 3. $0.50 / $1.50 per 1M tokens, text output. Large 4 costs more and returns reasoning |
+| `voxtral-mini-2602` | 2027-04-30 (deprecated 2026-10-31) | `voxtral-mini-transcribe-3-0` | $0.003 to $0.0035 per minute. Rule `voxtral-word-timestamps-removed`: `word` timestamps return 400 |
+| `voxtral-mini-transcribe-realtime-2602` | 2027-04-30 (deprecated 2026-10-31) | `voxtral-mini-transcribe-realtime-3-0` | $0.006 to $0.008 per minute. Rule `voxtral-realtime-session-lock` |
+| `voxtral-mini-tts-2603` | 2027-04-30 (deprecated 2026-10-31) | `voxtral-mini-tts-3-0` | $16 to $13 per million characters. Do not pin `voxtral-mini-tts-latest` |
+
+Large 4's API name on the models overview and the [pricing page](https://docs.mistral.ai/inference/pricing) is `mistral-large-4` ($0.70 input, $0.07 cached input, $2.10 output per 1M tokens, public preview, 1M context). The [model card](https://docs.mistral.ai/models/mistral-large-4-0) also accepts `mistral-large-4-0`. Audio prices are per minute or per million characters, so `price_usd_per_1m` is null. Rule `mistral-large-4-reasoning-effort` fires when the same file sets `reasoning_effort` to `none`, `minimal`, `xhigh`, or `max`. All three rules are `manual`.
+
+`voxtral-small-2507` is still GA on the models overview. The Voxtral 2 migration page maps it anyway; this pack leaves it out.
+
 ## Anthropic API version 2026-10-21
 
 `temperature`, `top_p` and `top_k` were removed in API version `2026-10-21` ([API parameter deprecations](https://platform.claude.com/docs/en/about-claude/model-deprecations), checked 22 Oct 2026). The signal `anthropic_version_2026_10_21` matches an `anthropic-version` header, env var or config value of 2026-10-21 or later. With it the sampling parameters are an error (`claude-sampling-removed-api-2026-10-21`, high); without it they are a warning (`claude-sampling-api-2026-10-21-warning`, medium), because the SDKs send an older version by default. Both rules are `manual`, and so is `claude-sampling-deprecated` (never applied, also with `--include-inferred`). They have no `applies_to`, which makes them model-independent: the scan reports them once per file in Anthropic code (category `param_rule`) unless a retiring-model finding in that file already carries them, and `fix` checks every Messages call. Installs up to 0.4.11 only show them next to retiring Claude ids in the scan, and as a warning in the fix plan when the version is set on the client.

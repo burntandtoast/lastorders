@@ -222,6 +222,6 @@ def test_sources_and_conventions():
 def test_older_installs_ignore_the_new_provider():
     """0.4.x only fetches providers it bundles, so the hosted Foundry pack can't change their scans."""
     idx = json.loads((ROOT / "site" / "v1" / "index.json").read_text())
-    assert {e["provider"] for e in idx["packs"]} == {"anthropic", "azure-foundry", "google", "openai"}
+    assert {e["provider"] for e in idx["packs"]} == {"anthropic", "azure-foundry", "google", "mistral", "openai"}
     assert (ROOT / "site" / "v1" / "pack.schema.json").read_bytes() == \
         (ROOT / "migration_kit" / "pack_data" / "pack.schema.json").read_bytes()
