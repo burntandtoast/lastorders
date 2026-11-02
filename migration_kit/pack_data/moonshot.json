@@ -1,0 +1,278 @@
+{
+  "$schema": "https://packs.burntandtoast.com/v1/pack.schema.json",
+  "pack_format": 1,
+  "provider": "moonshot",
+  "name": "Moonshot API (Kimi)",
+  "version": "2026.11.02.1",
+  "updated": "2026-11-02",
+  "status": "stable",
+  "notes": [
+    "Moonshot's own API only (https://api.moonshot.ai/v1, env MOONSHOT_API_KEY), from the models page (checked 2 Nov 2026). Flag only: every row has map_automatically false, so swap and fix never rewrite these IDs. Model IDs stay the kimi-* strings clients send. The switch to kimi-k3.1-pro is not a rename: context, price, and request parameters change.",
+    "New sign-ups have been blocked from every K2 series model since 31 Oct 2026; existing users are not affected. Moonshot says it plans to retire all K2 series models by the end of December 2026. The models page and the pricing page do not name an exact day, so this pack uses shutdown 31 Dec 2026 until Moonshot publishes one.",
+    "kimi-k2.6-highspeed is not listed on the models page, the K2.6 quickstart, or the pricing page. kimi-k2.7-code-highspeed is its own model id on the models page and the pricing page. The parameter reference says it is the same model as kimi-k2.7-code and differs only in output speed, but the scanner matches whole IDs, so it has its own row. kimi-k3.1-pro-highspeed is the high-speed variant of the replacement (separate id and price, same parameter constraints). It is not a retiring row.",
+    "Already discontinued, and parked for a follow-up, not rows here: kimi-k2.5 (31 Aug 2026); the moonshot-v1 series including moonshot-v1-auto and the vision-preview variants (31 Aug 2026); kimi-k2-0905-preview, kimi-k2-0711-preview, kimi-k2-turbo-preview, kimi-k2-thinking, and kimi-k2-thinking-turbo (25 May 2026); kimi-latest (28 Jan 2026); kimi-thinking-preview (11 Nov 2025). kimi-k3 is current and is not a row."
+  ],
+  "sources": [
+    {
+      "id": "models",
+      "title": "Kimi docs: Model list",
+      "url": "https://platform.kimi.ai/docs/models",
+      "checked": "2026-11-02"
+    },
+    {
+      "id": "pricing",
+      "title": "Kimi docs: Model inference pricing",
+      "url": "https://platform.kimi.ai/docs/pricing/chat.md",
+      "checked": "2026-11-02"
+    },
+    {
+      "id": "k3-quickstart",
+      "title": "Kimi docs: Kimi K3.1 Pro quickstart",
+      "url": "https://platform.kimi.ai/docs/guide/kimi-k3-1-pro-quickstart.md",
+      "checked": "2026-11-02"
+    },
+    {
+      "id": "reasoning",
+      "title": "Kimi docs: Reasoning effort",
+      "url": "https://platform.kimi.ai/docs/guide/use-reasoning-effort.md",
+      "checked": "2026-11-02"
+    },
+    {
+      "id": "thinking",
+      "title": "Kimi docs: Thinking models",
+      "url": "https://platform.kimi.ai/docs/guide/use-thinking-models.md",
+      "checked": "2026-11-02"
+    },
+    {
+      "id": "params",
+      "title": "Kimi docs: Model parameter reference",
+      "url": "https://platform.kimi.ai/docs/api/models-overview.md",
+      "checked": "2026-11-02"
+    },
+    {
+      "id": "vision",
+      "title": "Kimi docs: Configure Kimi vision models",
+      "url": "https://platform.kimi.ai/docs/guide/use-kimi-vision-model.md",
+      "checked": "2026-11-02"
+    }
+  ],
+  "id_patterns": [
+    {
+      "pattern": "kimi-k2\\.7-code-highspeed"
+    },
+    {
+      "pattern": "kimi-k2\\.7-code"
+    },
+    {
+      "pattern": "kimi-k2\\.6"
+    }
+  ],
+  "migrations": [
+    {
+      "id": "kimi-k3-1-pro-2026-12-31",
+      "title": "Moonshot plans to retire the K2 series",
+      "announced": "2026-10-31",
+      "shutdown": "2026-12-31",
+      "replacement": "kimi-k3.1-pro",
+      "headline": true,
+      "source": "models"
+    }
+  ],
+  "models": [
+    {
+      "id": "kimi-k2.6",
+      "kind": "snapshot",
+      "match": "exact",
+      "shutdown": "2026-12-31",
+      "replacement": "kimi-k3.1-pro",
+      "migration": "kimi-k3-1-pro-2026-12-31",
+      "section": "Multi-modal Model",
+      "confidence": "confirmed",
+      "source": "models",
+      "map_automatically": false,
+      "note": "Moonshot API (K2.6): new sign-ups blocked from the K2 series since 31 Oct 2026; existing users are not affected. Moonshot plans to retire all K2 series models by the end of December 2026 and has not published an exact day, so this pack uses 31 Dec 2026. Replacement ID is kimi-k3.1-pro. K2.6 is 256k context (pricing page: 262,144 tokens) at $0.95 input / $0.16 cached input / $4.00 output per 1M tokens, and accepts thinking type enabled (default), disabled, and enabled with keep all. K3.1 Pro is 1,048,576 tokens at $2.00 input / $0.20 cached input / $10.00 output per 1M tokens, plus cache writes at $2.00 (5-minute TTL) and $4.00 (1-hour TTL). Thinking is always on and cannot be turned off; do not send the K2 thinking parameter. reasoning_effort is low, high, or max, and the default is max. temperature, top_p, n, presence_penalty, and frequency_penalty are fixed; omit them. Vision does not accept a public image URL: use base64 or an ms:// file id, and content must be an array of objects. In multi-turn chats and tool calls, pass the complete assistant message back, including reasoning_content. kimi-k2.6-highspeed is not listed. The high-speed replacement id kimi-k3.1-pro-highspeed is a separate model, not a second name for kimi-k3.1-pro."
+    },
+    {
+      "id": "kimi-k2.7-code",
+      "kind": "snapshot",
+      "match": "exact",
+      "shutdown": "2026-12-31",
+      "replacement": "kimi-k3.1-pro",
+      "migration": "kimi-k3-1-pro-2026-12-31",
+      "section": "Multi-modal Model",
+      "confidence": "confirmed",
+      "source": "models",
+      "map_automatically": false,
+      "note": "Moonshot API (K2.7 Code): new sign-ups blocked from the K2 series since 31 Oct 2026; existing users are not affected. Moonshot plans to retire all K2 series models by the end of December 2026 and has not published an exact day, so this pack uses 31 Dec 2026. Replacement ID is kimi-k3.1-pro. K2.7 Code is 256k context (pricing page: 262,144 tokens) at $0.95 input / $0.19 cached input / $4.00 output per 1M tokens. Thinking is already always on (only type enabled with keep all is accepted; disabled errors). K3.1 Pro still rejects the thinking parameter and uses reasoning_effort low, high, or max, default max. Context becomes 1,048,576 tokens. K3.1 Pro is $2.00 input / $0.20 cached input / $10.00 output per 1M tokens, plus cache writes at $2.00 (5m TTL) and $4.00 (1h TTL). temperature, top_p, n, presence_penalty, and frequency_penalty are fixed; omit them. tool_choice required is rejected here and accepted on K3.1 Pro. Vision does not accept a public image URL. kimi-k2.7-code-highspeed is a separate row."
+    },
+    {
+      "id": "kimi-k2.7-code-highspeed",
+      "kind": "alias",
+      "alias_of": "kimi-k2.7-code",
+      "match": "exact",
+      "shutdown": "2026-12-31",
+      "replacement": "kimi-k3.1-pro",
+      "migration": "kimi-k3-1-pro-2026-12-31",
+      "section": "Multi-modal Model",
+      "confidence": "confirmed",
+      "source": "models",
+      "map_automatically": false,
+      "note": "Moonshot API (K2.7 Code high-speed): the models page and the pricing page list this as its own model id. The parameter reference says it is the same model as kimi-k2.7-code, with the same constraints, and differs only in output speed. It is a row because a scan of kimi-k2.7-code does not match the -highspeed suffix. Same retirement window as the K2 series: new sign-ups blocked since 31 Oct 2026, planned retirement end of December 2026, shutdown in this pack 31 Dec 2026 because no exact day is published. Price is $1.90 input / $0.38 cached input / $8.00 output per 1M tokens, 262,144 context. Replacement ID is kimi-k3.1-pro (not kimi-k3.1-pro-highspeed). Moving there has the same behaviour changes as kimi-k2.7-code: 1,048,576 context, thinking always on with reasoning_effort default max, fixed sampling parameters, and no public image URLs."
+    }
+  ],
+  "signals": [
+    {
+      "id": "moonshot_http",
+      "sdk": "http",
+      "pattern": "api\\.moonshot\\.ai",
+      "description": "Moonshot API host"
+    },
+    {
+      "id": "moonshot_key",
+      "sdk": "http",
+      "pattern": "MOONSHOT_API_KEY",
+      "description": "Moonshot API key environment variable"
+    },
+    {
+      "id": "kimi_thinking",
+      "pattern": "[\"']thinking[\"']\\s*:|\\bthinking\\s*=\\s*\\{",
+      "description": "K2 thinking request parameter"
+    },
+    {
+      "id": "kimi_sampling",
+      "pattern": "\\b(?:temperature|top_p|presence_penalty|frequency_penalty)\\s*[=:]|[\"']n[\"']\\s*:\\s*\\d",
+      "description": "sampling parameter K3.1 Pro fixes and says to omit"
+    },
+    {
+      "id": "kimi_public_image_url",
+      "pattern": "image_url[\\s\\S]{0,180}https?://",
+      "description": "image_url pointing at a public http(s) URL"
+    },
+    {
+      "id": "kimi_reasoning_effort_unsupported",
+      "pattern": "reasoning_effort\\s*[=:]\\s*[\"'](?:none|minimal|medium|xhigh)[\"']",
+      "description": "reasoning_effort value K3.1 Pro does not list (none, minimal, medium, xhigh)"
+    }
+  ],
+  "rules": [
+    {
+      "id": "kimi-k3-thinking-always-on",
+      "type": "param_removed",
+      "applies_to": {
+        "replacements": ["kimi-k3.1-pro"]
+      },
+      "when_any": ["kimi_thinking"],
+      "param": "thinking",
+      "risk": "medium",
+      "confidence": "confirmed",
+      "evidence": "K3.1 Pro quickstart and the thinking-models page (checked 2 Nov 2026): K3.1 Pro always has thinking on and does not accept the K2 thinking parameter. You cannot turn it off. K2.6 accepts type disabled; K2.7 Code already rejects disabled. When migrating, remove thinking and set top-level reasoning_effort if you need to.",
+      "message": "K3.1 Pro always thinks. You cannot turn thinking off, and it does not accept the K2 thinking parameter. Remove thinking. To spend less, set reasoning_effort to low or high; the default is max. Last Orders will not change the call.",
+      "fix": {
+        "action": "manual",
+        "note": "Not automated: delete the thinking parameter in the same change as the model id. Set reasoning_effort only if you do not want the default max."
+      }
+    },
+    {
+      "id": "kimi-k3-sampling-fixed",
+      "type": "param_removed",
+      "applies_to": {
+        "replacements": ["kimi-k3.1-pro"]
+      },
+      "when_any": ["kimi_sampling"],
+      "param": "temperature",
+      "risk": "medium",
+      "confidence": "confirmed",
+      "evidence": "K3.1 Pro quickstart and the model parameter reference (checked 2 Nov 2026): temperature=1.0, top_p=0.95, n=1, presence_penalty=0, and frequency_penalty=0 are fixed. Passing another value errors, and the docs say to omit them. K2.6 uses temperature 0.6 when thinking is off and 1.0 when it is on.",
+      "message": "K3.1 Pro fixes temperature at 1.0, top_p at 0.95, n at 1, and both penalties at 0. Omit temperature, top_p, n, presence_penalty, and frequency_penalty. A K2.6 non-thinking call that sends temperature 0.6 will fail. Last Orders will not change the arguments.",
+      "fix": {
+        "action": "manual",
+        "note": "Not automated: drop temperature, top_p, n, presence_penalty, and frequency_penalty in the same change as the model id."
+      }
+    },
+    {
+      "id": "kimi-k3-vision-no-public-url",
+      "type": "info",
+      "applies_to": {
+        "replacements": ["kimi-k3.1-pro"]
+      },
+      "when_any": ["kimi_public_image_url"],
+      "param": "image_url",
+      "risk": "medium",
+      "confidence": "confirmed",
+      "evidence": "K3.1 Pro quickstart and the vision guide (checked 2 Nov 2026): vision input does not accept public image URLs. Use base64 or an ms:// file id, and content must be an array of objects, not a serialized string. The vision guide states the same URL limit for K2.6 and K2.7 Code.",
+      "message": "K3.1 Pro does not accept a public image URL. Send base64 or an ms:// file id, and make content an array of objects rather than a string. Last Orders will not change the call.",
+      "fix": {
+        "action": "manual",
+        "note": "Not automated: replace https image URLs with base64 or an ms:// file id, and keep content as an array of objects."
+      }
+    },
+    {
+      "id": "kimi-k3-reasoning-effort",
+      "type": "param_conditional",
+      "applies_to": {
+        "replacements": ["kimi-k3.1-pro"]
+      },
+      "when_any": ["kimi_reasoning_effort_unsupported"],
+      "param": "reasoning_effort",
+      "risk": "medium",
+      "confidence": "confirmed",
+      "evidence": "Reasoning effort page and the K3.1 Pro quickstart (checked 2 Nov 2026): reasoning_effort supports low, high, and max. The default is max. K2.6 and K2.7 Code do not support reasoning_effort.",
+      "message": "K3.1 Pro accepts reasoning_effort low, high, and max only. The default is max, which costs more and is slower. none, minimal, medium, and xhigh are not listed. Last Orders will not change the argument.",
+      "fix": {
+        "action": "manual",
+        "note": "Not automated: set reasoning_effort to low, high, or max, or omit it to keep the default max."
+      }
+    }
+  ],
+  "risk_policy": {
+    "urgent_days": 30,
+    "default_risk": "medium"
+  },
+  "replacement_facts": {
+    "kimi-k3.1-pro": {
+      "aliases": ["kimi-k3.1-pro-highspeed"],
+      "context_window": 1048576,
+      "input": ["text", "image", "video"],
+      "output": ["reasoning", "text"],
+      "thinking": "always-on",
+      "reasoning_effort": ["low", "high", "max"],
+      "reasoning_effort_default": "max",
+      "sampling_fixed": {
+        "temperature": 1.0,
+        "top_p": 0.95,
+        "n": 1,
+        "presence_penalty": 0,
+        "frequency_penalty": 0
+      },
+      "price_usd_per_1m": {
+        "input": 2.0,
+        "cached_input": 0.2,
+        "output": 10.0,
+        "cache_write_5m": 2.0,
+        "cache_write_1h": 4.0
+      },
+      "source": "pricing",
+      "note": "Prices are the K3 series table on the pricing page (checked 2 Nov 2026): input $2.00, output $10.00, cached input $0.20, 5-minute cache write $2.00, 1-hour cache write $4.00, all per 1M tokens. Context on that page is 1,048,576 tokens. kimi-k3.1-pro-highspeed is a separate model id (about 2-3x the speed, same parameter constraints): input $4.00, output $20.00, cached input $0.20, 5m write $4.00, 1h write $8.00 per 1M tokens. It is not a second name for kimi-k3.1-pro. The pinned replacement is kimi-k3.1-pro. Batch inference for kimi-k3.1-pro is 60% of the standard price."
+    }
+  },
+  "facts": {
+    "confirmed": [
+      "Moonshot API: kimi-k2.6, kimi-k2.7-code, and kimi-k2.7-code-highspeed are K2 series models. New sign-ups have been blocked since 31 Oct 2026. Moonshot plans to retire all K2 series models by the end of December 2026. This pack's shutdown date is 31 Dec 2026 until an exact day is published.",
+      "Replacement ID for these rows is kimi-k3.1-pro. Context moves from 256k / 262,144 tokens to 1,048,576 tokens.",
+      "K3.1 Pro always thinks. reasoning_effort is low, high, or max, and the default is max. The K2 thinking parameter is not accepted.",
+      "On K3.1 Pro, temperature, top_p, n, presence_penalty, and frequency_penalty are fixed. Requests should omit them.",
+      "K3.1 Pro vision input does not accept public image URLs. Use base64 or an ms:// file id, and content must be an array of objects.",
+      "Pricing page, per 1M tokens: K2.6 $0.95 input / $0.16 cached input / $4.00 output. K2.7 Code $0.95 / $0.19 / $4.00. K2.7 Code high-speed $1.90 / $0.38 / $8.00. K3.1 Pro $2.00 input / $0.20 cached input / $10.00 output, plus cache writes $2.00 (5m) and $4.00 (1h)."
+    ],
+    "unconfirmed": [
+      "No live API calls. The pricing figures are taken from the pricing page's rendered table (the markdown body leaves that table empty)."
+    ]
+  },
+  "report": {
+    "next_steps": [
+      "Switch these IDs by hand to kimi-k3.1-pro. 31 Dec 2026 is the last day of the month Moonshot named, not an exact published shutdown day.",
+      "Remove the K2 thinking parameter. Thinking stays on. Set reasoning_effort to low or high if the default max is too slow or too expensive.",
+      "Omit temperature, top_p, n, presence_penalty, and frequency_penalty. Send images as base64 or ms:// file ids, with content as an array of objects."
+    ]
+  }
+}

@@ -136,6 +136,24 @@ Large 4's API name on the models overview and the [pricing page](https://docs.mi
 
 `voxtral-small-2507` is still GA on the models overview. The Voxtral 2 migration page maps it anyway; this pack leaves it out.
 
+## Moonshot API (`moonshot`)
+
+Moonshot's own Kimi API (`https://api.moonshot.ai/v1`, env `MOONSHOT_API_KEY`), from the [model list](https://platform.kimi.ai/docs/models) (checked 2 Nov 2026). Model IDs stay the `kimi-*` strings. Flag only: every row has `map_automatically: false`, so `swap` and `fix` do not rewrite the IDs.
+
+New sign-ups have been blocked from the K2 series since 31 Oct 2026. Moonshot says it will retire all K2 series models by the end of December 2026 and has not published a day. This pack uses 31 Dec 2026 until it does.
+
+| Model ID | Moonshot retirement | Suggested replacement | Notes |
+|---|---|---|---|
+| `kimi-k2.6` | 2026-12-31 (new sign-ups blocked 2026-10-31) | `kimi-k3.1-pro` | 256k / 262,144 tokens, $0.95 / $0.16 cached / $4.00 per 1M. Thinking can be disabled. `kimi-k2.6-highspeed` is not listed |
+| `kimi-k2.7-code` | 2026-12-31 (new sign-ups blocked 2026-10-31) | `kimi-k3.1-pro` | 256k / 262,144 tokens, $0.95 / $0.19 cached / $4.00 per 1M. Thinking is already always on |
+| `kimi-k2.7-code-highspeed` | 2026-12-31 (new sign-ups blocked 2026-10-31) | `kimi-k3.1-pro` | Same model as K2.7 Code per the parameter reference, own id and price ($1.90 / $0.38 / $8.00). A separate row so the scan matches the suffix |
+
+K3.1 Pro on the [quickstart](https://platform.kimi.ai/docs/guide/kimi-k3-1-pro-quickstart.md) and the [pricing page](https://platform.kimi.ai/docs/pricing/chat.md): 1,048,576 tokens, $2.00 input / $0.20 cached input / $10.00 output per 1M tokens, plus cache writes at $2.00 (5-minute TTL) and $4.00 (1-hour TTL). Thinking is always on. `reasoning_effort` is `low`, `high`, or `max`, and the default is `max`. `temperature`, `top_p`, `n`, `presence_penalty`, and `frequency_penalty` are fixed; omit them. Vision does not accept a public image URL; use base64 or an `ms://` file id, and `content` must be an array of objects. `kimi-k3.1-pro-highspeed` is a separate, more expensive id with the same parameter constraints. It is not the pinned replacement.
+
+Rules, all `manual`: `kimi-k3-thinking-always-on`, `kimi-k3-sampling-fixed`, `kimi-k3-vision-no-public-url`, `kimi-k3-reasoning-effort` (fires on `none`, `minimal`, `medium`, or `xhigh`).
+
+Parked for a follow-up, not rows: `kimi-k2.5`, the `moonshot-v1` series, the older `kimi-k2` preview / thinking / turbo ids, `kimi-latest`, and `kimi-thinking-preview`. `kimi-k3` is current and is not a row.
+
 ## Anthropic API version 2026-10-21
 
 `temperature`, `top_p` and `top_k` were removed in API version `2026-10-21` ([API parameter deprecations](https://platform.claude.com/docs/en/about-claude/model-deprecations), checked 22 Oct 2026). The signal `anthropic_version_2026_10_21` matches an `anthropic-version` header, env var or config value of 2026-10-21 or later. With it the sampling parameters are an error (`claude-sampling-removed-api-2026-10-21`, high); without it they are a warning (`claude-sampling-api-2026-10-21-warning`, medium), because the SDKs send an older version by default. Both rules are `manual`, and so is `claude-sampling-deprecated` (never applied, also with `--include-inferred`). They have no `applies_to`, which makes them model-independent: the scan reports them once per file in Anthropic code (category `param_rule`) unless a retiring-model finding in that file already carries them, and `fix` checks every Messages call. Installs up to 0.4.11 only show them next to retiring Claude ids in the scan, and as a warning in the fix plan when the version is set on the client.

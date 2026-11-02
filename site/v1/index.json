@@ -39,6 +39,15 @@
       "sha256": "f2f67f20933719ee51d68c0d38f52f55fd76eb67d043eddb0d5ea13427e02755"
     },
     {
+      "provider": "moonshot",
+      "name": "Moonshot API (Kimi)",
+      "version": "2026.11.02.1",
+      "status": "stable",
+      "pack_format": 1,
+      "url": "packs/moonshot.json",
+      "sha256": "15649005dc94282e101115e354e5dc28dfe6a10cc9a36f8cefa12d325a6e276d"
+    },
+    {
       "provider": "openai",
       "name": "OpenAI API",
       "version": "2026.10.16.2",
