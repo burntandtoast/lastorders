@@ -105,7 +105,18 @@ Partner models on Microsoft Foundry. Facts are from the [model retirement schedu
 | `Llama-3.3-70B-Instruct` | none | | partner listing retires 2027-01-31 |
 | `Llama-4-Maverick-17B-128E-Instruct-FP8` | none | | partner listing retires 2026-11-19 |
 
-Flag only: no model is swapped. Risk uses `shutdown_risk_when_any: ["azure_foundry"]` (Foundry / Azure AI inference hosts, `azure.ai.inference`, `@azure-rest/ai-inference`, LangChain Azure AI, `AZURE_AI_*` endpoint or key variables). Deployment names on Foundry are chosen by the customer, so a repo may not contain these ids at all.
+Flag only: no model is swapped. Risk uses `shutdown_risk_when_any: ["azure_foundry"]` (Foundry / Azure AI inference hosts, `azure.ai.inference`, `@azure-rest/ai-inference`, LangChain Azure AI, `AZURE_AI_*` / `AZURE_OPENAI_*` variables, `AzureOpenAI`, `azure_endpoint`). Deployment names on Foundry are chosen by the customer, so a repo may not contain these ids at all.
+
+### Azure OpenAI (same pack, checked 2 Nov 2026)
+
+Rows under "Foundry Models sold by Azure > Azure OpenAI" on the [model retirement schedule](https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/model-retirement-schedule). They are not copied onto the OpenAI platform pack. A file is assessed on this schedule only when it has the `azure_foundry` signal; otherwise the OpenAI pack keeps the snapshot.
+
+| Model ID | Azure retirement | Suggested replacement | Notes |
+|---|---|---|---|
+| `gpt-4o-2024-05-13` | 2027-01-14 (was 9 December 2026) | `gpt-5.1` version `2025-11-13` | Rule `azure-gpt-4o-20240513-provisioned`: Global Standard and Data Zone Standard deployments upgrade automatically; Provisioned deployments do not |
+| `gpt-4.1-mini-2025-04-14` | 2027-04-14 | none listed | footnote 3 |
+| `gpt-5-mini-2025-08-07` | 2027-07-13 (was 9 February 2027) | none listed | |
+| `gpt-5.1-2025-11-13` | 2027-07-13 (was 15 May 2027) | none listed | target of the gpt-4o 2024-05-13 automatic upgrade |
 
 ## Anthropic API version 2026-10-21
 

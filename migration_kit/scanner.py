@@ -580,7 +580,27 @@ def is_name_check(line: str, start: int, end: int) -> bool:
 _PREFIX_ARG = re.compile(r"""(["'`])([A-Za-z0-9][A-Za-z0-9._:-]*?)[-_]\1""")
 
 
-def iter_prefix_checks(line: str, packs: PackSet):
+def _host_gates(pack: Pack) -> set[str]:
+    return set((pack.data.get("risk_policy") or {}).get("shutdown_risk_when_any") or [])
+
+
+def _pick_span_pack(alts: list[tuple[str, Pack]], signals) -> tuple[str, Pack]:
+    """Several packs matched one span. A host-gated pack wins only when the file has one of
+    its shutdown_risk_when_any signals. Otherwise a pack with no host gate keeps the id, so a
+    hosted schedule cannot override the platform pack."""
+    if len(alts) == 1:
+        return alts[0]
+    sigs = set(signals or ())
+    gated = [(tok, pack) for tok, pack in alts if _host_gates(pack) & sigs]
+    if gated:
+        return gated[0]
+    plain = [(tok, pack) for tok, pack in alts if not _host_gates(pack)]
+    if plain:
+        return plain[0]
+    return alts[0]
+
+
+def iter_prefix_checks(line: str, packs: PackSet, signals=None):
     """Yield (start, end, token, pack) for `startsWith("<id>-")`-style family checks."""
     if "(" not in line:
         return
@@ -588,10 +608,11 @@ def iter_prefix_checks(line: str, packs: PackSet):
         s, e = m.start(2), m.end(2)
         if not _NAME_CHECK_BEFORE.search(line[max(0, s - 1 - 160):s - 1]):
             continue
-        for pack in packs:
-            if any(rx.fullmatch(m.group(2)) for rx in pack.bare_res):
-                yield s, e, m.group(2), pack
-                break
+        cands = [(m.group(2), pack) for pack in packs
+                 if any(rx.fullmatch(m.group(2)) for rx in pack.bare_res)]
+        if cands:
+            tok, pack = _pick_span_pack(cands, signals)
+            yield s, e, tok, pack
 
 
 # An unquoted JS/TS object key holding a table entry: `o1: { input: 15, output: 60 },`.
@@ -692,12 +713,12 @@ def markup_value(line: str, start: int) -> bool:
     return o >= 0 and max(before.rfind("%}"), before.rfind("}}")) < o
 
 
-def iter_model_tokens(line: str, packs: PackSet, lang: str = "", prev: str = "", mode=True):
+def iter_model_tokens(line: str, packs: PackSet, lang: str = "", prev: str = "", mode=True, signals=None):
     """Yield (start, end, token, pack) for every model-id token on a line, longest match first per span.
 
     Ids inside a web-page link are skipped. With mode=MARKUP (HTML outside <script>),
-    only quoted values count and `<!-- -->` comments are ignored."""
-    seen: list[tuple[int, int]] = []
+    only quoted values count and `<!-- -->` comments are ignored. When several packs match the
+    same span, `signals` (file-level signal ids) decides which pack owns it."""
     hits = []
     text_hits = []
     if mode == MARKUP:
@@ -722,10 +743,20 @@ def iter_model_tokens(line: str, packs: PackSet, lang: str = "", prev: str = "",
         for h in text_hits:
             nodes.setdefault(line.rfind(">", 0, h[0]), []).append(h)
         hits += [h for group in nodes.values() if len({x[2] for x in group}) >= 2 for h in group]
+    chosen: list[list] = []
     for s, e, tok, pack in sorted(hits, key=lambda h: (h[0], -(h[1] - h[0]))):
-        if any(s < pe and e > ps for ps, pe in seen):
+        overlapped = False
+        for ps, pe, alts in chosen:
+            if s < pe and e > ps:
+                if s == ps and e == pe:
+                    alts.append((tok, pack))
+                overlapped = True
+                break
+        if overlapped:
             continue
-        seen.append((s, e))
+        chosen.append([s, e, [(tok, pack)]])
+    for s, e, alts in chosen:
+        tok, pack = _pick_span_pack(alts, signals)
         yield s, e, tok, pack
 
 
@@ -1101,11 +1132,15 @@ def assess(f: Finding, pack: Pack, sig: list[str], today: dt.date) -> None:
             f.notes.append(rule["message"] + tag)
             if rule["risk"] != "info":
                 f.risk = _bump(f.risk, rule["risk"])
-    if not m.map_automatically and m.replacement:
+    if not m.map_automatically:
         f.auto_swap, f.no_swap_reason = False, "flag_only"
-        f.notes.append(f"Flag-only: `fix` and `swap` do not rewrite {f.model}. It shuts down "
-                       f"{m.shutdown or 'on a date not yet announced'}; switch it to {m.replacement} by hand"
-                       + (" (see the note above for what the switch needs)." if m.note else "."))
+        if m.replacement:
+            f.notes.append(f"Flag-only: `fix` and `swap` do not rewrite {f.model}. It shuts down "
+                           f"{m.shutdown or 'on a date not yet announced'}; switch it to {m.replacement} by hand"
+                           + (" (see the note above for what the switch needs)." if m.note else "."))
+        else:
+            f.notes.append(f"Flag-only: `fix` and `swap` do not rewrite {f.model}. It shuts down "
+                           f"{m.shutdown or 'on a date not yet announced'}. No automatic replacement is listed.")
     if f.kind in ("doc", "comment"):
         if RISK_RANK[f.risk] > RISK_RANK["low"]:
             f.risk = "low"
@@ -1178,7 +1213,7 @@ def scan(root: str | Path, include_docs: bool = True, packs: PackSet | None = No
             if r.mode is None:
                 continue
             line, i = r.text, r.index + 1
-            for s, e, tok, pack in iter_model_tokens(line, packs, r.lang, r.prev, r.mode):
+            for s, e, tok, pack in iter_model_tokens(line, packs, r.lang, r.prev, r.mode, sig):
                 if shell_noise(tok, r.lang, pack) or full_stop_noise(line, e, tok, pack):
                     continue
                 kind, block = classify(line, s, e, r.lang, r.prev, r.mode, rel)
@@ -1210,7 +1245,7 @@ def scan(root: str | Path, include_docs: bool = True, packs: PackSet | None = No
                     f.notes.append(r.note)
                 findings.append(f)
             if r.mode is True and r.lang not in DOC_LANGS and not _is_comment(line, r.lang):
-                for s, e, tok, pack in iter_prefix_checks(line, packs):
+                for s, e, tok, pack in iter_prefix_checks(line, packs, sig):
                     f = Finding(rel, i, s + 1, tok, pack.provider, "name_check", r.lang,
                                 line.strip()[:200], "not_listed", None, None, "n/a", "info")
                     assess(f, pack, sig, today)

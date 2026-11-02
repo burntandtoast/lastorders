@@ -1,6 +1,6 @@
 {
   "index_format": 1,
-  "generated": "2026-10-22",
+  "generated": "2026-11-02",
   "packs": [
     {
       "provider": "anthropic",
@@ -13,12 +13,12 @@
     },
     {
       "provider": "azure-foundry",
-      "name": "Microsoft Foundry partner models (Mistral, Cohere, Meta, Microsoft)",
-      "version": "2026.10.22.1",
+      "name": "Microsoft Foundry (Azure OpenAI and partner models)",
+      "version": "2026.11.02.1",
       "status": "stable",
       "pack_format": 1,
       "url": "packs/azure-foundry.json",
-      "sha256": "b8fe947a6cde99b26504eb759b52896f0a6e86814bbfbda4c0d0094d42faafd5"
+      "sha256": "20f0f6e883b6548d94e3a70a9aac1af324ecb7784fb9d90995d39e751ed0aca1"
     },
     {
       "provider": "google",

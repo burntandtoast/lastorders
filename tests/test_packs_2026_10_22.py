@@ -204,12 +204,18 @@ def test_sources_and_conventions():
     for name in ("anthropic", "azure-foundry"):
         d = _pack(name)
         ids = {s["id"] for s in d["sources"]}
-        assert all(s["url"].startswith("https://") and s["checked"] == "2026-10-22" or s["checked"] < "2026-10-22"
-                   for s in d["sources"])
+        assert all(s["url"].startswith("https://") and re.fullmatch(r"\d{4}-\d{2}-\d{2}", s["checked"]) for s in d["sources"])
         for m in d["models"] + d.get("migrations", []):
             assert m.get("source", next(iter(ids))) in ids, m["id"]
-        assert d["version"] in ("2026.10.22.1", "2026.10.22.2") and d["updated"] == "2026-10-22"
-    for m in _pack("azure-foundry")["models"]:
+    anth = _pack("anthropic")
+    assert anth["version"] in ("2026.10.22.1", "2026.10.22.2") and anth["updated"] == "2026-10-22"
+    assert all(s["checked"] <= "2026-10-22" for s in anth["sources"])
+    az = _pack("azure-foundry")
+    assert az["version"] == "2026.11.02.1" and az["updated"] == "2026-11-02"
+    checked = {s["id"]: s["checked"] for s in az["sources"]}
+    assert checked["foundry-schedule"] == "2026-10-22"
+    assert checked["foundry-schedule-azure-openai"] == "2026-11-02"
+    for m in az["models"]:
         assert m["confidence"] == "confirmed" and m.get("note")
 
 

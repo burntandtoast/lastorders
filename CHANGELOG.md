@@ -1,5 +1,8 @@
 # Changelog
 
+## Unreleased
+- **Azure OpenAI rows in `azure-foundry` 2026.11.02.1** (Foundry model retirement schedule, checked 2 Nov 2026). These rows stay off the OpenAI platform pack. `gpt-4o-2024-05-13` retires on Azure on 14 January 2027, replacement `gpt-5.1` version `2025-11-13`. Global Standard and Data Zone Standard deployments upgrade automatically; Provisioned deployments do not (`azure-gpt-4o-20240513-provisioned`). `gpt-5-mini-2025-08-07` and `gpt-5.1-2025-11-13` retire on 13 July 2027. `gpt-4.1-mini-2025-04-14` retires on 14 April 2027. A snapshot that exists in both packs is read on the Azure schedule only when the file shows Azure / Foundry use; otherwise the OpenAI date and replacement are unchanged, and `swap` still uses the OpenAI mapping.
+
 ## 0.4.12
 - **Anthropic sampling flags in the free scan, suggest-only fixes** (agreed with Chad, 22 Oct 2026; Anthropic pack 2026.10.22.2):
   - `scan` now flags `temperature`, `top_p` and `top_k` wherever Anthropic code sets them (a file with the Anthropic SDK, LangChain Anthropic, `api.anthropic.com/v1` or a Messages call), not only next to retiring Claude ids: one finding per file, category `param_rule` ("API parameter change"), at the first line that sets one, with the other lines listed. It says "This will fail once you move to the 2026-10-21 version": an error (high, counts for `--fail-on-high`) when the file sets `anthropic-version` 2026-10-21 or later, otherwise a warning (medium). The step-by-step fix is only in the `fix` plan.
