@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 
 from . import __version__, brand, licence, scanner
+from . import messages as msg
 from .packs import load_packs
 
 HERE = Path(__file__).resolve().parent.parent
@@ -56,10 +57,7 @@ def cmd_scan(a) -> int:
     else:
         packs_s = ", ".join(f"{p['provider']} v{p['version']} ({p['source']}"
                             + (f"; {p['detail']}" if p["detail"] else "") + ")" for p in res.packs)
-        print(f"Scanned {res.files_scanned} files: {s['total_findings']} model references {s['by_risk']}. "
-              f"Fine-tunes: {len(s['fine_tuned_models'])}.\n  packs: {packs_s}\n  {m}\n  {j}")
-        for sk in res.skipped:
-            print(sk.line())
+        print(scanner.terminal_summary(res, m, j, a.repo, packs_s if a.verbose else None))
     return 2 if a.fail_on_high and s["by_risk"].get("high") else 0
 
 
@@ -85,8 +83,13 @@ def _print_preview(rows) -> None:
     print(format_preview(rows))
 
 
-def _preview_footer() -> None:
-    print("A licence is required for the full diff and to apply it.")
+def _preview_footer(rows, repo: str) -> None:
+    files = len({r[0] for r in rows})
+    if rows:
+        print(msg.PREVIEW_COUNT.format(n=len(rows), change_word=msg.plural(len(rows), "change"),
+                                       files=files, file_word=msg.plural(files, "file")))
+        print()
+    print(msg.PREVIEW_PITCH.format(repo=repo))
 
 
 def cmd_swap(a) -> int:
@@ -98,7 +101,8 @@ def cmd_swap(a) -> int:
         mapping.include_docs = True
     res = swapper.plan(a.repo, mapping, packs)
     if not allowed:
-        _print_preview([(c.file, c.old, c.new) for c in res.changes])
+        rows = [(c.file, c.old, c.new) for c in res.changes]
+        _print_preview(rows)
         if res.skipped_fine_tunes:
             print(f"{len(res.skipped_fine_tunes)} fine-tuned references left alone.")
         held = len(res.skipped_duplicate_key) + len(res.skipped_duplicate_id)
@@ -106,7 +110,7 @@ def cmd_swap(a) -> int:
             print(f"Warnings: {len(res.must_update_together)} check(s) must be updated together with the swap; "
                   f"{held} rename(s) skipped because they would create a duplicate key or id; "
                   f"{len(res.manual())} item(s) need a manual decision.")
-        _preview_footer()
+        _preview_footer(rows, a.repo)
         return 0
     p, s = swapper.write(res, a.out)
     print(f"{len(res.changes)} replacements in {len(res.new_contents)} files; "
@@ -164,7 +168,7 @@ def cmd_fix(a) -> int:
                            assume_model=a.assume_model, include_inferred=a.include_inferred)
     if not allowed:
         _print_preview(res.model_changes)
-        _preview_footer()
+        _preview_footer(res.model_changes, a.repo)
         return 0
     paths = fixer.write(res, a.out)
     c = res.counts()
@@ -323,7 +327,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--version", action="version", version=f"{brand.CLI_NAME} {__version__}")
     sub = p.add_subparsers(dest="cmd", required=True)
 
-    s = sub.add_parser("scan", help="free: find retiring model IDs in a repo")
+    s = sub.add_parser("scan", help=msg.HELP_SCAN)
     s.add_argument("repo", nargs="?", default=".")
     s.add_argument("--out", default=f"{brand.CLI_NAME}-out")
     s.add_argument("--no-docs", action="store_true", help="skip .md/.txt files")
@@ -333,10 +337,11 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--summary-file", help="append a compact markdown summary (e.g. $GITHUB_STEP_SUMMARY)")
     s.add_argument("--annotations", action="store_true", help="print GitHub Actions annotations")
     s.add_argument("--format", choices=["text", "json"], default="text", help="stdout format")
+    s.add_argument("--verbose", "-v", action="store_true", help=msg.HELP_VERBOSE)
     _pack_opts(s)
     s.set_defaults(fn=cmd_scan)
 
-    w = sub.add_parser("swap", help="summarise model ID changes; the patch needs a licence")
+    w = sub.add_parser("swap", help=msg.HELP_SWAP)
     w.add_argument("repo")
     w.add_argument("--mapping", help="mapping YAML (default: generated from the packs' headline migrations)")
     w.add_argument("--out", default=f"{brand.CLI_NAME}-out")
@@ -346,7 +351,7 @@ def build_parser() -> argparse.ArgumentParser:
     _pack_opts(w)
     w.set_defaults(fn=cmd_swap)
 
-    fx = sub.add_parser("fix", help="summarise model ID changes; the patch needs a licence")
+    fx = sub.add_parser("fix", help=msg.HELP_FIX)
     fx.add_argument("repo", nargs="?", default=".")
     fx.add_argument("--out", default=f"{brand.CLI_NAME}-out")
     fx.add_argument("--mapping", help="mapping YAML for the model swap (default: generated from the packs)")

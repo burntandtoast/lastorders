@@ -2,26 +2,40 @@
   "$schema": "https://packs.burntandtoast.com/v1/pack.schema.json",
   "pack_format": 1,
   "provider": "anthropic",
-  "name": "Anthropic Claude API (stub)",
-  "version": "2026.10.22.2",
-  "updated": "2026-10-22",
-  "status": "stub",
+  "name": "Anthropic Claude API",
+  "version": "2026.10.23.1",
+  "updated": "2026-10-23",
+  "status": "stable",
   "notes": [
-    "STUB pack to prove the engine is provider-neutral. It contains only facts from Anthropic's model deprecations page (read 15 Oct 2026; API parameter deprecations re-read 22 Oct 2026), for the Claude API. Amazon Bedrock and Google Cloud set their own retirement dates and are NOT covered.",
-    "No live API checks have been run against Anthropic. No aliases or eval adapter. Sampling-parameter rules: claude-sampling-deprecated (Claude 4.7+ models, earlier API versions) and the two anthropic-version 2026-10-21 rules. All three are suggest-only: `fix` never removes the parameters, also with --include-inferred."
+    "Facts from Anthropic's official docs only: the model deprecations page (retirement dates and API parameter deprecations, re-read 23 Oct 2026), the Claude Sonnet 4.5 model page and the model IDs page. Dates are for the Claude API and the other Anthropic-operated platforms (Claude Platform on AWS, Claude Models on Google Cloud managed by Anthropic, Microsoft Foundry). Amazon Bedrock and Google-managed Vertex AI set their own retirement dates and are NOT covered.",
+    "Aliases: only claude-sonnet-4-5 is listed. Anthropic's model IDs page says an undated alias points to the most recent dated snapshot of that minor version, and the Sonnet 4.5 model page gives claude-sonnet-4-5 as its Claude API alias, retiring 30 Nov 2026. Other aliases are not listed until checked against a current Anthropic page.",
+    "No live API checks have been run against Anthropic. No eval adapter. Sampling-parameter rules: claude-sampling-deprecated (Claude 4.7+ models, earlier API versions) and the two anthropic-version 2026-10-21 rules. All three are suggest-only: `fix` never removes the parameters, also with --include-inferred. The scan checks sampling parameters on the call that holds the model id, not across the whole file.",
+    "Risk: urgent_days is 60, Anthropic's minimum notice period, so any Claude model with an announced retirement date is rated high."
   ],
   "sources": [
     {
       "id": "deprecations",
       "title": "Anthropic model deprecations",
-      "url": "https://docs.anthropic.com/en/docs/about-claude/model-deprecations",
-      "checked": "2026-10-15"
+      "url": "https://platform.claude.com/docs/en/about-claude/model-deprecations",
+      "checked": "2026-10-23"
     },
     {
       "id": "api-parameter-deprecations",
       "title": "Anthropic model deprecations: API parameter deprecations",
       "url": "https://platform.claude.com/docs/en/about-claude/model-deprecations",
       "checked": "2026-10-22"
+    },
+    {
+      "id": "sonnet-4-5",
+      "title": "Claude Sonnet 4.5 model page",
+      "url": "https://platform.claude.com/docs/en/models/sonnet-4-5/overview",
+      "checked": "2026-10-23"
+    },
+    {
+      "id": "model-ids",
+      "title": "Anthropic model IDs and versions",
+      "url": "https://platform.claude.com/docs/en/about-claude/models/model-ids-and-versions",
+      "checked": "2026-10-23"
     }
   ],
   "id_patterns": [
@@ -51,6 +65,18 @@
       "source": "deprecations",
       "note": "Deprecated 30 Sep 2026; retires 30 Nov 2026 on the Claude API.",
       "migration": "claude-sonnet-4-5-2026-11-30"
+    },
+    {
+      "id": "claude-sonnet-4-5",
+      "kind": "alias",
+      "alias_of": "claude-sonnet-4-5-20250929",
+      "shutdown": "2026-11-30",
+      "replacement": "claude-sonnet-5-5",
+      "section": "2026-09-30: Claude Sonnet 4.5 model",
+      "confidence": "confirmed",
+      "source": "sonnet-4-5",
+      "migration": "claude-sonnet-4-5-2026-11-30",
+      "note": "Undated alias for claude-sonnet-4-5-20250929. Anthropic's Sonnet 4.5 model page lists claude-sonnet-4-5 as the Claude API alias and gives the retirement date as 30 Nov 2026; the deprecations table lists only the dated ID."
     },
     {
       "id": "claude-opus-4-1-20250805",
@@ -313,19 +339,21 @@
     }
   ],
   "risk_policy": {
-    "urgent_days": 30,
+    "urgent_days": 60,
     "default_risk": "medium"
   },
   "facts": {
     "confirmed": [
       "claude-sonnet-4-5-20250929 is deprecated and retires on the Claude API on 30 Nov 2026; recommended replacement claude-sonnet-5-5.",
+      "claude-sonnet-4-5 is the Claude API alias for Claude Sonnet 4.5 (claude-sonnet-4-5-20250929), which retires on 30 Nov 2026 (Sonnet 4.5 model page). Undated aliases point to the most recent dated snapshot of their minor version (model IDs page).",
       "Anthropic gives at least 60 days' notice before retiring publicly released models.",
       "Amazon Bedrock and Google Cloud set their own retirement schedules; these dates apply to Anthropic-operated platforms only.",
       "temperature, top_p and top_k are deprecated on Claude 4.7 and later models (400 at non-default values).",
       "API version 2026-10-21 removes temperature, top_p and top_k: requests that send them return a 400 error on any model. Earlier API versions reject them only at non-default values on Claude 4.7 and later and Claude Mythos Preview."
     ],
     "unconfirmed": [
-      "This is a stub pack: no live checks, no alias data, and replacements' parameter behaviour beyond the docs is untested."
+      "No live API checks: replacements' parameter behaviour beyond the docs is untested.",
+      "Other undated aliases (for example claude-opus-4-1, claude-sonnet-4-0, claude-opus-4-0) are not listed: their current status was not confirmed on a current Anthropic page."
     ]
   },
   "report": {

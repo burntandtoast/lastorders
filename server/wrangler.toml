@@ -38,8 +38,8 @@ TOKEN_TTL_DAYS = "7"
 LICENCE_FEATURES = "*"
 EMAIL_PROVIDER = "resend"         # resend | log | none
 EMAIL_FROM = "Last Orders <licences@burntandtoast.com>"
-EMAIL_REPLY_TO = ""
-SUPPORT_EMAIL = ""
+EMAIL_REPLY_TO = "hello@burntandtoast.com"
+SUPPORT_EMAIL = "hello@burntandtoast.com"
 PUBLIC_BASE_URL = "https://packs.burntandtoast.com"  # CLI/API host (verify, packs, webhook); defaults to the request origin
 PUBLIC_SITE_URL = "https://lastorders.burntandtoast.com"  # customer-facing: /buy, /terms, /success, /cancel (served via the landing Worker); old links on the API host 301 here
 

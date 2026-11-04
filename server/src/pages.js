@@ -85,6 +85,7 @@ export function pendingPage({ productName }) {
 
 export function cancelPage({ productName, baseUrl }) {
   return page(`${productName}: checkout cancelled`, `<h1>Checkout cancelled</h1><p>No payment was taken. The free scan keeps working without a licence.</p>
+<p>Questions before you buy? Email <a href="mailto:hello@burntandtoast.com">hello@burntandtoast.com</a>. A person reads it.</p>
 <p><a href="${LANDING_URL}/">Back to ${escapeHtml(productName)}</a></p>`);
 }
 

@@ -155,7 +155,10 @@ rules. Every fact links to the provider's documentation and the date we checked 
 against the live API are marked `live-tested`, and anything we assumed is marked `inferred`.
 
 - **OpenAI**: full pack. The default mapping swaps the 14 Jan 2027 GPT-4o / GPT-4.1 batch to `gpt-6-luna`, and the 23 Oct 2026 chat and reasoning models to `gpt-5.6-luna`, `gpt-5.6-sol` or `gpt-5.6-terra`. For those three replacements, live-tested on 16 Oct 2026 (`probes/probe_56-result.json`), the paid `fix` renames Chat Completions `max_tokens` to `max_completion_tokens` and sets `reasoning_effort` to `none` where the call uses temperature (other than 1), `top_p`, `logprobs` or tools, in the same change as the model switch. Responses calls with those parameters are flagged. `reasoning_effort` `max` is flagged. `o1-pro` (the documented substitute is `gpt-5.6-sol` with `reasoning.mode: pro`), `gpt-image-1` and fine-tunes are flagged, not rewritten. Models that have already shut down, including the 28 Sep 2026 batch and the 23 Jul 2026 batch, are reported as already retired.
-- **Anthropic**: preview (stub). It covers Claude API retirement dates from Anthropic's deprecations page.
+- **Anthropic**: Claude API retirement dates from Anthropic's model deprecations page, plus the undated
+  `claude-sonnet-4-5` alias (from the Sonnet 4.5 model page), which retires with `claude-sonnet-4-5-20250929` on
+  30 Nov 2026. In a file that also names another provider's model, sampling-parameter rules are checked on the
+  call that holds the model id, so a `temperature` on an OpenAI call in the same file doesn't flag a Claude call.
   Amazon Bedrock and Google Cloud dates for Claude are not covered.
 - **Google**: Vertex AI and the Gemini API, flag-only. On Vertex, `gemini-2.5-pro`, `gemini-2.5-flash` and `gemini-2.5-flash-lite` retired on 20 Oct 2026. On the Gemini API, `gemini-2.5-pro` auto-routes to `gemini-3.8-flash` and `gemini-2.5-flash` auto-routes to `gemini-3.5-flash-lite` on 1 Dec 2026; `gemini-2.5-flash-lite` is not deprecated there. `gemini-live-2.5-flash-native-audio` retires on Vertex on 13 Dec 2026; the model versions table lists no replacement ID. `gemini-2.5-flash-image` shuts down on 15 Mar 2027 on both, replacement `gemini-3.1-flash-lite-image`. A file that uses Vertex is high risk when that schedule's shutdown is within 30 days or already past. A file with no Vertex signal uses the Gemini API schedule for Pro and Flash (same 30-day rule) and stays informational for Flash-Lite and the live model. Nothing is rewritten automatically.
 - Azure OpenAI and Bedrock: planned
@@ -212,7 +215,7 @@ The patch is proprietary ([LICENSE-COMMERCIAL](LICENSE-COMMERCIAL)), together wi
 - The free scan can show a finding as a plain replacement that the licensed patch won't make, so the scan report
   can overstate the size of the patch. The scan doesn't run swap's duplicate-key and duplicate-id checks, and swap
   skips docs unless you pass `--include-docs`. In our test on 38 public repos, 274 rows showed as plain replacements
-  but were kept by swap (119 in one repo, 35 and 18 in two others). The free `lastorders swap .` preview uses the
+  but were kept by swap (119 in one repo, 35 and 18 in two others). The free `lastorders fix .` (or `swap .`) preview uses the
   real plan and shows the actual per-file count.
 - Generated, minified and vendored files are skipped by both scan and swap. An ID still defined in a skipped
   generated file (such as a generated model registry) doesn't count as a kept definition, so references to it

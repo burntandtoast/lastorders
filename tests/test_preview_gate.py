@@ -27,12 +27,17 @@ def test_format_preview_groups_ids_without_locations():
     assert ":1" not in text and "@@" not in text
 
 
+COUNT_LINE = re.compile(r"\d+ changes? in \d+ files?\. ")
+
+
 def _assert_summary(text: str) -> None:
-    assert "A licence is required for the full diff and to apply it." in text
+    assert "To get the reviewable patch plus the must-review list for this repo" in text
+    assert "/#pricing" in text and "/buy" not in text
     for marker in PATCH_MARKERS:
         assert marker not in text
-    body = [ln for ln in text.splitlines()
-            if ln and not ln.startswith("A licence") and not ln.endswith("left alone.")]
+    lines = text.splitlines()
+    end = next(i for i, ln in enumerate(lines) if COUNT_LINE.match(ln))
+    body = [ln for ln in lines[:end] if ln and not ln.endswith("left alone.") and not ln.startswith("Warnings:")]
     assert body, text
     for ln in body:
         assert SUMMARY_LINE.fullmatch(ln), ln
@@ -114,4 +119,4 @@ def test_licensed_swap_and_fix_still_write_the_patch(tmp_path, licensed, capsys)
     fix = (out / "fix.diff").read_text()
     assert "--- a/" in fix and (out / "fix-plan.json").is_file() and (out / "fix-plan.md").is_file()
     shown = capsys.readouterr().out
-    assert "patch:" in shown and "A licence is required" not in shown
+    assert "patch:" in shown and "To get the reviewable patch" not in shown
