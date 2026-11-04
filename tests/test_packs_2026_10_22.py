@@ -208,8 +208,9 @@ def test_sources_and_conventions():
         for m in d["models"] + d.get("migrations", []):
             assert m.get("source", next(iter(ids))) in ids, m["id"]
     anth = _pack("anthropic")
-    assert anth["version"] in ("2026.10.22.1", "2026.10.22.2") and anth["updated"] == "2026-10-22"
-    assert all(s["checked"] <= "2026-10-22" for s in anth["sources"])
+    # 2026.10.23.1 is the stable pack (alias, 60-day window); see test_0413.py
+    assert anth["version"] == "2026.10.23.1" and anth["updated"] == "2026-10-23" and anth["status"] == "stable"
+    assert all(s["checked"] <= "2026-10-23" for s in anth["sources"])
     az = _pack("azure-foundry")
     assert az["version"] == "2026.11.02.1" and az["updated"] == "2026-11-02"
     checked = {s["id"]: s["checked"] for s in az["sources"]}

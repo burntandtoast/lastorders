@@ -21,8 +21,8 @@ export const WAIVER_FIELD = {
   key: WAIVER_FIELD_KEY,
   type: "dropdown",
   optional: false,
-  label: { type: "custom", custom: "Immediate supply and your right to cancel" },
-  dropdown: { options: [{ label: "I agree to immediate supply and lose my 14-day right to cancel once the key is used", value: "agree" }] },
+  label: { type: "custom", custom: "Before you pay: your right to cancel" },
+  dropdown: { options: [{ label: "I agree: supply starts when I first use the key, and my 14-day right to cancel ends then", value: "agree" }] },
 };
 
 export function submitMessage(baseUrl) {

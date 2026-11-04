@@ -16,6 +16,21 @@ test("pricing button points at checkout now payments are open", () => {
   assert.match(html, /href="\/buy">Buy a licence · £179</);
 });
 
+test("sub-nav, footer and past-deadline badges, with the Gemini API card unchanged", () => {
+  const html = readFileSync(new URL("../public/index.html", import.meta.url), "utf8");
+  assert.match(html, /href="#licence">The patch</);
+  assert.match(html, /href="#pricing">Get the patch · £179</);
+  assert.match(html, /href="https:\/\/fieldwork\.burntandtoast\.com\/\?utm_source=lastorders&amp;utm_medium=footer"[^>]*>/);
+  assert.match(html, /<span class="foot-label">AI Fieldwork<\/span><span class="foot-desc">A practical AI course<\/span>/);
+  assert.match(html, /burntandtoast\/lastorders@v0\.4\.14/);
+  assert.equal((html.match(/<span class="next passed">Passed<\/span>/g) || []).length, 2);
+  assert.match(html, /<span class="next">Next up<\/span><b>30 Nov 2026</);
+  assert.doesNotMatch(html, /That's days away/);
+  const dec = html.slice(html.indexOf("<b>1 Dec 2026</b>"), html.indexOf("<b>1 Dec 2026</b>") + 700);
+  assert.match(dec, /automatically routes the request and bills the replacement/);
+  assert.match(dec, /gemini-2\.5-pro<\/code> routes to <code>gemini-3\.8-flash/);
+});
+
 test("/buy redirects to #remind until BUY_OPEN=1", async () => {
   const closed = await worker.fetch(new Request("https://lastorders.example/buy?repo=github.com/acme/shop"), env());
   assert.equal(closed.status, 302);

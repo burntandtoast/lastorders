@@ -39,6 +39,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from . import __version__, brand
+from . import messages
 
 ENV_VAR = brand.env_name("LICENCE")
 REPO_ENV_VAR = brand.env_name("REPO")
@@ -317,7 +318,7 @@ def require(feature: str, flag_value: str | None = None, repo_path: str | Path =
         raise LicenceError(
             f"{what.capitalize()} needs a {brand.PRODUCT_NAME} licence ({why}). One licence covers one GitHub repo "
             f"(monorepos included). Set {ENV_VAR}=BTM-XXXX-XXXX-XXXX or pass --licence. "
-            f"The free `scan` needs no licence. Licences: {brand.BUY_URL}")
+            + messages.NEEDS_LICENCE_TAIL)
     if not lic.repo_id:
         raise LicenceError(
             f"{what.capitalize()} needs to know which repo this licence is for, and there's no git `origin` remote or "
