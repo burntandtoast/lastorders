@@ -11,10 +11,10 @@ engines. All provider knowledge lives in packs.
 | `id_patterns[]` | regexes for model-ID tokens (the engine adds token boundaries). `quoted_only` for ambiguous IDs such as `o3` |
 | `fine_tune` | `{pattern, base_group, risk, notes, bases[]}`: how to spot a fine-tune and extract its base model. `bases[]` (`{base, match: exact/prefix, shutdown, replacement, section, confidence, source, notes}`) covers fine-tunes whose shutdown differs from, or isn't covered by, the base model entry; its `notes` replace the generic ones |
 | `migrations[]` | named retirement events `{id, title, announced, shutdown, replacement, headline}`. `headline` ones drive the report deadline and the default swap mapping |
-| `models[]` | `{id, kind: snapshot/alias/family, alias_of, match: exact/prefix, shutdown, replacement, migration, confidence, note, map_automatically}` |
+| `models[]` | `{id, kind: snapshot/alias/family, alias_of, match: exact/prefix, shutdown, replacement, migration, confidence, note, past_note, map_automatically, platforms[]}`. `platforms[]` is `{when_any, shutdown, replacement, migration, note, past_note, source, map_automatically}`. The first entry whose `when_any` hits the file's signals wins. An entry with no `when_any` is the schedule when none match, and that date raises risk on its own. `past_note` replaces the default "calls are likely failing" sentence after the date |
 | `signals[]` | call-site and usage detectors `{id, pattern, languages[], sdk, call}`, e.g. openai/anthropic/LangChain clients, plain HTTP, `max_tokens`, tools. `pattern` works at file level (scan). The optional `call` drives the fixer at call level: `callees` (dotted-suffix match, longest wins) marks an endpoint, `params` fires when an argument is passed (`ignore_values` excepted, e.g. `temperature: 1`), and `param_values` fires on literal values (e.g. `reasoning.effort: none`) |
 | `rules[]` | `{id, type, applies_to{replacements, migrations} (omit for a model-independent rule, reported per file), when_all, when_any, unless_any, param, new_param, risk, message, confidence, evidence, fix}`. `type` is one of `param_renamed`, `param_removed`, `param_conditional`, `endpoint`, `tool_calling` or `info`. `fix` is a machine-readable hint for the auto-fixer |
-| `risk_policy` | `{urgent_days, default_risk, shutdown_risk_when_any, otherwise_note}`. `shutdown_risk_when_any` is a list of signal ids: the shutdown date raises risk to high only when the same file has one of them. Otherwise the finding stays at `default_risk` and uses `otherwise_note` instead of the model note. Signals are file-level, so a signal in another file does not count |
+| `risk_policy` | `{urgent_days, default_risk, shutdown_risk_when_any, otherwise_note}`. `shutdown_risk_when_any` is a list of signal ids: for a row with no `platforms` schedule, the shutdown date raises risk to high only when the same file has one of them. Otherwise the finding stays at `default_risk` and uses `otherwise_note` instead of the model note. A `platforms` schedule replaces that gate for that model. Signals are file-level, so a signal in another file does not count |
 | `replacement_facts{model: {...}}` | capabilities, prices and `eval.model_params` (used by `init-evals`) |
 | `facts{confirmed, live_checked_on, live, unconfirmed}`, `report{next_steps, fine_tune_advice}` | text for the client report |
 
@@ -69,21 +69,21 @@ silently keeps the bundled pack.
 
 Clients only download index entries whose `provider` is one they already bundle (see `load_packs`). A new provider in the hosted index is skipped by older installs, including 0.4.0 and 0.4.1, so publishing it does not change their scans.
 
-## Google (Vertex AI)
+## Google (Vertex AI and the Gemini API)
 
-`google` covers Vertex AI retirements. Facts are from the [model versions](https://cloud.google.com/vertex-ai/generative-ai/docs/learn/model-versions) table (checked 16 Oct 2026). That page lists no `-001`, dated, or preview ID for the three 20 Oct models. The same three stable IDs have no shutdown date on the [Gemini API](https://ai.google.dev/gemini-api/docs/deprecations).
+`google` covers Vertex AI retirements and the Gemini API auto-routes for the same stable IDs. Vertex facts are from the [model versions](https://cloud.google.com/vertex-ai/generative-ai/docs/learn/model-versions) table (checked 16 Oct 2026). That page lists no `-001`, dated, or preview ID for the three 20 Oct models. Gemini API facts are from [Gemini API deprecations](https://ai.google.dev/gemini-api/docs/deprecations) (checked 4 Nov 2026).
 
-| Model ID | Vertex retirement | Suggested replacement | Also listed |
+| Model ID | Vertex retirement | Vertex replacement | Gemini API |
 |---|---|---|---|
-| `gemini-2.5-pro` | 2026-10-20 | `gemini-3.8-flash` | `gemini-3.5-flash` |
-| `gemini-2.5-flash` | 2026-10-20 | `gemini-3.8-flash` | `gemini-3.5-flash-lite`, `gemini-3.1-flash-lite` |
-| `gemini-2.5-flash-lite` | 2026-10-20 | `gemini-3.8-flash` | `gemini-3.1-flash-lite`, Gemma 4 (no model ID on the page) |
-| `gemini-live-2.5-flash-native-audio` | 2026-12-13 | none on the page | |
-| `gemini-2.5-flash-image` | 2027-03-15 | `gemini-3.1-flash-lite-image` | |
+| `gemini-2.5-pro` | 2026-10-20 | `gemini-3.8-flash` (also `gemini-3.5-flash`) | 2026-12-01, auto-routes to `gemini-3.8-flash` |
+| `gemini-2.5-flash` | 2026-10-20 | `gemini-3.8-flash` (also `gemini-3.5-flash-lite`, `gemini-3.1-flash-lite`) | 2026-12-01, auto-routes to `gemini-3.5-flash-lite` |
+| `gemini-2.5-flash-lite` | 2026-10-20 | `gemini-3.8-flash` (also `gemini-3.1-flash-lite`, Gemma 4 with no model ID on the page) | no shutdown date |
+| `gemini-live-2.5-flash-native-audio` | 2026-12-13 | none on the page | not a row on the Gemini API page |
+| `gemini-2.5-flash-image` | 2027-03-15 | `gemini-3.1-flash-lite-image` | same date and replacement |
 
-The pack is flag-only: every model has `map_automatically: false` and there are no `rules`, so `swap` and `fix` do not rewrite these IDs.
+The pack is flag-only: every model and every `platforms` entry has `map_automatically: false`, and there are no `rules`, so `swap` and `fix` do not rewrite these IDs. Pro and Flash each have two schedules on the same ID. The `vertex` entry wins when the file has that signal. The entry with no `when_any` is the Gemini API schedule.
 
-Risk uses `shutdown_risk_when_any: ["vertex"]`. The `vertex` signal matches, in the same file as the model ID:
+Risk uses `shutdown_risk_when_any: ["vertex"]` for rows without `platforms` (Flash-Lite and the live model). The `vertex` signal matches, in the same file as the model ID:
 
 - Python `import vertexai` / `from vertexai`, or `google.cloud.aiplatform`
 - `genai.Client(vertexai=True)` and the JS `vertexai: true` form
@@ -91,7 +91,7 @@ Risk uses `shutdown_risk_when_any: ["vertex"]`. The `vertex` signal matches, in 
 - a host containing `aiplatform.googleapis.com`
 - the `@google-cloud/vertexai` package
 
-`@google/genai` on its own is the Gemini API client and does not count. When the file has no `vertex` signal, the finding stays informational and the note is `retires on Vertex AI; not deprecated on the Gemini API`. A Vertex import in a different file does not raise this file: that case is unclear, and unclear stays informational. The shutdown date raises a Vertex finding to high only when it is within 30 days or already past.
+`@google/genai` on its own is the Gemini API client and does not count. A Vertex import in a different file does not raise this file. For Flash-Lite and the live model, a file with no `vertex` signal stays informational and the note is `retires on Vertex AI; not deprecated on the Gemini API`. For Pro and Flash, that file uses the 1 Dec 2026 Gemini API schedule instead, and that date raises risk when it is within 30 days or already past. After 1 Dec the note says the API automatically routes the ID. It does not say the call is failing. The Vertex date raises a Vertex finding to high only when it is within 30 days or already past.
 
 ## Microsoft Foundry (`azure-foundry`)
 

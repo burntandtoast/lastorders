@@ -1,6 +1,7 @@
 import datetime as dt
 
 from conftest import ROOT, TODAY
+from migration_kit.fixer import plan_fixes
 from migration_kit.packs import load_packs
 from migration_kit.scanner import scan
 from migration_kit.swapper import mapping_from_packs
@@ -184,11 +185,23 @@ def test_google_vertex_is_high_and_studio_is_informational(tmp_path):
     assert any("gemini-3.1-flash-lite" in n for n in by_file["genai_vertex.py"][0].notes)
     assert by_file["vertex_url.yaml"][0].model == "gemini-2.5-flash"
 
-    for name in ("studio.py", "studio.ts", "off.env", "alone.py", "notes.md"):
+    lite = by_file["studio.ts"][0]
+    assert lite.model == "gemini-2.5-flash-lite"
+    assert lite.risk == "info" and lite.shutdown == "2026-10-20" and lite.suggested == "gemini-3.8-flash"
+    assert INFO in lite.notes and lite.rules == []
+    api = {
+        "studio.py": ("gemini-2.5-pro", "gemini-3.8-flash", "gemini-2-5-pro-api-2026-12-01"),
+        "notes.md": ("gemini-2.5-pro", "gemini-3.8-flash", "gemini-2-5-pro-api-2026-12-01"),
+        "off.env": ("gemini-2.5-flash", "gemini-3.5-flash-lite", "gemini-2-5-flash-api-2026-12-01"),
+        "alone.py": ("gemini-2.5-flash", "gemini-3.5-flash-lite", "gemini-2-5-flash-api-2026-12-01"),
+    }
+    for name, (model, repl, migration) in api.items():
         f = by_file[name][0]
-        assert f.risk == "info" and f.shutdown == "2026-10-20" and f.suggested == "gemini-3.8-flash", name
-        assert INFO in f.notes
-        assert f.rules == []
+        # 15 Oct 2026 is 47 days before 1 Dec, outside urgent_days, so the API date stays informational.
+        assert f.model == model and f.risk == "info" and f.shutdown == "2026-12-01", name
+        assert f.suggested == repl and f.migration == migration and f.category == "in_scope", name
+        assert INFO not in f.notes and f.rules == [] and not f.auto_swap, name
+        assert any("Gemini API" in n for n in f.notes), name
     assert "other.py" not in by_file
     near = {f.model: f for f in by_file["near.py"]}
     assert set(near) == {"gemini-2.5-flash-image"}
@@ -200,9 +213,54 @@ def test_google_vertex_is_high_and_studio_is_informational(tmp_path):
     assert g.data.get("rules", []) == []
     assert g.default_mapping(None) == {}
     assert "gemini" not in mapping_from_packs(load_packs()).replacements
+    for row in g.data["models"]:
+        assert row["map_automatically"] is False
+        for plat in row.get("platforms") or []:
+            assert plat["map_automatically"] is False
 
     later = scan(tmp_path, today=dt.date(2026, 10, 21), packs=load_packs())
     later_by = {f.file: f for f in later.findings}
-    assert later_by["studio.py"].risk == "info"
-    assert later_by["vertex_sdk.py"].risk == "high"
+    assert later_by["studio.py"].risk == "info" and later_by["studio.py"].shutdown == "2026-12-01"
+    assert later_by["vertex_sdk.py"].risk == "high" and later_by["vertex_sdk.py"].shutdown == "2026-10-20"
     assert any("has passed" in n for n in later_by["vertex_sdk.py"].notes)
+    assert any("likely failing" in n for n in later_by["vertex_sdk.py"].notes)
+
+    near_api = scan(tmp_path, today=dt.date(2026, 11, 5), packs=load_packs())
+    near_by = {f.file: f for f in near_api.findings}
+    assert near_by["studio.py"].risk == "high" and near_by["studio.py"].suggested == "gemini-3.8-flash"
+    assert any("Shuts down in 26 days." in n for n in near_by["studio.py"].notes)
+    assert near_by["alone.py"].risk == "high" and near_by["alone.py"].suggested == "gemini-3.5-flash-lite"
+    assert near_by["studio.ts"].risk == "info" and near_by["studio.ts"].shutdown == "2026-10-20"
+    assert INFO in near_by["studio.ts"].notes
+    assert near_by["notes.md"].risk == "low" and near_by["notes.md"].shutdown == "2026-12-01"
+    assert near_by["vertex_url.yaml"].shutdown == "2026-10-20" and near_by["vertex_url.yaml"].suggested == "gemini-3.8-flash"
+
+    passed = scan(tmp_path, today=dt.date(2026, 12, 2), packs=load_packs())
+    passed_by = {f.file: f for f in passed.findings}
+    assert passed_by["studio.py"].risk == "high"
+    assert any("automatically routes this ID to gemini-3.8-flash" in n for n in passed_by["studio.py"].notes)
+    assert not any("likely failing" in n for n in passed_by["studio.py"].notes)
+    assert passed_by["off.env"].suggested == "gemini-3.5-flash-lite"
+    assert any("automatically routes this ID to gemini-3.5-flash-lite" in n for n in passed_by["off.env"].notes)
+    assert not any("likely failing" in n for n in passed_by["off.env"].notes)
+    assert any("likely failing" in n for n in passed_by["vertex_sdk.py"].notes)
+    assert passed_by["studio.ts"].risk == "info" and INFO in passed_by["studio.ts"].notes
+
+    api_fix = tmp_path / "api_fix.py"
+    api_fix.write_text(
+        'from google import genai\n'
+        'client = genai.Client(api_key="x")\n'
+        'client.models.generate_content(model="gemini-2.5-flash", contents="hi")\n')
+    vx_fix = tmp_path / "vx_fix.py"
+    vx_fix.write_text('import vertexai\nmodel = "gemini-2.5-pro"\n')
+    before = {p.name: p.read_text() for p in (api_fix, vx_fix)}
+    fx = plan_fixes(tmp_path, load_packs(offline=True))
+    flags = {(i.file, i.model): i for i in fx.items if i.rule == "flag-only"}
+    flash = flags[("api_fix.py", "gemini-2.5-flash")]
+    assert "2026-12-01" in flash.message and "gemini-3.5-flash-lite" in flash.message
+    assert flash.target == "gemini-3.5-flash-lite" and flash.status == "manual"
+    pro = flags[("vx_fix.py", "gemini-2.5-pro")]
+    assert "2026-10-20" in pro.message and pro.target == "gemini-3.8-flash"
+    assert "gemini-3.5-flash-lite" not in pro.message
+    assert api_fix.read_text() == before["api_fix.py"] and vx_fix.read_text() == before["vx_fix.py"]
+    assert fx.new_contents == {}
