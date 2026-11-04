@@ -2,16 +2,17 @@
   "$schema": "https://packs.burntandtoast.com/v1/pack.schema.json",
   "pack_format": 1,
   "provider": "google",
-  "name": "Google Gemini on Vertex AI",
-  "version": "2026.10.16.2",
-  "updated": "2026-10-16",
+  "name": "Google Gemini on Vertex AI and the Gemini API",
+  "version": "2026.11.04.1",
+  "updated": "2026-11-04",
   "status": "stable",
   "notes": [
-    "Flag only. No automatic swap (map_automatically is false on every model) and no rules, so fix and swap leave these IDs alone.",
-    "Vertex detection is file-level, using the signal id 'vertex'. A finding is high risk only when that signal matches the same file as the model ID and the shutdown is within urgent_days or already past. Vertex usage in a different file, or no signal at all, stays informational: the call might be the Gemini API (AI Studio).",
+    "Flag only. map_automatically is false on every model and every platform schedule, and there are no rules, so fix and swap leave these IDs alone. The Gemini API auto-route is a silent tier change, so this pack does not rewrite the ID.",
+    "Vertex detection is file-level, using the signal id 'vertex'. For a model with platforms, the entry whose when_any includes vertex wins when that signal is in the same file. High risk when that schedule's shutdown is within urgent_days or already past. A Vertex import in a different file does not count.",
+    "With no vertex signal, gemini-2.5-pro and gemini-2.5-flash use the Gemini API schedule (shutdown 2026-12-01, separate replacements). That date raises risk the same way. gemini-2.5-flash-lite and gemini-live-2.5-flash-native-audio have no Gemini API shutdown in this pack, so a file without the vertex signal stays informational.",
     "Checked https://cloud.google.com/vertex-ai/generative-ai/docs/learn/model-versions on 16 Oct 2026. That URL redirects to the Gemini Enterprise Agent Platform model-versions page. The lifecycle table lists gemini-2.5-pro, gemini-2.5-flash and gemini-2.5-flash-lite with retirement date 20 Oct 2026. It lists no -001, dated, or preview ID for these three. gemini-live-2.5-flash-native-audio retires 13 Dec 2026 with no replacement model ID in that cell. gemini-2.5-flash-image retires 15 Mar 2027; the replacement cell is gemini-3.1-flash-lite-image.",
-    "The same three stable IDs have 'No shutdown date announced' on the Gemini API deprecations page. Preview IDs (for example gemini-2.5-pro-preview-06-05) are different models with their own, already passed, Gemini API shutdowns and are not this retirement.",
-    "Suggested replacement is the first model ID in Google's 'or' list. The other listed options are in each model's note. Gemma 4 is named for gemini-2.5-flash-lite but the page does not give it a model ID."
+    "Checked https://ai.google.dev/gemini-api/docs/deprecations on 4 Nov 2026. gemini-2.5-pro and gemini-2.5-flash are removed from AI Studio selection. The API still accepts them until 1 Dec 2026, then automatically routes pro to gemini-3.8-flash (billed at Gemini 3.8 Flash rates) and flash to gemini-3.5-flash-lite (billed at Gemini 3.5 Flash-Lite rates). gemini-2.5-flash-lite has no shutdown date announced. The same page lists gemini-2.5-flash-image shutting down on 15 Mar 2027, replacement gemini-3.1-flash-lite-image. Preview IDs (for example gemini-2.5-pro-preview-06-05) are different models with their own, already passed, shutdowns and are not these rows.",
+    "Suggested Vertex replacement is the first model ID in Google's 'or' list. The other listed options are in each model's note. Gemma 4 is named for gemini-2.5-flash-lite but the page does not give it a model ID."
   ],
   "sources": [
     {
@@ -24,7 +25,7 @@
       "id": "gemini-api-deprecations",
       "title": "Gemini API deprecations",
       "url": "https://ai.google.dev/gemini-api/docs/deprecations",
-      "checked": "2026-10-16"
+      "checked": "2026-11-04"
     }
   ],
   "id_patterns": [
@@ -48,6 +49,22 @@
       "source": "model-versions"
     },
     {
+      "id": "gemini-2-5-pro-api-2026-12-01",
+      "title": "Gemini API auto-routes gemini-2.5-pro to gemini-3.8-flash",
+      "shutdown": "2026-12-01",
+      "replacement": "gemini-3.8-flash",
+      "headline": true,
+      "source": "gemini-api-deprecations"
+    },
+    {
+      "id": "gemini-2-5-flash-api-2026-12-01",
+      "title": "Gemini API auto-routes gemini-2.5-flash to gemini-3.5-flash-lite",
+      "shutdown": "2026-12-01",
+      "replacement": "gemini-3.5-flash-lite",
+      "headline": true,
+      "source": "gemini-api-deprecations"
+    },
+    {
       "id": "gemini-live-2-5-native-audio-2026-12-13",
       "title": "Vertex AI retires Gemini 2.5 Flash Live native audio",
       "shutdown": "2026-12-13",
@@ -56,7 +73,7 @@
     },
     {
       "id": "gemini-2-5-flash-image-2027-03-15",
-      "title": "Vertex AI retires Gemini 2.5 Flash Image",
+      "title": "Gemini 2.5 Flash Image retires on Vertex AI and the Gemini API",
       "shutdown": "2027-03-15",
       "replacement": "gemini-3.1-flash-lite-image",
       "headline": true,
@@ -75,7 +92,29 @@
       "confidence": "confirmed",
       "source": "model-versions",
       "map_automatically": false,
-      "note": "Vertex AI also lists gemini-3.5-flash. No -001 or preview ID is published for this model."
+      "note": "Vertex AI retired this ID on 20 Oct 2026; Vertex also lists gemini-3.5-flash. On the Gemini API the same ID auto-routes to gemini-3.8-flash on 1 Dec 2026. Not swapped. No -001 or preview ID is published for this model.",
+      "platforms": [
+        {
+          "when_any": ["vertex"],
+          "shutdown": "2026-10-20",
+          "replacement": "gemini-3.8-flash",
+          "migration": "gemini-2-5-vertex-2026-10-20",
+          "section": "Latest available models: Gemini models available for at least 12 months after release",
+          "source": "model-versions",
+          "map_automatically": false,
+          "note": "Vertex AI retired this ID on 20 Oct 2026. Vertex also lists gemini-3.5-flash. No -001 or preview ID is published for this model."
+        },
+        {
+          "shutdown": "2026-12-01",
+          "replacement": "gemini-3.8-flash",
+          "migration": "gemini-2-5-pro-api-2026-12-01",
+          "section": "Gemini API deprecations: Gemini 2.5 Pro",
+          "source": "gemini-api-deprecations",
+          "map_automatically": false,
+          "note": "Gemini API: removed from AI Studio selection. The API accepts gemini-2.5-pro until 1 Dec 2026, then automatically routes requests to gemini-3.8-flash and bills them at Gemini 3.8 Flash rates.",
+          "past_note": "Shutdown date 2026-12-01 has passed. The Gemini API automatically routes this ID to gemini-3.8-flash and bills those requests at Gemini 3.8 Flash rates."
+        }
+      ]
     },
     {
       "id": "gemini-2.5-flash",
@@ -88,7 +127,29 @@
       "confidence": "confirmed",
       "source": "model-versions",
       "map_automatically": false,
-      "note": "Vertex AI also lists gemini-3.5-flash-lite and gemini-3.1-flash-lite. No -001 or preview ID is published for this model."
+      "note": "Vertex AI retired this ID on 20 Oct 2026; Vertex also lists gemini-3.5-flash-lite and gemini-3.1-flash-lite. On the Gemini API the same ID auto-routes to gemini-3.5-flash-lite on 1 Dec 2026. Not swapped. No -001 or preview ID is published for this model.",
+      "platforms": [
+        {
+          "when_any": ["vertex"],
+          "shutdown": "2026-10-20",
+          "replacement": "gemini-3.8-flash",
+          "migration": "gemini-2-5-vertex-2026-10-20",
+          "section": "Latest available models: Gemini models available for at least 12 months after release",
+          "source": "model-versions",
+          "map_automatically": false,
+          "note": "Vertex AI retired this ID on 20 Oct 2026. Vertex also lists gemini-3.5-flash-lite and gemini-3.1-flash-lite. No -001 or preview ID is published for this model."
+        },
+        {
+          "shutdown": "2026-12-01",
+          "replacement": "gemini-3.5-flash-lite",
+          "migration": "gemini-2-5-flash-api-2026-12-01",
+          "section": "Gemini API deprecations: Gemini 2.5 Flash",
+          "source": "gemini-api-deprecations",
+          "map_automatically": false,
+          "note": "Gemini API: removed from AI Studio selection. The API accepts gemini-2.5-flash until 1 Dec 2026, then automatically routes requests to gemini-3.5-flash-lite and bills them at Gemini 3.5 Flash-Lite rates.",
+          "past_note": "Shutdown date 2026-12-01 has passed. The Gemini API automatically routes this ID to gemini-3.5-flash-lite and bills those requests at Gemini 3.5 Flash-Lite rates."
+        }
+      ]
     },
     {
       "id": "gemini-2.5-flash-lite",
@@ -101,7 +162,7 @@
       "confidence": "confirmed",
       "source": "model-versions",
       "map_automatically": false,
-      "note": "Vertex AI also lists gemini-3.1-flash-lite and Gemma 4. No -001 or preview ID is published for this model."
+      "note": "Vertex AI also lists gemini-3.1-flash-lite and Gemma 4. No -001 or preview ID is published for this model. gemini-2.5-flash-lite is not deprecated on the Gemini API."
     },
     {
       "id": "gemini-live-2.5-flash-native-audio",
@@ -126,7 +187,28 @@
       "confidence": "confirmed",
       "source": "model-versions",
       "map_automatically": false,
-      "note": "Released 2 Oct 2025. Image model. The model versions table lists gemini-3.1-flash-lite-image as the replacement."
+      "note": "Released 2 Oct 2025. Image model. Shuts down on 15 Mar 2027 on Vertex AI and on the Gemini API. Both pages list gemini-3.1-flash-lite-image as the replacement.",
+      "platforms": [
+        {
+          "when_any": ["vertex"],
+          "shutdown": "2027-03-15",
+          "replacement": "gemini-3.1-flash-lite-image",
+          "migration": "gemini-2-5-flash-image-2027-03-15",
+          "section": "Gemini image models",
+          "source": "model-versions",
+          "map_automatically": false,
+          "note": "Released 2 Oct 2025. Image model. The Vertex model versions table lists retirement on 15 Mar 2027 and gemini-3.1-flash-lite-image as the replacement."
+        },
+        {
+          "shutdown": "2027-03-15",
+          "replacement": "gemini-3.1-flash-lite-image",
+          "migration": "gemini-2-5-flash-image-2027-03-15",
+          "section": "Gemini API deprecations: image models",
+          "source": "gemini-api-deprecations",
+          "map_automatically": false,
+          "note": "Gemini API: gemini-2.5-flash-image shuts down on 15 Mar 2027. Recommended replacement gemini-3.1-flash-lite-image."
+        }
+      ]
     }
   ],
   "signals": [
@@ -174,12 +256,12 @@
   },
   "facts": {
     "confirmed": [
-      "On Vertex AI, gemini-2.5-pro (released 17 Jun 2025), gemini-2.5-flash (released 17 Jun 2025) and gemini-2.5-flash-lite (released 22 Jul 2025) retire on 20 Oct 2026.",
+      "On Vertex AI, gemini-2.5-pro (released 17 Jun 2025), gemini-2.5-flash (released 17 Jun 2025) and gemini-2.5-flash-lite (released 22 Jul 2025) retired on 20 Oct 2026.",
       "Documented Vertex replacements: gemini-2.5-pro -> gemini-3.8-flash or gemini-3.5-flash; gemini-2.5-flash -> gemini-3.8-flash or gemini-3.5-flash-lite or gemini-3.1-flash-lite; gemini-2.5-flash-lite -> gemini-3.8-flash or gemini-3.1-flash-lite or Gemma 4.",
       "The model versions table does not list a -001, dated, or preview ID for these three stable models.",
-      "On the Gemini API, gemini-2.5-pro, gemini-2.5-flash and gemini-2.5-flash-lite have no shutdown date announced.",
-      "On Vertex AI, gemini-live-2.5-flash-native-audio (released 12 Dec 2025) retires on 13 Dec 2026. The model versions table's replacement cell for that row is empty.",
-      "On Vertex AI, gemini-2.5-flash-image (released 2 Oct 2025) retires on 15 Mar 2027. The model versions table lists gemini-3.1-flash-lite-image as the replacement."
+      "On the Gemini API, checked 4 Nov 2026, gemini-2.5-pro shuts down on 1 Dec 2026 and automatically routes to gemini-3.8-flash (Gemini 3.8 Flash rates). gemini-2.5-flash shuts down on the same date and automatically routes to gemini-3.5-flash-lite (Gemini 3.5 Flash-Lite rates). Both are already removed from AI Studio selection. gemini-2.5-flash-lite has no shutdown date announced.",
+      "On Vertex AI, gemini-live-2.5-flash-native-audio (released 12 Dec 2025) retires on 13 Dec 2026. The model versions table's replacement cell for that row is empty. That ID is not a Gemini API deprecations row.",
+      "gemini-2.5-flash-image (released 2 Oct 2025) shuts down on 15 Mar 2027 on Vertex AI and on the Gemini API. Both pages list gemini-3.1-flash-lite-image as the replacement."
     ],
     "unconfirmed": [
       "No live API calls were made. Replacements were not checked for parameter compatibility, so this pack does not swap or rewrite calls."
@@ -187,8 +269,9 @@
   },
   "report": {
     "next_steps": [
-      "If the call uses Vertex AI, point it at the suggested replacement and test it. This pack only flags the ID; it does not rewrite code.",
-      "If the call uses the Gemini API (AI Studio / generativelanguage.googleapis.com), these three IDs are not deprecated. No change is required for this retirement."
+      "If the call uses Vertex AI, gemini-2.5-pro, gemini-2.5-flash and gemini-2.5-flash-lite already retired on 20 Oct 2026. Point the call at the suggested replacement and test it. This pack only flags the ID; it does not rewrite code.",
+      "If the call uses the Gemini API, gemini-2.5-pro automatically routes to gemini-3.8-flash on 1 Dec 2026 and gemini-2.5-flash automatically routes to gemini-3.5-flash-lite on that date. gemini-2.5-flash-lite has no shutdown date on the Gemini API. This pack does not rewrite these IDs.",
+      "gemini-2.5-flash-image shuts down on 15 Mar 2027 on both Vertex AI and the Gemini API; the listed replacement is gemini-3.1-flash-lite-image. gemini-live-2.5-flash-native-audio is a Vertex retirement on 13 Dec 2026 with no replacement model ID on the model versions page."
     ]
   }
 }

@@ -274,6 +274,10 @@ def plan_fixes(root: str | Path, packs: PackSet | None = None, mapping: Mapping 
                 continue
             lm = pack.lookup(model) if model else None
             lm0 = pack.lookup(model0) if model0 else None
+            if lm is not None:
+                lm = lm.resolve(file_sig_cache[fkey])
+            if lm0 is not None:
+                lm0 = lm0.resolve(file_sig_cache[fkey])
             if lm and not lm.map_automatically and lm.replacement:
                 items.append(_flag_only_item(rel, cs.line, pack.provider, model, lm, endpoint))
             if model and model in pc.replacements:
@@ -466,8 +470,10 @@ def _file_level_items(root: Path, packs: PackSet, items: list[FixItem], parsed: 
                 and (f.file, f.model) not in have_flag and pack):
             lm = pack.lookup(f.model)
             if lm and not lm.map_automatically:  # flag-only models; not prose/regex/changelog skips
-                have_flag.add((f.file, f.model))
-                items.append(_flag_only_item(f.file, f.line, f.provider, f.model, lm))
+                lm = lm.resolve(res.file_signals.get(f.file, []))
+                if not lm.map_automatically and (lm.replacement or lm.shutdown):
+                    have_flag.add((f.file, f.model))
+                    items.append(_flag_only_item(f.file, f.line, f.provider, f.model, lm))
         if f.category == "fine_tune" and (f.file, f.model) not in have_ft:
             have_ft.add((f.file, f.model))
             items.append(FixItem(f.file, f.line, f.provider, "fine-tune", "manual",

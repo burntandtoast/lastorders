@@ -104,6 +104,35 @@ class Model:
     kind: str
     map_automatically: bool
     section: str
+    platforms: tuple = ()
+    past_note: str = ""
+
+    def resolve(self, signals) -> Model:
+        """Schedule for this file. The first `platforms` entry whose `when_any` hits `signals` wins.
+        An entry with no `when_any` is the default when none match. No platforms: this row as written."""
+        sigs = set(signals or ())
+        chosen = None
+        for p in self.platforms:
+            when = p.get("when_any") or []
+            if when and set(when) & sigs:
+                chosen = p
+                break
+        if chosen is None:
+            for p in self.platforms:
+                if not (p.get("when_any") or []):
+                    chosen = p
+                    break
+        if chosen is None:
+            return self
+
+        def pick(key, current):
+            return chosen[key] if key in chosen else current
+
+        return Model(
+            self.id, pick("shutdown", self.shutdown), pick("replacement", self.replacement),
+            pick("migration", self.migration), pick("confidence", self.confidence),
+            pick("note", self.note), self.kind, pick("map_automatically", self.map_automatically),
+            pick("section", self.section), (), pick("past_note", self.past_note))
 
 
 @dataclass
@@ -123,7 +152,8 @@ class Pack:
         for m in d.get("models", []):
             mod = Model(m["id"], m.get("shutdown"), m.get("replacement"), m.get("migration"),
                         m.get("confidence", "confirmed"), m.get("note", ""), m.get("kind", "snapshot"),
-                        m.get("map_automatically", True), m.get("section", ""))
+                        m.get("map_automatically", True), m.get("section", ""),
+                        tuple(m.get("platforms") or ()), m.get("past_note") or "")
             if m.get("match") == "prefix":
                 self.prefixes.append(mod)
             else:

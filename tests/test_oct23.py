@@ -119,7 +119,12 @@ def test_vertex_live_audio_and_flash_image(tmp_path):
     assert image.risk == "info" and image.category == "in_scope"
     studio = found["studio.py"]
     assert studio["gemini-live-2.5-flash-native-audio"].risk == "info"
-    assert "retires on Vertex AI; not deprecated on the Gemini API" in studio["gemini-2.5-flash-image"].notes
+    assert "retires on Vertex AI; not deprecated on the Gemini API" in studio["gemini-live-2.5-flash-native-audio"].notes
+    image_api = studio["gemini-2.5-flash-image"]
+    assert image_api.shutdown == "2027-03-15" and image_api.suggested == "gemini-3.1-flash-lite-image"
+    assert image_api.risk == "info"
+    assert any("Gemini API" in n for n in image_api.notes)
+    assert "not deprecated on the Gemini API" not in " ".join(image_api.notes)
     assert "preview.py" not in found
     assert load_packs().get("google").default_mapping(None) == {}
 

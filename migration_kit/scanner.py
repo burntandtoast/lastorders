@@ -1091,15 +1091,20 @@ def assess(f: Finding, pack: Pack, sig: list[str], today: dt.date) -> None:
             f.confidence = "n/a"
         f.notes += ft.get("notes", [])
         return
-    m = pack.lookup(f.model)
-    if m is None:
+    raw = pack.lookup(f.model)
+    if raw is None:
         f.category, f.risk, f.confidence = "not_listed", "info", "n/a"
         f.notes.append(f"Not listed as retiring in the {pack.provider} pack (v{pack.version}).")
         return
+    # A platforms entry already picked the schedule for this file's signals, so its
+    # date applies on its own. Rows with no platforms keep the host gate.
+    m = raw.resolve(sigset)
     if not m.shutdown and not m.replacement and not m.migration:
         # A plain model row: the pack knows the id but lists no retirement for it.
         f.category, f.risk, f.confidence = "not_listed", "info", m.confidence
         f.notes.append(m.note or f"Known to the {pack.provider} pack (v{pack.version}); no retirement date listed.")
+        if m is not raw and not m.map_automatically:
+            f.auto_swap, f.no_swap_reason = False, "flag_only"
         return
     headline = {x["id"] for x in pack.headline_migrations}
     f.category = "in_scope" if m.migration in headline else "other_deprecated"
@@ -1109,7 +1114,7 @@ def assess(f: Finding, pack: Pack, sig: list[str], today: dt.date) -> None:
     # When shutdown_risk_when_any is set, the date raises risk only if the file
     # has one of those signals. Otherwise the finding stays at default_risk.
     gate = set(policy.get("shutdown_risk_when_any") or [])
-    on_platform = (not gate) or bool(gate & sigset)
+    on_platform = m is not raw or (not gate) or bool(gate & sigset)
     if m.note and (on_platform or not policy.get("otherwise_note")):
         f.notes.append(m.note)
     if not on_platform and policy.get("otherwise_note"):
@@ -1118,7 +1123,7 @@ def assess(f: Finding, pack: Pack, sig: list[str], today: dt.date) -> None:
         days = (dt.date.fromisoformat(m.shutdown) - today).days
         if days < 0:
             f.risk = "high"
-            f.notes.append(f"Shutdown date {m.shutdown} has passed; calls are likely failing now.")
+            f.notes.append(m.past_note or f"Shutdown date {m.shutdown} has passed; calls are likely failing now.")
         elif days <= pack.urgent_days:
             f.risk = "high"
             f.notes.append(f"Shuts down in {days} days.")

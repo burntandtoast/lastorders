@@ -304,6 +304,60 @@
           },
           "source": {
             "type": "string"
+          },
+          "past_note": {
+            "type": "string",
+            "description": "Replaces the default 'calls are likely failing' note when this row's shutdown date has passed."
+          },
+          "platforms": {
+            "description": "Signal-specific schedules for one model id. The first entry whose when_any intersects the file's signals wins. An entry with no when_any is the schedule when none match. Its shutdown date raises risk on its own. Rows without platforms keep shutdown_risk_when_any.",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "when_any": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "shutdown": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/$defs/date"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "replacement": {
+                  "type": "string"
+                },
+                "migration": {
+                  "type": "string"
+                },
+                "section": {
+                  "type": "string"
+                },
+                "confidence": {
+                  "$ref": "#/$defs/confidence"
+                },
+                "note": {
+                  "type": "string"
+                },
+                "past_note": {
+                  "type": "string"
+                },
+                "map_automatically": {
+                  "type": "boolean"
+                },
+                "source": {
+                  "type": "string"
+                }
+              }
+            }
           }
         }
       }
@@ -567,7 +621,7 @@
         },
         "otherwise_note": {
           "type": "string",
-          "description": "Note used instead of the model note when shutdown_risk_when_any is set and none of those signals are present."
+          "description": "Note used instead of the model note when shutdown_risk_when_any is set, none of those signals are present, and the model has no platforms schedule for that case."
         }
       }
     },
