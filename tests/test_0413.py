@@ -87,6 +87,8 @@ def test_terminal_summary_is_readable_and_points_at_pricing(tmp_path):
     assert "Soonest shutdown: claude-sonnet-4-5" in text and "in 38 days" in text
     assert "{'" not in text and "packs:" not in text
     assert messages.PRICE in text and "lastorders.burntandtoast.com/#pricing" in text and "/buy" not in text
+    assert text.endswith(messages.SCAN_BRIEF) and "utm_medium=cli" in text and "utm_content=post-scan-cli" in text
+    assert "Listing Writer" not in text and "£29" not in text
 
 
 def test_terminal_summary_caps_rows(tmp_path):
@@ -99,9 +101,10 @@ def test_clean_and_empty_scans(tmp_path):
     clean = _scan(tmp_path / "c", {"a.py": 'M = "claude-sonnet-5-5"\n'}, today=dt.date(2026, 10, 23))
     text = terminal_summary(clean, Path("scan.md"), Path("scan.json"))
     assert text.startswith("Scanned 1 file: no retiring model IDs found. Nothing to do today.")
-    assert "(claude-sonnet-5-5)" in text and text.endswith(messages.REMIND_SHORT)
+    assert "(claude-sonnet-5-5)" in text and messages.REMIND_SHORT in text and text.endswith(messages.SCAN_BRIEF)
     md = to_markdown(clean)
     assert "**No retiring model IDs found.**" in md and "30 November 2026" in md and "## Next steps" not in md
+    assert md.rstrip().endswith(messages.MD_BRIEF) and "utm_content=post-scan-cli" in md and "Listing Writer" not in md
     empty = _scan(tmp_path / "e", {"a.py": "print(1)\n"})
     text = terminal_summary(empty, Path("scan.md"), Path("scan.json"))
     assert text.startswith("Scanned 1 file: no AI model IDs found") and "built at runtime" in text
@@ -117,7 +120,8 @@ def test_scan_md_and_job_summary_end_with_next_steps(tmp_path):
 
 
 def test_passive_copy_never_links_to_buy():
-    for name in ("SCAN_NEXT_STEPS", "MD_NEXT_STEPS", "SUMMARY_FOOTER", "PREVIEW_PITCH", "MD_CLEAN", "SCAN_REMIND"):
+    for name in ("SCAN_NEXT_STEPS", "MD_NEXT_STEPS", "SUMMARY_FOOTER", "PREVIEW_PITCH", "MD_CLEAN", "SCAN_REMIND",
+                 "SCAN_BRIEF", "MD_BRIEF"):
         assert "/buy" not in str(getattr(messages, name)), name
     assert "/buy" in messages.NEEDS_LICENCE_TAIL and "£179" in messages.NEEDS_LICENCE_TAIL
 
