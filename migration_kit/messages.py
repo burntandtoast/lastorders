@@ -42,6 +42,11 @@ SCAN_CLEAN_NONE = "Scanned {files} {file_word}: no AI model IDs found, so nothin
 SCAN_CLEAN_BLIND_SPOT = ("The scan can't see model names built at runtime or stored in a database. "
                          "If you set the model that way, check its live value.")
 SCAN_REMIND = "Want an email before the next shutdown date? " + REMIND_SHORT
+# Soft line after a successful scan. Brief only: the CLI has no profession branch, so it never pitches Listing Writer.
+BRIEF_CLI_URL = ("https://burntandtoast.com/brief/lo?utm_source=lastorders&utm_medium=cli"
+                 "&utm_campaign=lo-scan-brief-2026-11&utm_content=post-scan-cli")
+SCAN_BRIEF = "The Burnt Brief is the studio's free Monday note on AI that actually ships. " + BRIEF_CLI_URL
+MD_BRIEF = "The Burnt Brief is the studio's free Monday note on AI that actually ships. <" + BRIEF_CLI_URL + ">"
 SCAN_PARAM_ONLY = "{n} API parameter {item_word} to check (not a retiring model ID). Details: {md}"
 SCAN_PACKS = "  packs: {packs}"      # printed with --verbose (always in scan.md)
 

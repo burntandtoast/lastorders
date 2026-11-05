@@ -83,10 +83,21 @@ test("/faq redirects (301) to the FAQ section on the home page", async () => {
   assert.match(toml, /run_worker_first = \[[^\]]*"\/faq"/);
 });
 
-test("the Burnt Brief card links to the counted short link and says to confirm by email", () => {
+test("post-scan Brief is the only button; Listing Writer is a quiet sentence under it", () => {
   const html = readFileSync(new URL("../public/index.html", import.meta.url), "utf8");
-  assert.match(html, /href="https:\/\/burntandtoast\.com\/brief\/lo">Get The Burnt Brief</);
-  assert.match(html, /Free\. Check your inbox to confirm\./);
+  const brief = html.slice(html.indexOf('<section id="brief"'), html.indexOf('<section class="contact">'));
+  const hrefs = [...brief.matchAll(/href="([^"]+)"/g)].map((m) => m[1].replaceAll("&amp;", "&"));
+  assert.deepEqual(hrefs, [
+    "https://burntandtoast.com/brief/lo?utm_source=lastorders&utm_medium=web&utm_campaign=lo-scan-brief-2026-11&utm_content=post-scan",
+    "https://kits.burntandtoast.com/estate-agents/kits/listing-writer?utm_source=lastorders&utm_medium=web&utm_campaign=lo-scan-brief-2026-11&utm_content=listing-writer",
+  ]);
+  assert.match(brief, /<h2 id="brief-title">Scan done\. Want the next one\?<\/h2>/);
+  assert.match(brief, /The Burnt Brief is the studio’s free Monday note on AI that actually ships — retiring models, tools you can run yourself, and the odd kit when it’s useful\. No spam\./);
+  assert.match(brief, /<a class="btn" href="[^"]+">Get The Burnt Brief<\/a>/);
+  assert.match(brief, /<p class="brief-also"><a href="[^"]+">Writing Rightmove copy after the scan\? Listing Writer turns a fact sheet into portal-ready wording with a compliance check — £29, instant download\.<\/a><\/p>/);
+  assert.equal((brief.match(/class="btn"/g) || []).length, 1);
+  assert.doesNotMatch(brief, /waitlist/i);
+  assert.ok(brief.indexOf('class="btn"') < brief.indexOf('class="brief-also"'));
 });
 
 test("public pages have a self-canonical; robots.txt points at sitemap.xml, which lists only public pages", () => {

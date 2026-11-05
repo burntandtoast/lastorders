@@ -1569,7 +1569,7 @@ def terminal_summary(res: ScanResult, md: Path, js: Path, repo: str = ".", packs
         out += [sk.line() for sk in res.skipped]
         if packs:
             out.append(msg.SCAN_PACKS.format(packs=packs))
-        out += ["", msg.SCAN_NEXT_STEPS.format(repo=repo)]
+        out += ["", msg.SCAN_NEXT_STEPS.format(repo=repo), "", msg.SCAN_BRIEF]
         return "\n".join(out)
     unlisted = sorted({f.model for f in res.findings if f.category == "not_listed" and f.kind != "name_check"})
     if res.findings:
@@ -1588,7 +1588,7 @@ def terminal_summary(res: ScanResult, md: Path, js: Path, repo: str = ".", packs
     out += [sk.line() for sk in res.skipped]
     if packs:
         out.append(msg.SCAN_PACKS.format(packs=packs))
-    out += ["", msg.SCAN_REMIND]
+    out += ["", msg.SCAN_REMIND, "", msg.SCAN_BRIEF]
     return "\n".join(out)
 
 
@@ -1637,6 +1637,7 @@ def to_markdown(res: ScanResult) -> str:
     steps = next_steps(res)
     if steps:
         out += steps + [""]
+    out += [msg.MD_BRIEF, ""]
     return "\n".join(out)
 
 

@@ -8,7 +8,7 @@
   internal/aiconnectors/models_test.go:38 ended up with "gpt-6-luna" twice in 0.4.10).
 """
 from conftest import TODAY
-from migration_kit import swapper
+from migration_kit import messages, swapper
 from migration_kit.fixer.engine import plan_fixes, to_markdown as fix_markdown
 from migration_kit.packs import load_packs
 from migration_kit.scanner import scan, to_markdown, to_summary_markdown
@@ -32,7 +32,9 @@ def test_scan_report_and_job_summary_carry_the_patch_size_note(tmp_path):
     assert "fix .` shows the real per-file count" in md
     assert "It skips docs unless you pass `--include-docs`" in md
     assert len([l for l in md.splitlines() if NOTE in l]) == 1
-    assert md.rstrip().splitlines()[-5] == "## Next steps" and md.index("## Next steps") > md.rindex("| `app.py`")
+    lines = md.rstrip().splitlines()
+    assert lines[-7] == "## Next steps" and lines[-1] == messages.MD_BRIEF
+    assert md.index("## Next steps") > md.rindex("| `app.py`")
 
 
 def test_no_patch_size_note_without_plain_replacements(tmp_path):

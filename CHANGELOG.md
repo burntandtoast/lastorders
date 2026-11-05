@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- After a successful `scan`, the terminal summary and `scan.md` end with one line for The Burnt Brief (`utm_medium=cli`, `utm_content=post-scan-cli`). The CLI does not mention Listing Writer.
 - **Anthropic pack** (`anthropic` 2026.10.23.1, stable). Restores the 23 Oct 2026 pack the packs host already serves: undated alias `claude-sonnet-4-5` retires with `claude-sonnet-4-5-20250929` on 30 Nov 2026, and `urgent_days` is 60. In a file that names more than one provider's model, sampling-parameter signals are checked on the call that holds the model id. Plain `scan` output, `scan.md` and the Action job summary point at `/#pricing` and never at `/buy`.
 - Licence server: checkout description, the waiver dropdown and the cancel page use the 23 Oct copy. `EMAIL_REPLY_TO` and `SUPPORT_EMAIL` are `hello@burntandtoast.com`.
 
