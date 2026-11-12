@@ -92,9 +92,9 @@ test("post-scan Brief is the only button; Listing Writer is a quiet sentence und
     "https://kits.burntandtoast.com/estate-agents/kits/listing-writer?utm_source=lastorders&utm_medium=web&utm_campaign=lo-scan-brief-2026-11&utm_content=listing-writer",
   ]);
   assert.match(brief, /<h2 id="brief-title">Scan done\. Want the next one\?<\/h2>/);
-  assert.match(brief, /The Burnt Brief is the studio’s free Monday note on AI that actually ships — retiring models, tools you can run yourself, and the odd kit when it’s useful\. No spam\./);
+  assert.match(brief, /The Burnt Brief is the studio’s free Monday note on AI that actually ships: retiring models, tools you can run yourself, and the odd kit when it’s useful\. No spam\./);
   assert.match(brief, /<a class="btn" href="[^"]+">Get The Burnt Brief<\/a>/);
-  assert.match(brief, /<p class="brief-also"><a href="[^"]+">Writing Rightmove copy after the scan\? Listing Writer turns a fact sheet into portal-ready wording with a compliance check — £29, instant download\.<\/a><\/p>/);
+  assert.match(brief, /<p class="brief-also"><a href="[^"]+">Writing Rightmove copy after the scan\? Listing Writer turns a fact sheet into portal-ready wording with a compliance check. £29, instant download\.<\/a><\/p>/);
   assert.equal((brief.match(/class="btn"/g) || []).length, 1);
   assert.doesNotMatch(brief, /waitlist/i);
   assert.ok(brief.indexOf('class="btn"') < brief.indexOf('class="brief-also"'));
@@ -108,4 +108,44 @@ test("public pages have a self-canonical; robots.txt points at sitemap.xml, whic
   assert.match(read("robots.txt"), /^Disallow: \/buy$/m);
   const locs = [...read("sitemap.xml").matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
   assert.deepEqual(locs, ["https://lastorders.burntandtoast.com/", "https://lastorders.burntandtoast.com/client-report-sample", "https://lastorders.burntandtoast.com/terms"]);
+});
+
+test("remind form mentions the confirmation email, unsubscribe, and the Last Orders privacy anchor", () => {
+  const html = readFileSync(new URL("../public/index.html", import.meta.url), "utf8");
+  assert.match(
+    html,
+    /<p class="remind-small">You'll get a confirmation email first, and you can unsubscribe any time from any email\. We count visits anonymously\. No cookies, no ads, no tracking across sites\. <a href="https:\/\/burntandtoast\.com\/privacy\/#last-orders-reminders">Privacy<\/a><\/p>/,
+  );
+});
+
+test("subscribe does not send the visitor IP address to Buttondown", async () => {
+  const src = readFileSync(new URL("../src/worker.js", import.meta.url), "utf8");
+  assert.doesNotMatch(src, /ip_address/);
+  assert.doesNotMatch(src, /cf-connecting-ip/);
+
+  const bodies = [];
+  const orig = globalThis.fetch;
+  globalThis.fetch = async (url, opts = {}) => {
+    bodies.push({ url: String(url), body: opts.body });
+    return new Response("{}", { status: 201 });
+  };
+  try {
+    const res = await worker.fetch(
+      new Request("https://lastorders.example/subscribe", {
+        method: "POST",
+        headers: { "content-type": "application/json", accept: "application/json" },
+        body: JSON.stringify({ email: "test@example.com" }),
+      }),
+      env({ BUTTONDOWN_API_KEY: "test-key" }),
+    );
+    assert.equal(res.status, 200);
+    assert.equal(bodies.length, 1);
+    assert.equal(bodies[0].url, "https://api.buttondown.com/v1/subscribers");
+    const payload = JSON.parse(bodies[0].body);
+    assert.equal(payload.email_address, "test@example.com");
+    assert.deepEqual(payload.tags, ["lastorders-waitlist"]);
+    assert.equal("ip_address" in payload, false);
+  } finally {
+    globalThis.fetch = orig;
+  }
 });

@@ -47,7 +47,7 @@ async function subscribe(request, env) {
     const r = await fetch("https://api.buttondown.com/v1/subscribers", {
       method: "POST",
       headers: { Authorization: `Token ${env.BUTTONDOWN_API_KEY}`, "content-type": "application/json", "X-Buttondown-Collision-Behavior": "add" },
-      body: JSON.stringify({ email_address: email, tags: [TAG], referrer_url: request.headers.get("referer") || "https://lastorders.burntandtoast.com", ip_address: request.headers.get("cf-connecting-ip") || undefined }),
+      body: JSON.stringify({ email_address: email, tags: [TAG], referrer_url: request.headers.get("referer") || "https://lastorders.burntandtoast.com" }),
     });
     if (r.ok || r.status === 409) return reply(true, MSG.ok, 200);
     const text = (await r.text()).slice(0, 300);
