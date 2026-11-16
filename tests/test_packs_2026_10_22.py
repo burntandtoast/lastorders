@@ -16,6 +16,8 @@ from migration_kit.swapper import plan as swap_plan
 TODAY = dt.date(2026, 10, 15)
 ERR = "claude-sampling-removed-api-2026-10-21"
 WARN = "claude-sampling-api-2026-10-21-warning"
+WARN_EARLIER = "claude-sampling-api-2026-10-21-warning-earlier"
+EARLIER_NOTE = "This file sets anthropic-version to a date earlier than API version 2026-10-21"
 OLD = "claude-sampling-deprecated"
 COHERE = "foundry-cohere-embed-v3-rebuild-index"
 
@@ -65,29 +67,30 @@ def test_anthropic_version_signal_boundary(version, new):
 def test_rule_severity_error_and_warning():
     assert _rule("anthropic", ERR)["risk"] == "high"        # error
     assert _rule("anthropic", WARN)["risk"] == "medium"     # warning
-    assert _rule("anthropic", ERR)["confidence"] == _rule("anthropic", WARN)["confidence"] == "confirmed"
+    assert _rule("anthropic", WARN_EARLIER)["risk"] == "medium"
+    assert _rule("anthropic", ERR)["confidence"] == _rule("anthropic", WARN)["confidence"] == _rule("anthropic", WARN_EARLIER)["confidence"] == "confirmed"
 
 
-@pytest.mark.parametrize("version,rule", [("2026-10-21", ERR), ("2026-11-05", ERR), ("2026-10-20", WARN), (None, WARN)])
+@pytest.mark.parametrize("version,rule", [("2026-10-21", ERR), ("2026-11-05", ERR), ("2026-10-20", WARN_EARLIER), (None, WARN)])
 def test_scan_error_at_or_after_2026_10_21_else_warning(tmp_path, version, rule):
     root = _write(tmp_path, {"app.py": _claude_call("claude-sonnet-4-5-20250929", version)})
     (f,) = _findings(root, "claude-sonnet-4-5-20250929")
-    other = WARN if rule == ERR else ERR
-    assert rule in f.rules and other not in f.rules
+    other = {ERR, WARN, WARN_EARLIER} - {rule}
+    assert rule in f.rules and not (other & set(f.rules))
     assert any("will return a 400 on API version 2026-10-21 or later" in n for n in f.notes)
     assert not any("will fail" in n.lower() or "is broken" in n.lower() for n in f.notes)
     if version and version < "2026-10-21":
-        assert any(f"This file sets anthropic-version to {version}, which is earlier than 2026-10-21." in n for n in f.notes)
+        assert any(EARLIER_NOTE in n for n in f.notes)
 
 
 def test_no_sampling_params_no_rule(tmp_path):
     root = _write(tmp_path, {"app.py": "import anthropic\nclient = anthropic.Anthropic()\n"
                                        'client.messages.create(model="claude-sonnet-4-5-20250929", max_tokens=5, messages=[])\n'})
     (f,) = _findings(root, "claude-sonnet-4-5-20250929")
-    assert ERR not in f.rules and WARN not in f.rules
+    assert ERR not in f.rules and WARN not in f.rules and WARN_EARLIER not in f.rules
 
 
-@pytest.mark.parametrize("version,rule", [("2026-10-21", ERR), ("2026-10-20", WARN), (None, WARN)])
+@pytest.mark.parametrize("version,rule", [("2026-10-21", ERR), ("2026-10-20", WARN_EARLIER), (None, WARN)])
 def test_fixer_flags_call_on_active_model_and_never_applies(tmp_path, version, rule):
     # claude-opus-4-6 is active and not covered by the older inferred rule, so nothing may remove the params,
     # even with --include-inferred.
@@ -95,7 +98,7 @@ def test_fixer_flags_call_on_active_model_and_never_applies(tmp_path, version, r
     root = _write(tmp_path, {"app.py": src})
     for include_inferred in (False, True):
         res = plan_fixes(root, load_packs(offline=True), include_inferred=include_inferred)
-        items = [i for i in res.items if i.rule in (ERR, WARN)]
+        items = [i for i in res.items if i.rule in (ERR, WARN, WARN_EARLIER)]
         assert [i.rule for i in items] == [rule]
         assert items[0].status == "manual" and "not applied automatically" in items[0].change
         assert "app.py" not in res.new_contents and res.diff == ""
@@ -106,7 +109,7 @@ def test_fixer_error_uses_file_level_version_signal(tmp_path):
     root = _write(tmp_path, {"app.py": _claude_call("claude-sonnet-5-5", "2026-10-21")})
     res = plan_fixes(root, load_packs(offline=True))
     rules = {i.rule: i for i in res.items}
-    assert ERR in rules and WARN not in rules and rules[ERR].status == "manual"
+    assert ERR in rules and WARN not in rules and WARN_EARLIER not in rules and rules[ERR].status == "manual"
     assert "temperature=0.2" in (root / "app.py").read_text()
     assert all("temperature" not in i.change or not i.status.startswith("fixed") for i in res.items)
 
@@ -115,11 +118,11 @@ def test_default_sampling_value_still_flagged_for_new_version(tmp_path):
     # Removed in 2026-10-21 for every value, not only non-default ones.
     root = _write(tmp_path, {"app.py": _claude_call("claude-opus-4-6", "2026-10-21", temperature="1")})
     res = plan_fixes(root, load_packs(offline=True))
-    assert [i.rule for i in res.items if i.rule in (ERR, WARN)] == [ERR]
+    assert [i.rule for i in res.items if i.rule in (ERR, WARN, WARN_EARLIER)] == [ERR]
 
 
 def test_anthropic_rules_fix_is_manual_only():
-    for rid in (ERR, WARN):
+    for rid in (ERR, WARN, WARN_EARLIER):
         fix = _rule("anthropic", rid)["fix"]
         assert fix["action"] == "manual" and "not applied automatically" in fix["note"]
 

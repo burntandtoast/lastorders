@@ -14,16 +14,18 @@ TODAY = dt.date(2026, 11, 16)
 FIXTURES = ROOT / "tests" / "fixtures" / "anthropic_sampling"
 ERR = "claude-sampling-removed-api-2026-10-21"
 WARN = "claude-sampling-api-2026-10-21-warning"
+WARN_EARLIER = "claude-sampling-api-2026-10-21-warning-earlier"
 WORDING = "will return a 400 on API version 2026-10-21 or later"
+EARLIER_NOTE = "This file sets anthropic-version to a date earlier than API version 2026-10-21"
 
 POSITIVES = {
     "positive_python_sdk.py": ("temperature", WARN),
     "positive_js_sdk.ts": ("top_p", WARN),
-    "positive_http.js": ("top_k", WARN),
+    "positive_http.js": ("top_k", WARN_EARLIER),
     "positive_langchain.py": ("temperature", WARN),
     "positive_vercel_ai.ts": ("temperature", WARN),
     "positive_version_2026_10_21.py": ("temperature", ERR),
-    "positive_earlier_version.py": ("temperature", WARN),
+    "positive_earlier_version.py": ("temperature", WARN_EARLIER),
 }
 
 
@@ -35,7 +37,7 @@ def _scan_file(tmp_path, src: Path):
 
 
 def _param_findings(res):
-    return [f for f in res.findings if f.category == "param_rule" or ERR in f.rules or WARN in f.rules]
+    return [f for f in res.findings if f.category == "param_rule" or ERR in f.rules or WARN in f.rules or WARN_EARLIER in f.rules]
 
 
 def test_positive_fixtures_flag_sampling_params(tmp_path):
@@ -46,16 +48,17 @@ def test_positive_fixtures_flag_sampling_params(tmp_path):
         # One flag per file (param_rule, or carried on a retiring model).
         assert len(found) == 1, (name, [(f.category, f.model, f.rules) for f in found])
         f = found[0]
-        assert rule in f.rules and (ERR if rule == WARN else WARN) not in f.rules, name
+        others = {ERR, WARN, WARN_EARLIER} - {rule}
+        assert rule in f.rules and not (others & set(f.rules)), name
         assert WORDING in " ".join(f.notes), (name, f.notes)
         assert "will fail" not in " ".join(f.notes).lower()
         assert "is broken" not in " ".join(f.notes).lower()
         if f.category == "param_rule":
             assert f.model == param
         if name == "positive_earlier_version.py":
-            assert "This file sets anthropic-version to 2023-06-01, which is earlier than 2026-10-21." in f.notes
+            assert EARLIER_NOTE in " ".join(f.notes)
         if name == "positive_http.js":
-            assert "This file sets anthropic-version to 2023-06-01, which is earlier than 2026-10-21." in f.notes
+            assert EARLIER_NOTE in " ".join(f.notes)
         if name == "positive_version_2026_10_21.py":
             assert "already sets anthropic-version to 2026-10-21 or later" in f.notes[0]
             assert not any("earlier than 2026-10-21" in n for n in f.notes)
@@ -70,7 +73,7 @@ def test_negative_fixtures_do_not_flag_other_providers(tmp_path):
     ):
         res = _scan_file(tmp_path / name, FIXTURES / name)
         assert not [f for f in res.findings if f.category == "param_rule"], name
-        assert not [f for f in res.findings if ERR in f.rules or WARN in f.rules], name
+        assert not [f for f in res.findings if ERR in f.rules or WARN in f.rules or WARN_EARLIER in f.rules], name
 
 
 def test_pack_cites_16_nov_2026_and_keeps_official_urls():
