@@ -19,6 +19,8 @@ from migration_kit.site import build_site
 TODAY = dt.date(2026, 10, 22)
 ERR = "claude-sampling-removed-api-2026-10-21"
 WARN = "claude-sampling-api-2026-10-21-warning"
+WARN_EARLIER = "claude-sampling-api-2026-10-21-warning-earlier"
+EARLIER_NOTE = "This file sets anthropic-version to a date earlier than API version 2026-10-21"
 OLD = "claude-sampling-deprecated"
 WORDING = "will return a 400 on API version 2026-10-21 or later"
 
@@ -60,7 +62,7 @@ def test_include_inferred_never_strips_sampling_params(tmp_path, model):
     after = res.new_contents.get("app.py", (root / "app.py").read_text())
     assert "temperature=0.2" in after and "top_p=0.9" in after and "top_k=5" in after
     for i in res.items:
-        if i.rule in (OLD, ERR, WARN):
+        if i.rule in (OLD, ERR, WARN, WARN_EARLIER):
             assert i.status == "manual"
     assert not any(i.status.startswith("fixed") and "temperature" in i.change for i in res.items)
 
@@ -70,7 +72,7 @@ def test_all_anthropic_rules_manual():
 
 
 # ------------------------------------------------------------------ (2) free scan flags the parameters
-@pytest.mark.parametrize("version,rule,risk", [(None, WARN, "medium"), ("2026-10-20", WARN, "medium"),
+@pytest.mark.parametrize("version,rule,risk", [(None, WARN, "medium"), ("2026-10-20", WARN_EARLIER, "medium"),
                                                ("2026-10-21", ERR, "high"), ("2027-03-01", ERR, "high")])
 def test_scan_flags_params_on_active_model(tmp_path, version, rule, risk):
     root = _write(tmp_path, {"app.py": _call("claude-sonnet-5-5", version)})
@@ -81,7 +83,7 @@ def test_scan_flags_params_on_active_model(tmp_path, version, rule, risk):
     assert WORDING in p.notes[0]
     assert "will fail" not in p.notes[0].lower() and "is broken" not in p.notes[0].lower()
     if version and version < "2026-10-21":
-        assert f"This file sets anthropic-version to {version}, which is earlier than 2026-10-21." in p.notes
+        assert any(EARLIER_NOTE in n for n in p.notes)
     if risk == "high":
         assert "already sets anthropic-version to 2026-10-21 or later" in p.notes[0]
 
@@ -94,7 +96,7 @@ def test_scan_flag_with_model_from_env(tmp_path):
 
 
 def test_scan_message_has_no_step_by_step_fix(tmp_path):
-    for rid in (ERR, WARN):
+    for rid in (ERR, WARN, WARN_EARLIER):
         r = _rules("anthropic")[rid]
         assert WORDING in r["message"]
         assert "1." not in r["message"] and "Suggested fix" not in r["message"] and "prompt" not in r["message"]
@@ -165,7 +167,7 @@ def test_model_independent_rules_are_anthropic_only():
     """The free-scan file flag and the model-independent fixer path only touch rules with no `applies_to`.
     Every OpenAI, Google and Foundry rule has one, so their findings are unchanged."""
     ps = load_packs(offline=True)
-    assert {r["id"] for r in model_independent_rules(ps.get("anthropic"))} == {ERR, WARN}
+    assert {r["id"] for r in model_independent_rules(ps.get("anthropic"))} == {ERR, WARN, WARN_EARLIER}
     for prov in ("openai", "google", "azure-foundry"):
         assert model_independent_rules(ps.get(prov)) == []
 

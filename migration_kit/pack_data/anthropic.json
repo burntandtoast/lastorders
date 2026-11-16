@@ -346,7 +346,8 @@
         "claude_sampling"
       ],
       "unless_any": [
-        "anthropic_version_2026_10_21"
+        "anthropic_version_2026_10_21",
+        "anthropic_version_earlier"
       ],
       "param": "temperature,top_p,top_k",
       "risk": "medium",
@@ -363,15 +364,33 @@
         "http_anthropic",
         "messages_api",
         "vercel_ai_anthropic"
+      ]
+    },
+    {
+      "id": "claude-sampling-api-2026-10-21-warning-earlier",
+      "type": "param_removed",
+      "when_all": [
+        "claude_sampling",
+        "anthropic_version_earlier"
       ],
-      "append_notes": [
-        {
-          "when_any": [
-            "anthropic_version_earlier"
-          ],
-          "capture_signal": "anthropic_version_earlier",
-          "note": "This file sets anthropic-version to {value}, which is earlier than 2026-10-21."
-        }
+      "unless_any": [
+        "anthropic_version_2026_10_21"
+      ],
+      "param": "temperature,top_p,top_k",
+      "risk": "medium",
+      "confidence": "confirmed",
+      "evidence": "Anthropic model deprecations, API parameter deprecations (checked 16 Nov 2026, https://platform.claude.com/docs/en/about-claude/model-deprecations): temperature, top_p, top_k are 'Removed in API version 2026-10-21' and return a 400 error. Earlier API versions return it when set to a non-default value on Claude 4.7 and later models and Claude Mythos Preview. Recommended replacement: omit them and use prompting.",
+      "message": "This code sets temperature, top_p or top_k. These parameters will return a 400 on API version 2026-10-21 or later. This file sets anthropic-version to a date earlier than API version 2026-10-21 and will be affected when that version is used.",
+      "fix": {
+        "action": "manual",
+        "note": "Suggested fix, not applied automatically: 1. Remove temperature, top_p and top_k from this call. 2. If you relied on them (for example temperature 0 for repeatable output), say what you need in the prompt instead. 3. Re-run your evals, then move anthropic-version to 2026-10-21 or later."
+      },
+      "when_any": [
+        "anthropic_sdk",
+        "langchain_anthropic",
+        "http_anthropic",
+        "messages_api",
+        "vercel_ai_anthropic"
       ]
     }
   ],
