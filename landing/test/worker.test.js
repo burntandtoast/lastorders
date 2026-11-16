@@ -109,3 +109,33 @@ test("public pages have a self-canonical; robots.txt points at sitemap.xml, whic
   const locs = [...read("sitemap.xml").matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
   assert.deepEqual(locs, ["https://lastorders.burntandtoast.com/", "https://lastorders.burntandtoast.com/client-report-sample", "https://lastorders.burntandtoast.com/terms"]);
 });
+
+test("Before 1 December section lists the two Anthropic items and a scan button", () => {
+  const html = readFileSync(new URL("../public/index.html", import.meta.url), "utf8");
+  assert.match(html, /href="#december-cliff">Before 1 December</);
+  const section = html.slice(html.indexOf('id="december-cliff"'), html.indexOf('id="if-nothing"'));
+  assert.match(section, /<h2>Before 1 December<\/h2>/);
+  assert.doesNotMatch(section, /December cliff/);
+  assert.match(section, /30 November 2026/);
+  assert.match(section, /claude-sonnet-4-5-20250929/);
+  assert.match(section, /claude-sonnet-5-5/);
+  assert.match(section, /will return a 400 on API version 2026-10-21 or later/);
+  assert.match(section, /href="#scan">Scan your repo</);
+  assert.doesNotMatch(section, /Argon|Copilot|Kimi K3/);
+  assert.doesNotMatch(section, /£|\$/);
+  assert.doesNotMatch(section, /[\u2014\u2013\u00b7]/);
+  // Keep the existing anchor; visible copy must not say December cliff
+  const withoutStyle = html.replace(/<style[\s\S]*?<\/style>/g, " ");
+  assert.doesNotMatch(withoutStyle, /December cliff/);
+  const lede = html.slice(html.indexOf('<p class="lede">'), html.indexOf("</p>", html.indexOf('<p class="lede">')));
+  assert.match(lede, /OpenAI switched off o1, o3-mini, o4-mini, gpt-3.5-turbo and some GPT-4o and GPT-4.1 snapshots on 23&nbsp;October 2026/);
+  assert.match(lede, /The rest of GPT-4o and GPT-4.1 go on 14&nbsp;January 2027/);
+  assert.doesNotMatch(lede, /switches off/);
+  assert.doesNotMatch(html, /which is days away/);
+  assert.match(html, /Those were switched off on 23 October 2026/);
+  assert.match(html, /before 30 November, 1 December or 14 January/);
+  assert.doesNotMatch(html, /before 20 October, 23 October or 14 January/);
+  const oct23 = html.slice(html.indexOf("<b>23 Oct 2026</b>"), html.indexOf("<b>30 Nov 2026</b>"));
+  assert.match(oct23, /were switched off/);
+  assert.doesNotMatch(oct23, /are switched off/);
+});

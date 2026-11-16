@@ -507,6 +507,31 @@
           "evidence": {
             "type": "string"
           },
+          "append_notes": {
+            "description": "Extra finding notes when the listed signals are present on the file. If capture_signal is set and the note contains {value}, the first capturing group of that signal is interpolated.",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "note"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "when_any": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "capture_signal": {
+                  "type": "string"
+                },
+                "note": {
+                  "type": "string"
+                }
+              }
+            }
+          },
           "fix": {
             "type": "object",
             "description": "Machine-readable instruction for the auto-fixer. Endpoint keys refer to signal ids that carry `call.callees`.",

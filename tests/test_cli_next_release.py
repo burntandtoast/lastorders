@@ -20,7 +20,7 @@ TODAY = dt.date(2026, 10, 22)
 ERR = "claude-sampling-removed-api-2026-10-21"
 WARN = "claude-sampling-api-2026-10-21-warning"
 OLD = "claude-sampling-deprecated"
-WORDING = "This will fail once you move to the 2026-10-21 version"
+WORDING = "will return a 400 on API version 2026-10-21 or later"
 
 
 def _write(tmp_path, files):
@@ -79,7 +79,11 @@ def test_scan_flags_params_on_active_model(tmp_path, version, rule, risk):
     assert p.rules == [rule] and p.risk == risk and p.model == "temperature" and p.line == 4
     assert p.provider == "anthropic" and p.kind == "param" and not p.auto_swap
     assert WORDING in p.notes[0]
-    assert p.notes[0].startswith("Error:" if risk == "high" else "Warning:")
+    assert "will fail" not in p.notes[0].lower() and "is broken" not in p.notes[0].lower()
+    if version and version < "2026-10-21":
+        assert f"This file sets anthropic-version to {version}, which is earlier than 2026-10-21." in p.notes
+    if risk == "high":
+        assert "already sets anthropic-version to 2026-10-21 or later" in p.notes[0]
 
 
 def test_scan_flag_with_model_from_env(tmp_path):

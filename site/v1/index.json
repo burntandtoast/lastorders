@@ -1,15 +1,15 @@
 {
   "index_format": 1,
-  "generated": "2026-11-04",
+  "generated": "2026-11-16",
   "packs": [
     {
       "provider": "anthropic",
       "name": "Anthropic Claude API",
-      "version": "2026.10.23.1",
+      "version": "2026.11.16.1",
       "status": "stable",
       "pack_format": 1,
       "url": "packs/anthropic.json",
-      "sha256": "352c1a0d66cff27a0bd1f343c47f771b8a7ee01bd9323e6a373d8c58d45ba5fb"
+      "sha256": "10f883983ff4222cd5c9be06c32e319a657cf329f11e02d6b174a37208472f51"
     },
     {
       "provider": "azure-foundry",
