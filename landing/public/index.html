@@ -233,6 +233,13 @@ code,kbd,samp,pre,.cmd,.cmd .c,.err-block,.report .bar{font-family:ui-monospace,
  .deadline .repl{padding:14px 0 0;border-left:0;border-top:2px dashed #E0A070}
  .deadline .next{align-self:flex-start}}
 @media (max-width:480px){.deadline b{font-size:1.8rem}.deadlines{margin-top:36px;padding-left:46px}.deadline .mark{left:-46px}.deadlines:before{left:12px}.deadline code{font-size:.8rem}}
+/* ---- December cliff (16 Nov 2026): two dated Anthropic items and a scan button ---- */
+.cliff{max-width:760px}
+.cliff .intro{margin:0 0 22px;max-width:40rem}
+.cliff-list{list-style:none;margin:0 0 26px;padding:0;display:flex;flex-direction:column;gap:16px}
+.cliff-item{background:#FFFCF5;border:2.5px solid #2B1D14;box-shadow:4px 5px 0 #2B1D14;border-radius:14px;padding:22px 24px}
+.cliff-item b{display:block;font-family:var(--display);font-size:1.35rem;line-height:1.15;letter-spacing:-.03em;color:#9B2C2C;margin:0 0 8px}
+.cliff-item p{margin:0;color:#4A382C;font-size:1rem;line-height:1.6}
 </style>
 </head>
 <body id="top">
@@ -245,7 +252,7 @@ code,kbd,samp,pre,.cmd,.cmd .c,.err-block,.report .bar{font-family:ui-monospace,
 <details class="menu"><summary><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="M4 7 H20 M4 12 H20 M4 17 H20" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg><span>Menu</span></summary>
 <ul><li><a class="menu-play" href="https://lastorders.burntandtoast.com/">Last Orders</a></li><li><a href="https://burntandtoast.com/#games">Games</a></li><li><a href="https://burntandtoast.com/#studio">Studio</a></li><li><a href="https://burntandtoast.com/blog">Journal</a></li><li><a href="https://burntandtoast.com/#contact">Say hello</a></li></ul></details>
 </nav></div></header>
-<div class="subnav"><div class="wrap"><p class="title">Last Orders</p><nav aria-label="Last Orders"><a href="#if-nothing">If you do nothing</a><a href="#scan">Free scan</a><a href="#problem">The problem</a><a href="#licence">The patch</a><a href="#pricing">Pricing</a><a href="#faq">FAQ</a><a class="btn" href="#pricing">Get the patch · £179</a></nav></div></div>
+<div class="subnav"><div class="wrap"><p class="title">Last Orders</p><nav aria-label="Last Orders"><a href="#december-cliff">December cliff</a><a href="#if-nothing">If you do nothing</a><a href="#scan">Free scan</a><a href="#problem">The problem</a><a href="#licence">The patch</a><a href="#pricing">Pricing</a><a href="#faq">FAQ</a><a class="btn" href="#pricing">Get the patch · £179</a></nav></div></div>
 
 <main>
 <div class="hero"><div class="wrap">
@@ -263,6 +270,16 @@ code,kbd,samp,pre,.cmd,.cmd .c,.err-block,.report .bar{font-family:ui-monospace,
   </div>
 
 </div></div>
+
+<section id="december-cliff" class="alt"><div class="wrap cliff">
+  <h2>The December cliff</h2>
+  <p class="intro">Two Anthropic changes to deal with before the end of November. The free scan already flags both.</p>
+  <ul class="cliff-list">
+    <li class="cliff-item"><b>30 November 2026</b><p>Anthropic retires <code>claude-sonnet-4-5-20250929</code>. The recommended replacement is <code>claude-sonnet-5-5</code>. The free scan already flags this ID and its alias <code>claude-sonnet-4-5</code>.</p></li>
+    <li class="cliff-item"><b>API version 2026-10-21 or later</b><p>Calls that still send <code>temperature</code>, <code>top_p</code> or <code>top_k</code> will return a 400 on API version 2026-10-21 or later. Omit those parameters and guide the model with prompting.</p></li>
+  </ul>
+  <a class="btn" href="#scan">Scan your repo</a>
+</div></section>
 
 <section id="if-nothing" class="consequences"><div class="wrap">
   <h2>What happens if you do nothing</h2>

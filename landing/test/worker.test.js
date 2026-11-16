@@ -109,3 +109,18 @@ test("public pages have a self-canonical; robots.txt points at sitemap.xml, whic
   const locs = [...read("sitemap.xml").matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
   assert.deepEqual(locs, ["https://lastorders.burntandtoast.com/", "https://lastorders.burntandtoast.com/client-report-sample", "https://lastorders.burntandtoast.com/terms"]);
 });
+
+test("December cliff section lists the two Anthropic items and a scan button", () => {
+  const html = readFileSync(new URL("../public/index.html", import.meta.url), "utf8");
+  assert.match(html, /href="#december-cliff">December cliff</);
+  const section = html.slice(html.indexOf('id="december-cliff"'), html.indexOf('id="if-nothing"'));
+  assert.match(section, /<h2>The December cliff<\/h2>/);
+  assert.match(section, /30 November 2026/);
+  assert.match(section, /claude-sonnet-4-5-20250929/);
+  assert.match(section, /claude-sonnet-5-5/);
+  assert.match(section, /will return a 400 on API version 2026-10-21 or later/);
+  assert.match(section, /href="#scan">Scan your repo</);
+  assert.doesNotMatch(section, /Argon|Copilot|Kimi K3/);
+  assert.doesNotMatch(section, /£|\$/);
+  assert.doesNotMatch(section, /[\u2014\u2013\u00b7]/);
+});

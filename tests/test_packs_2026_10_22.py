@@ -74,7 +74,10 @@ def test_scan_error_at_or_after_2026_10_21_else_warning(tmp_path, version, rule)
     (f,) = _findings(root, "claude-sonnet-4-5-20250929")
     other = WARN if rule == ERR else ERR
     assert rule in f.rules and other not in f.rules
-    assert any(n.startswith("Error:" if rule == ERR else "Warning:") for n in f.notes)
+    assert any("will return a 400 on API version 2026-10-21 or later" in n for n in f.notes)
+    assert not any("will fail" in n.lower() or "is broken" in n.lower() for n in f.notes)
+    if version and version < "2026-10-21":
+        assert any(f"This file sets anthropic-version to {version}, which is earlier than 2026-10-21." in n for n in f.notes)
 
 
 def test_no_sampling_params_no_rule(tmp_path):
@@ -208,9 +211,11 @@ def test_sources_and_conventions():
         for m in d["models"] + d.get("migrations", []):
             assert m.get("source", next(iter(ids))) in ids, m["id"]
     anth = _pack("anthropic")
-    # 2026.10.23.1 is the stable pack (alias, 60-day window); see test_0413.py
-    assert anth["version"] == "2026.10.23.1" and anth["updated"] == "2026-10-23" and anth["status"] == "stable"
-    assert all(s["checked"] <= "2026-10-23" for s in anth["sources"])
+    # 2026.11.16.1 is the stable pack (sampling wording, Vercel AI SDK, 16 Nov re-read); see test_0413.py
+    assert anth["version"] == "2026.11.16.1" and anth["updated"] == "2026-11-16" and anth["status"] == "stable"
+    checked = {s["id"]: s["checked"] for s in anth["sources"]}
+    assert checked["deprecations"] == checked["api-parameter-deprecations"] == "2026-11-16"
+    assert checked["sonnet-4-5"] == checked["model-ids"] == "2026-10-23"
     az = _pack("azure-foundry")
     assert az["version"] == "2026.11.02.1" and az["updated"] == "2026-11-02"
     checked = {s["id"]: s["checked"] for s in az["sources"]}

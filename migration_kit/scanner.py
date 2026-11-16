@@ -1151,6 +1151,33 @@ def model_independent_rules(pack: Pack) -> list[dict]:
     return [r for r in pack.data.get("rules", []) if not r.get("applies_to") and (r.get("when_all") or r.get("when_any"))]
 
 
+def _signal_pattern(pack: Pack, signal_id: str) -> str | None:
+    return next((s.get("pattern") for s in pack.data.get("signals") or [] if s.get("id") == signal_id), None)
+
+
+def _append_rule_notes(finding: Finding, rule: dict, sigset: set[str], rows: list, pack: Pack) -> None:
+    """Pack-driven extra notes, optionally filling {value} from a signal's first capture group."""
+    text = "\n".join(r.text for r in rows)
+    for extra in rule.get("append_notes") or []:
+        if extra.get("when_any") and not (set(extra["when_any"]) & sigset):
+            continue
+        note = extra.get("note") or ""
+        sid = extra.get("capture_signal")
+        if sid and "{value}" in note:
+            pat = _signal_pattern(pack, sid)
+            vals: list[str] = []
+            if pat:
+                for m in re.finditer(pat, text):
+                    val = m.group(1) if m.lastindex else m.group(0)
+                    if val not in vals:
+                        vals.append(val)
+            if not vals:
+                continue
+            note = note.format(value=", ".join(vals))
+        if note:
+            finding.notes.append(note)
+
+
 def param_rule_findings(rel: str, rows: list, sig: list[str], packs: PackSet, found: list[Finding],
                         scopes: "CallScopes | None" = None) -> list[Finding]:
     """One finding per file and model-independent rule, at the first code line that sets one of the
@@ -1181,6 +1208,7 @@ def param_rule_findings(rel: str, rows: list, sig: list[str], packs: PackSet, fo
             if more:
                 shown = ", ".join(map(str, more[:10])) + (f" and {len(more) - 10} more" if len(more) > 10 else "")
                 f.notes.append(f"Also set on line(s) {shown} of this file.")
+            _append_rule_notes(f, rule, sigset, rows, pack)
             out.append(f)
     return out
 
@@ -1204,7 +1232,7 @@ def _bump(risk: str, to: str) -> str:
     return to if RISK_RANK[to] > RISK_RANK[risk] else risk
 
 
-def assess(f: Finding, pack: Pack, sig: list[str], today: dt.date) -> None:
+def assess(f: Finding, pack: Pack, sig: list[str], today: dt.date, rows: list | None = None) -> None:
     sigset = set(sig)
     base = pack.fine_tune_base(f.model)
     if base is not None:
@@ -1274,6 +1302,8 @@ def assess(f: Finding, pack: Pack, sig: list[str], today: dt.date) -> None:
             tag = " [live-tested]" if rule.get("confidence") == "live-tested" else (
                 " [inferred]" if rule.get("confidence") == "inferred" else "")
             f.notes.append(rule["message"] + tag)
+            if rows is not None:
+                _append_rule_notes(f, rule, set(sig), rows, pack)
             if rule["risk"] != "info":
                 f.risk = _bump(f.risk, rule["risk"])
     if not m.map_automatically:
@@ -1364,7 +1394,7 @@ def scan(root: str | Path, include_docs: bool = True, packs: PackSet | None = No
                 kind, block = classify(line, s, e, r.lang, r.prev, r.mode, rel)
                 f = Finding(rel, i, s + 1, tok, pack.provider, kind, r.lang,
                             line.strip()[:200], "not_listed", None, None, "n/a", "info")
-                assess(f, pack, scopes.at(pos, s, pack.provider), today)
+                assess(f, pack, scopes.at(pos, s, pack.provider), today, rows)
                 apply_block(f, block)
                 if r.mode == MARKUP and kind == "doc" and not markup_quoted(line, s, e):
                     f.risk = "info"
@@ -1393,7 +1423,7 @@ def scan(root: str | Path, include_docs: bool = True, packs: PackSet | None = No
                 for s, e, tok, pack in iter_prefix_checks(line, packs, sig):
                     f = Finding(rel, i, s + 1, tok, pack.provider, "name_check", r.lang,
                                 line.strip()[:200], "not_listed", None, None, "n/a", "info")
-                    assess(f, pack, scopes.at(pos, s, pack.provider), today)
+                    assess(f, pack, scopes.at(pos, s, pack.provider), today, rows)
                     apply_block(f, "name_check")
                     f.notes.append(f"Prefix check for the {tok} family (`{line[s:e + 1]}`).")
                     if r.note:
