@@ -161,3 +161,14 @@ test("shutdown copy uses past tense for dates before 18 November 2026 and future
   assert.doesNotMatch(html, /is switched off with its base model/);
   assert.doesNotMatch(html, /they're switched off on 14 January/);
 });
+
+test("the done-for-you card has the standard price and no expired early bird", () => {
+  const html = readFileSync(new URL("../public/index.html", import.meta.url), "utf8");
+  const card = html.slice(html.indexOf("Done for you"), html.indexOf("Several repos or services"));
+  assert.match(card, /from £1,500/);
+  assert.match(card, /fine-tuned models from £3,500/);
+  assert.doesNotMatch(card, /Early bird/);
+  assert.doesNotMatch(card, /1,250/);
+  assert.doesNotMatch(card, /booked by 31 Oct/);
+  assert.doesNotMatch(html, /class="early"/);
+});
