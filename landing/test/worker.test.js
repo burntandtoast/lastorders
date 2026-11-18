@@ -139,3 +139,25 @@ test("Before 1 December section lists the two Anthropic items and a scan button"
   assert.match(oct23, /were switched off/);
   assert.doesNotMatch(oct23, /are switched off/);
 });
+
+test("shutdown copy uses past tense for dates before 18 November 2026 and future tense after", () => {
+  const html = readFileSync(new URL("../public/index.html", import.meta.url), "utf8");
+  const card = (from, to) => html.slice(html.indexOf(from), to ? html.indexOf(to) : html.length);
+  assert.match(card("<b>20 Oct 2026</b>", "<b>23 Oct 2026</b>"), /retired on Vertex AI/);
+  assert.match(card("<b>23 Oct 2026</b>", "<b>30 Nov 2026</b>"), /were switched off/);
+  assert.doesNotMatch(card("<b>23 Oct 2026</b>", "<b>30 Nov 2026</b>"), /are switched off|will be switched off/);
+  assert.match(card("<b>1 Dec 2026</b>", "<b>11 Dec 2026</b>"), /chatgpt-image-latest<\/code> will be switched off/);
+  assert.match(card("<b>11 Dec 2026</b>", "<b>6 Jan 2027</b>"), /snapshots will be switched off/);
+  assert.match(card("<b>6 Jan 2027</b>", "<b>14 Jan 2027</b>"), /snapshots will be switched off/);
+  assert.match(card("<b>14 Jan 2027</b>", "<b>20 Jan 2027</b>"), /snapshots will be removed/);
+  assert.match(card("<b>20 Jan 2027</b>", "<b>26 Feb 2027</b>"), /models will be switched off/);
+  assert.match(card("<b>26 Feb 2027</b>", "<b>1 Apr 2027</b>"), /will be switched off/);
+  assert.match(card("<b>1 Apr 2027</b>", 'id="scan"'), /will be switched off/);
+  const afterOct = html.slice(html.indexOf("<b>30 Nov 2026</b>"));
+  assert.doesNotMatch(afterOct, /are switched off/);
+  assert.match(html, /Your fine-tuned model will be switched off with its base model on 14 January/);
+  assert.match(html, /they will be switched off on 14 January 2027/);
+  assert.match(html, /Fine-tuned models built on those bases will be switched off on the same day/);
+  assert.doesNotMatch(html, /is switched off with its base model/);
+  assert.doesNotMatch(html, /they're switched off on 14 January/);
+});
